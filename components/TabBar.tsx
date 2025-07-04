@@ -1,6 +1,7 @@
 import { View, TouchableOpacity } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Home, Search, MessageCircle, User, Plus } from "lucide-react-native";
+import { COLORS } from "~/theme/colors";
 
 const tabRoutes = [
   { name: "index", icon: Home },
@@ -37,7 +38,7 @@ export default function TabBar({
             >
               <Icon 
                 size={24} 
-                color={isFocused ? "#C1501F" : "#8E8E93"} 
+                color={isFocused ? COLORS.utOrange : COLORS.light.grey} 
                 strokeWidth={2}
               />
             </TouchableOpacity>

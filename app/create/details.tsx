@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 import Dropdown from '~/components/Dropdown';
@@ -78,24 +77,11 @@ export default function DetailsScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-white">
+    <View className="flex-1 bg-white">
       <KeyboardAvoidingView 
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         className="flex-1"
       >
-        {/* Header */}
-        <View className="border-b border-gray-100 px-4 py-3 flex-row items-center justify-between">
-          <TouchableOpacity onPress={() => router.back()}>
-            <MaterialIcons name="arrow-back" size={24} color="#666" />
-          </TouchableOpacity>
-          <Text className="text-lg font-semibold">Item Details</Text>
-          <TouchableOpacity onPress={handleNext} disabled={!isValid}>
-            <Text className={`font-medium ${isValid ? 'text-[#C1501F]' : 'text-gray-300'}`}>
-              Next
-            </Text>
-          </TouchableOpacity>
-        </View>
-
         <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
           <View className="p-4 space-y-5">
             <View>
@@ -171,7 +157,7 @@ export default function DetailsScreen() {
         </ScrollView>
 
         {/* Bottom Action */}
-        <View className="px-4 py-3 border-t border-gray-100">
+        <View className="px-4 py-3 border-t mb-8 border-gray-100">
           <TouchableOpacity
             onPress={handleNext}
             disabled={!isValid}
@@ -190,6 +176,6 @@ export default function DetailsScreen() {
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
-    </SafeAreaView>
+    </View>
   );
 } 

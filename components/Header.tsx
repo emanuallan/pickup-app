@@ -1,6 +1,5 @@
-import { memo, useState } from 'react';
+import { memo } from 'react';
 import { View, Image, TouchableOpacity, Text } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { MessageCircle, Search, Bell, Settings } from 'lucide-react-native';
 import { usePathname, useRouter } from 'expo-router';
 import Logo from '../assets/utmplogo.png'
@@ -67,7 +66,7 @@ function Header() {
   }
 
   return (
-    <View className=" border-b border-gray-100">
+    <View className="border-b border-gray-100 bg-white">
       <View className="flex-row items-center justify-between px-4 h-12">
         {renderLeftSide()}
         <View className="flex-row items-center gap-5">

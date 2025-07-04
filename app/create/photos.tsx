@@ -1,10 +1,8 @@
 import { useState } from 'react';
 import { View, Text, TouchableOpacity, Image, ScrollView } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { MaterialIcons } from '@expo/vector-icons';
-import ModalHeader from '~/components/ModalHeader';
 
 export default function PhotosScreen() {
   const router = useRouter();
@@ -30,7 +28,6 @@ export default function PhotosScreen() {
 
   const handleNext = () => {
     if (images.length === 0) {
-      // Allow proceeding without images, but show a message
       router.push({
         pathname: '/create/details',
         params: { images: JSON.stringify([]) }
@@ -44,10 +41,7 @@ export default function PhotosScreen() {
   };
 
   return (
-    <View className="flex-1 bg-white" edges={'top'}>
-      {/* Header */}
-      <ModalHeader title='Add Photos'/>
-
+    <View className="flex-1 bg-white">
       <ScrollView className="flex-1">
         <View className="p-4">
           <Text className="text-lg font-semibold mb-2">Add up to 5 photos</Text>
@@ -87,7 +81,7 @@ export default function PhotosScreen() {
       </ScrollView>
 
       {/* Bottom Action */}
-      <View className="px-4 py-3 border-t border-gray-100">
+      <View className="px-4 py-3 border-t mb-8 border-gray-100">
         <TouchableOpacity
           onPress={handleNext}
           className="w-full flex-row items-center justify-center py-3.5 bg-[#C1501F] rounded-xl"

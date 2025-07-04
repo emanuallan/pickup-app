@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, Image, Alert } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useAuth } from '~/contexts/AuthContext';
@@ -93,24 +92,13 @@ export default function ConfirmScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-white">
-      {/* Header */}
-      <View className="border-b border-gray-100 px-4 py-3 flex-row items-center justify-between">
-        <TouchableOpacity onPress={() => router.back()}>
-          <MaterialIcons name="arrow-back" size={24} color="#666" />
-        </TouchableOpacity>
-        <Text className="text-lg font-semibold">Review Listing</Text>
-        <View style={{ width: 24 }} />
-      </View>
-
+    <View className="flex-1 bg-white">
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
-        {/* Preview Header */}
-        <View className="p-4 border-b border-gray-100">
-          <Text className="text-sm text-gray-500">Preview how your listing will appear</Text>
-        </View>
-
-        {/* Listing Preview */}
         <View className="p-4">
+          {/* Preview Header */}
+          <Text className="text-sm text-gray-500 mb-4">Preview how your listing will appear</Text>
+
+          {/* Listing Preview */}
           {/* Images */}
           {images.length > 0 && (
             <ScrollView 
@@ -169,6 +157,6 @@ export default function ConfirmScreen() {
           </Text>
         </TouchableOpacity>
       </View>
-    </SafeAreaView>
+    </View>
   );
 } 
