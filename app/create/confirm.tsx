@@ -4,11 +4,15 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useAuth } from '~/contexts/AuthContext';
 import { supabase } from '~/lib/supabase';
+import { decode } from 'base64-arraybuffer';
+import * as FileSystem from 'expo-file-system';
+import * as ImageManipulator from 'expo-image-manipulator';
 
 export default function ConfirmScreen() {
   const router = useRouter();
   const { user } = useAuth();
   const [saving, setSaving] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   
   const params = useLocalSearchParams();
   const images = JSON.parse(params.images as string) as string[];
@@ -19,35 +23,96 @@ export default function ConfirmScreen() {
   const location = params.location as string;
   const condition = params.condition as string;
 
+  const optimizeImage = async (uri: string) => {
+    try {
+      // Resize and compress the image
+      const manipResult = await ImageManipulator.manipulateAsync(
+        uri,
+        [{ resize: { width: 1080 } }], // Resize to max width of 1080px
+        {
+          compress: 0.7, // 70% quality
+          format: ImageManipulator.SaveFormat.JPEG,
+        }
+      );
+      
+      return manipResult.uri;
+    } catch (error) {
+      console.error('Error optimizing image:', error);
+      return uri; // Return original if optimization fails
+    }
+  };
+
+  const uploadSingleImage = async (imageUri: string, index: number) => {
+    try {
+      console.log(`Processing image ${index + 1}/${images.length}`);
+
+      // Optimize image first
+      const optimizedUri = await optimizeImage(imageUri);
+      
+      // Read the optimized file as base64
+      const base64 = await FileSystem.readAsStringAsync(optimizedUri, {
+        encoding: FileSystem.EncodingType.Base64,
+      });
+
+      // Create a unique file name
+      const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.jpg`;
+      const filePath = `${user!.id}/${fileName}`;
+
+      // Upload to Supabase Storage using ArrayBuffer
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('listing-images')
+        .upload(filePath, decode(base64), {
+          contentType: 'image/jpeg',
+          upsert: true
+        });
+
+      if (uploadError) throw uploadError;
+
+      const { data: publicUrlData } = supabase.storage
+        .from('listing-images')
+        .getPublicUrl(filePath);
+
+      return publicUrlData.publicUrl;
+    } catch (error) {
+      console.error(`Error uploading image ${index + 1}:`, error);
+      throw error;
+    }
+  };
+
   const uploadImages = async () => {
     if (!user?.email) return [];
     
-    const uploadedImageUrls: string[] = [];
-    for (const imageUri of images) {
-      try {
-        const response = await fetch(imageUri);
-        const blob = await response.blob();
-        const fileName = `${user.email}-${Date.now()}-${Math.random().toString(36).substring(7)}`;
+    const uploadPromises = images.map((uri, index) => uploadSingleImage(uri, index));
+    const uploadedUrls: string[] = [];
+    
+    try {
+      // Upload all images in parallel with progress tracking
+      const total = uploadPromises.length;
+      let completed = 0;
+
+      const results = await Promise.allSettled(uploadPromises);
+      
+      results.forEach((result, index) => {
+        completed++;
+        setUploadProgress((completed / total) * 100);
         
-        const { data: uploadData, error: uploadError } = await supabase.storage
-          .from('listing-images')
-          .upload(fileName, blob);
-
-        if (uploadError) {
-          console.error('Image upload failed:', uploadError?.message || uploadError);
-          throw new Error(`Failed to upload image: ${uploadError?.message || 'Unknown error'}`);
+        if (result.status === 'fulfilled') {
+          uploadedUrls.push(result.value);
+        } else {
+          console.error(`Failed to upload image ${index + 1}:`, result.reason);
         }
+      });
 
-        const { data: publicUrlData } = supabase.storage
-          .from('listing-images')
-          .getPublicUrl(fileName);
-
-        uploadedImageUrls.push(publicUrlData.publicUrl);
-      } catch (error) {
-        console.error('Error uploading image:', error);
+      if (uploadedUrls.length === 0) {
+        throw new Error('No images were uploaded successfully');
       }
+
+      return uploadedUrls;
+    } catch (error) {
+      console.error('Error uploading images:', error);
+      Alert.alert('Error', 'Failed to upload images. Please try again.');
+      return uploadedUrls;
     }
-    return uploadedImageUrls;
   };
 
   const handlePublish = async () => {
@@ -58,7 +123,11 @@ export default function ConfirmScreen() {
 
     try {
       setSaving(true);
+      setUploadProgress(0);
+      console.log('Starting image upload process...');
+      
       const uploadedImageUrls = await uploadImages();
+      console.log('Images uploaded successfully:', uploadedImageUrls);
 
       const payload = {
         title,
@@ -77,8 +146,12 @@ export default function ConfirmScreen() {
 
       const { error } = await supabase.from('listings').insert([payload]);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Database error:', error);
+        throw error;
+      }
       
+      console.log('Listing created successfully');
       router.push({
         pathname: '/(tabs)/browse',
         params: { filter: 'my-listings' }
@@ -88,6 +161,7 @@ export default function ConfirmScreen() {
       Alert.alert('Error', 'Failed to create listing. Please try again.');
     } finally {
       setSaving(false);
+      setUploadProgress(0);
     }
   };
 
@@ -146,6 +220,11 @@ export default function ConfirmScreen() {
 
       {/* Bottom Action */}
       <View className="px-4 py-3 border-t border-gray-100">
+        {uploadProgress > 0 && uploadProgress < 100 && (
+          <Text className="text-center text-gray-600 mb-2">
+            Uploading images: {Math.round(uploadProgress)}%
+          </Text>
+        )}
         <TouchableOpacity
           onPress={handlePublish}
           disabled={saving}
