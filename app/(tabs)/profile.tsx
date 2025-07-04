@@ -5,7 +5,6 @@ import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import * as ImagePicker from 'expo-image-picker';
-import { decode } from 'base64-js';
 
 interface UserSettings {
   email: string;
@@ -120,7 +119,10 @@ export default function ProfileScreen() {
       });
 
       if (!result.canceled && result.assets[0].base64) {
+        console.log('Image picked successfully');
         await uploadImage(result.assets[0].base64);
+      } else {
+        console.log('Image picking canceled or no base64 data');
       }
     } catch (error) {
       console.error('Error picking image:', error);
@@ -133,31 +135,53 @@ export default function ProfileScreen() {
 
     try {
       setUploadingImage(true);
+      console.log('Starting image upload...');
 
-      // Convert base64 to Uint8Array
-      const binaryData = decode(base64Image);
+      // Create a Blob from base64
+      const base64Data = base64Image.includes('base64,') 
+        ? base64Image.split('base64,')[1] 
+        : base64Image;
+
+      // Convert base64 to Blob
+      const byteCharacters = atob(base64Data);
+      const byteNumbers = new Array(byteCharacters.length);
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      }
+      const byteArray = new Uint8Array(byteNumbers);
+      const blob = new Blob([byteArray], { type: 'image/jpeg' });
+
       const fileName = `${user.email.replace('@', '-at-')}-${Date.now()}.jpg`;
+      console.log('Uploading with filename:', fileName);
 
       // Upload to Supabase Storage
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('profile-images')
-        .upload(fileName, binaryData, {
+        .upload(fileName, blob, {
           contentType: 'image/jpeg',
           cacheControl: '3600',
-          upsert: false
+          upsert: true // Changed to true to overwrite if exists
         });
 
-      if (uploadError) throw uploadError;
+      if (uploadError) {
+        console.error('Upload error:', uploadError);
+        throw uploadError;
+      }
+
+      console.log('Upload successful, getting public URL...');
 
       // Get public URL
       const { data: { publicUrl } } = supabase.storage
         .from('profile-images')
         .getPublicUrl(fileName);
 
+      console.log('Public URL:', publicUrl);
+
       // Delete old profile image if it exists
       if (userSettings?.profile_image_url) {
         const oldFileName = userSettings.profile_image_url.split('/').pop();
         if (oldFileName) {
+          console.log('Deleting old image:', oldFileName);
           await supabase.storage
             .from('profile-images')
             .remove([oldFileName]);
@@ -170,8 +194,12 @@ export default function ProfileScreen() {
         .update({ profile_image_url: publicUrl })
         .eq('email', user.email);
 
-      if (updateError) throw updateError;
+      if (updateError) {
+        console.error('Update error:', updateError);
+        throw updateError;
+      }
 
+      console.log('Profile updated successfully');
       setUserSettings(prev => prev ? { ...prev, profile_image_url: publicUrl } : null);
     } catch (error) {
       console.error('Error uploading image:', error);
