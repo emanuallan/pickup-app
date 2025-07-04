@@ -41,6 +41,7 @@
     "expo-store-review": "~8.1.5",
     "expo-system-ui": "~5.0.6",
     "expo-web-browser": "~14.2.0",
+    "lucide-react-native": "^0.525.0",
     "nativewind": "latest",
     "react": "19.0.0",
     "react-dom": "19.0.0",

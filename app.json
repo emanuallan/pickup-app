@@ -31,14 +31,24 @@
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.austin616.utmarketplaceapp"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
+      },
+      "package": "com.austin616.utmarketplaceapp"
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "605280f5-93e7-4ae8-835b-f51154cf9578"
       }
     }
   }
