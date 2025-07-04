@@ -3,6 +3,7 @@ import { View, Image, TouchableOpacity, Text } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MessageCircle, Search, Bell, Settings } from 'lucide-react-native';
 import { usePathname, useRouter } from 'expo-router';
+import Logo from '../assets/utmplogo.png'
 
 function Header() {
   const pathname = usePathname();
@@ -20,7 +21,7 @@ function Header() {
     return (
       <View className="flex-row items-center">
         <TouchableOpacity onPress={() => router.push('/')}>
-          <Text className="text-xl font-bold">UT Marketplace</Text>
+          <Image source={Logo} className="w-14 h-14" />
         </TouchableOpacity>
       </View>
     );

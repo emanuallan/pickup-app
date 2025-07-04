@@ -1,10 +1,11 @@
 import { View, TouchableOpacity } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Home, Search, MessageCircle, User } from "lucide-react-native";
+import { Home, Search, MessageCircle, User, Plus } from "lucide-react-native";
 
 const tabRoutes = [
   { name: "index", icon: Home },
   { name: "browse", icon: Search },
+  { name: "create", icon: Plus },
   { name: "messages", icon: MessageCircle },
   { name: "profile", icon: User },
 ] as const;

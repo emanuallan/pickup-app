@@ -7,7 +7,7 @@ import { ActionSheetProvider } from '@expo/react-native-action-sheet';
 
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 
-import { Link, Stack, Tabs } from 'expo-router';
+import { Link, Stack, Tabs, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { Pressable, View } from 'react-native';
 
@@ -20,22 +20,48 @@ import { NAV_THEME } from '~/theme';
 import Header from "~/components/Header";
 import TabBar from "~/components/TabBar";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { AuthProvider } from '../contexts/AuthContext';
+import { Slot } from 'expo-router';
+import { useEffect } from 'react';
 
 export {
   // Catch any errors thrown by the Layout component.
   ErrorBoundary,
 } from 'expo-router';
 
-export default function RootLayout() {
+function InitialLayout() {
+  const router = useRouter();
+
+  useEffect(() => {
+    // Start with the auth flow
+    router.replace('/(auth)/login');
+  }, []);
+
   return (
     <View className="flex-1">
       <SafeAreaView className="flex-1" edges={['top']}>
-        <Header />
         <Stack screenOptions={{ headerShown: false }}>
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          <Stack.Screen name="(auth)" />
+          <Stack.Screen name="(tabs)" />
         </Stack>
       </SafeAreaView>
     </View>
+  );
+}
+
+export default function RootLayout() {
+  return (
+    <AuthProvider>
+      <View className="flex-1">
+        <SafeAreaView className="flex-1" edges={['top']}>
+        <Header />
+          <Stack screenOptions={{ headerShown: false }}>
+            <Stack.Screen name="(auth)" />
+            <Stack.Screen name="(tabs)" />
+          </Stack>
+        </SafeAreaView>
+      </View>
+    </AuthProvider>
   );
 }
 
