@@ -5,6 +5,9 @@ import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import * as ImagePicker from 'expo-image-picker';
+import * as ImageManipulator from 'expo-image-manipulator';
+import * as FileSystem from 'expo-file-system';
+import { decode } from 'base64-arraybuffer';
 
 interface UserSettings {
   email: string;
@@ -114,15 +117,12 @@ export default function ProfileScreen() {
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: true,
         aspect: [1, 1],
-        quality: 0.8,
-        base64: true,
+        quality: 1,
       });
 
-      if (!result.canceled && result.assets[0].base64) {
+      if (!result.canceled) {
         console.log('Image picked successfully');
-        await uploadImage(result.assets[0].base64);
-      } else {
-        console.log('Image picking canceled or no base64 data');
+        await uploadImage(result.assets[0].uri);
       }
     } catch (error) {
       console.error('Error picking image:', error);
@@ -130,37 +130,38 @@ export default function ProfileScreen() {
     }
   };
 
-  const uploadImage = async (base64Image: string) => {
+  const uploadImage = async (imageUri: string) => {
     if (!user?.email) return;
 
     try {
       setUploadingImage(true);
       console.log('Starting image upload...');
 
-      // Create a Blob from base64
-      const base64Data = base64Image.includes('base64,') 
-        ? base64Image.split('base64,')[1] 
-        : base64Image;
+      // Optimize image
+      const optimizedImage = await ImageManipulator.manipulateAsync(
+        imageUri,
+        [{ resize: { width: 400 } }],
+        {
+          compress: 0.7,
+          format: ImageManipulator.SaveFormat.JPEG,
+        }
+      );
 
-      // Convert base64 to Blob
-      const byteCharacters = atob(base64Data);
-      const byteNumbers = new Array(byteCharacters.length);
-      for (let i = 0; i < byteCharacters.length; i++) {
-        byteNumbers[i] = byteCharacters.charCodeAt(i);
-      }
-      const byteArray = new Uint8Array(byteNumbers);
-      const blob = new Blob([byteArray], { type: 'image/jpeg' });
+      // Read the optimized file as base64
+      const base64 = await FileSystem.readAsStringAsync(optimizedImage.uri, {
+        encoding: FileSystem.EncodingType.Base64,
+      });
 
-      const fileName = `${user.email.replace('@', '-at-')}-${Date.now()}.jpg`;
+      const fileName = `${user.id}-${Date.now()}.jpg`;
       console.log('Uploading with filename:', fileName);
 
-      // Upload to Supabase Storage
+      // Upload to Supabase Storage using ArrayBuffer
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('profile-images')
-        .upload(fileName, blob, {
+        .upload(fileName, decode(base64), {
           contentType: 'image/jpeg',
           cacheControl: '3600',
-          upsert: true // Changed to true to overwrite if exists
+          upsert: true
         });
 
       if (uploadError) {
