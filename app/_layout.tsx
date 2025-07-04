@@ -43,6 +43,7 @@ function InitialLayout() {
         <Stack screenOptions={{ headerShown: false }}>
           <Stack.Screen name="(auth)" />
           <Stack.Screen name="(tabs)" />
+          <Stack.Screen name="create" />
         </Stack>
       </SafeAreaView>
     </View>
@@ -54,10 +55,25 @@ export default function RootLayout() {
     <AuthProvider>
       <View className="flex-1">
         <SafeAreaView className="flex-1" edges={['top']}>
-        <Header />
-          <Stack screenOptions={{ headerShown: false }}>
+          <Stack 
+            screenOptions={{ 
+              headerShown: false,
+            }}
+          >
             <Stack.Screen name="(auth)" />
-            <Stack.Screen name="(tabs)" />
+            <Stack.Screen 
+              name="(tabs)" 
+              options={{
+                headerShown: false,
+              }}
+            />
+            <Stack.Screen 
+              name="(modals)" 
+              options={{ 
+                headerShown: false,
+                presentation: 'modal',
+              }} 
+            />
           </Stack>
         </SafeAreaView>
       </View>
