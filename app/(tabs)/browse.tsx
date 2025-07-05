@@ -54,7 +54,7 @@ function getTimeAgo(dateString: string) {
   if (isNaN(date.getTime())) return '';
 
   const seconds = Math.floor(diff / 1000);
-  if (seconds < 60) return 'just now';
+  if (seconds < 600) return 'Just now';
 
   const minutes = Math.floor(seconds / 60);
   if (minutes < 60) return `${minutes} minute${minutes !== 1 ? 's' : ''} ago`;
@@ -89,13 +89,6 @@ export default function BrowseScreen() {
   const [listings, setListings] = useState<Listing[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-
-  const formatTime = (time: string) => {
-    if (time) {
-      return getTimeAgo(time);
-    }
-    return '';
-  }
 
   useEffect(() => {
     fetchListings();
@@ -251,7 +244,7 @@ export default function BrowseScreen() {
             <View style={{ width: itemWidth, padding: 1 }}>
               <ListingCard
                 {...item}
-                timePosted={formatTime(item.created_at)}
+                timePosted={getTimeAgo(item.created_at)}
                 user={{
                   name: item.user_name,
                   image: item.user_image,
