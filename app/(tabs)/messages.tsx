@@ -5,18 +5,24 @@ import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 
-interface Conversation {
+interface Message {
   id: string;
-  other_user: {
-    id: string;
-    email: string;
-    profile_image_url: string | null;
-    display_name: string | null;
-  };
-  last_message: {
-    text: string;
-    created_at: string;
-  };
+  sender_id: string;
+  receiver_id: string;
+  content: string;
+  created_at: string;
+  read: boolean;
+  listing_id?: string;
+}
+
+interface Conversation {
+  user_id: string;
+  user_name: string;
+  user_image?: string;
+  listing_id: string;
+  listing_title: string;
+  last_message?: string;
+  last_message_time?: string;
   unread_count: number;
 }
 
@@ -29,60 +35,113 @@ export default function MessagesScreen() {
   useEffect(() => {
     if (user) {
       fetchConversations();
+      subscribeToMessages();
     }
   }, [user]);
 
+  const subscribeToMessages = () => {
+    if (!user?.email) return;
+
+    const messagesSubscription = supabase
+      .channel('messages')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'messages',
+          filter: `receiver_id=eq.${user.email}`,
+        },
+        (payload) => {
+          const newMessage = payload.new as Message;
+          if (newMessage.sender_id === user.email || newMessage.receiver_id === user.email) {
+            fetchConversations();
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      messagesSubscription.unsubscribe();
+    };
+  };
+
   const fetchConversations = async () => {
+    if (!user?.email) return;
+    
     try {
       setLoading(true);
-      // For now, we'll use mock data
-      // In a real app, you would fetch this from your database
-      const mockConversations: Conversation[] = [
-        {
-          id: '1',
-          other_user: {
-            id: '2',
-            email: 'john@utexas.edu',
-            profile_image_url: null,
-            display_name: 'John Doe'
-          },
-          last_message: {
-            text: 'Is this still available?',
-            created_at: new Date(Date.now() - 1000 * 60 * 5).toISOString() // 5 minutes ago
-          },
-          unread_count: 2
-        },
-        {
-          id: '2',
-          other_user: {
-            id: '3',
-            email: 'sarah@utexas.edu',
-            profile_image_url: null,
-            display_name: 'Sarah Smith'
-          },
-          last_message: {
-            text: 'Great! When can we meet?',
-            created_at: new Date(Date.now() - 1000 * 60 * 60).toISOString() // 1 hour ago
-          },
-          unread_count: 0
-        },
-        {
-          id: '3',
-          other_user: {
-            id: '4',
-            email: 'mike@utexas.edu',
-            profile_image_url: null,
-            display_name: 'Mike Johnson'
-          },
-          last_message: {
-            text: 'Thanks for the quick response!',
-            created_at: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString() // 1 day ago
-          },
-          unread_count: 0
-        }
-      ];
+      // Fetch all messages for the current user
+      const { data: messagesData, error: messagesError } = await supabase
+        .from("messages")
+        .select("*")
+        .or(`sender_id.eq.${user.email},receiver_id.eq.${user.email}`)
+        .order("created_at", { ascending: false });
 
-      setConversations(mockConversations);
+      if (messagesError) throw messagesError;
+
+      const userEmail = user.email;
+      const filteredMessages = messagesData?.filter(
+        (msg) => msg.sender_id === userEmail || msg.receiver_id === userEmail
+      ) || [];
+
+      // Group by user_id and listing_id
+      const conversationMap = new Map<string, Conversation>();
+      for (const message of filteredMessages) {
+        const partnerId = message.sender_id === user.email ? message.receiver_id : message.sender_id;
+        const listingId = message.listing_id || "general";
+        const key = `${partnerId}:${listingId}`;
+
+        if (!conversationMap.has(key)) {
+          conversationMap.set(key, {
+            user_id: partnerId,
+            user_name: "", // We'll fetch this later
+            user_image: undefined,
+            listing_id: listingId,
+            listing_title: "",
+            last_message: message.content,
+            last_message_time: message.created_at,
+            unread_count: message.receiver_id === user.email && !message.read ? 1 : 0,
+          });
+        } else {
+          const conv = conversationMap.get(key)!;
+          if (message.receiver_id === user.email && !message.read) {
+            conv.unread_count++;
+          }
+        }
+      }
+
+      // Fetch user settings for all partner IDs
+      const partnerIds = Array.from(conversationMap.values()).map((c) => c.user_id);
+      const listingIds = Array.from(conversationMap.values())
+        .map((c) => c.listing_id)
+        .filter((id) => id !== "general");
+
+      const { data: userSettingsData } = await supabase
+        .from('user_settings')
+        .select('email, display_name, profile_image_url')
+        .in('email', partnerIds);
+
+      // Fetch listing titles
+      const { data: listingData } = await supabase
+        .from("listings")
+        .select("id, title")
+        .in("id", listingIds.length > 0 ? listingIds : [""]);
+
+      // Update conversation map with user info and listing titles
+      for (const conv of conversationMap.values()) {
+        const userSettings = userSettingsData?.find((u) => u.email === conv.user_id);
+        if (userSettings) {
+          conv.user_name = userSettings.display_name || conv.user_id;
+          conv.user_image = userSettings.profile_image_url;
+        }
+        const listing = listingData?.find((l) => l.id === conv.listing_id);
+        if (listing) {
+          conv.listing_title = listing.title;
+        }
+      }
+
+      setConversations(Array.from(conversationMap.values()));
     } catch (error) {
       console.error('Error fetching conversations:', error);
     } finally {
@@ -108,13 +167,15 @@ export default function MessagesScreen() {
     }
   };
 
-  const navigateToChat = (conversationId: string, otherUser: Conversation['other_user']) => {
+  const navigateToChat = (conversation: Conversation) => {
     router.push({
       pathname: '/chat/[id]',
       params: { 
-        id: conversationId,
-        otherUserName: otherUser.display_name || otherUser.email.split('@')[0],
-        otherUserId: otherUser.id
+        id: `${conversation.user_id}:${conversation.listing_id}`,
+        otherUserName: conversation.user_name,
+        otherUserId: conversation.user_id,
+        listingId: conversation.listing_id,
+        listingTitle: conversation.listing_title
       }
     });
   };
@@ -137,31 +198,49 @@ export default function MessagesScreen() {
     );
   }
 
+  if (conversations.length === 0) {
+    return (
+      <View className="flex-1 bg-white px-4 py-8">
+        <View className="items-center">
+          <View className="w-16 h-16 bg-orange-100 rounded-full items-center justify-center mb-4">
+            <MaterialIcons name="forum" size={32} color="#C1501F" />
+          </View>
+          <Text className="text-xl font-semibold text-center mb-2">No conversations yet</Text>
+          <Text className="text-gray-600 text-center mb-6">
+            Start messaging with other Longhorns by browsing listings and reaching out to sellers.
+          </Text>
+          <TouchableOpacity
+            onPress={() => router.push('/(tabs)/browse')}
+            className="bg-[#C1501F] px-6 py-3 rounded-xl"
+          >
+            <Text className="text-white font-medium">Browse Listings</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
+
   return (
     <View className="flex-1 bg-white">
-      {/* Header */}
-      <View className="px-4 py-3 border-b border-gray-200">
-        <Text className="text-2xl font-bold">Messages</Text>
-      </View>
-
-      {/* Conversations List */}
       <FlatList
         data={conversations}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item) => `${item.user_id}:${item.listing_id}`}
         renderItem={({ item }) => (
           <TouchableOpacity
+            onPress={() => navigateToChat(item)}
             className="flex-row items-center px-4 py-3 border-b border-gray-100"
-            onPress={() => navigateToChat(item.id, item.other_user)}
           >
             {/* Profile Picture */}
             <View className="w-12 h-12 rounded-full bg-gray-200 justify-center items-center mr-3">
-              {item.other_user.profile_image_url ? (
+              {item.user_image ? (
                 <Image
-                  source={{ uri: item.other_user.profile_image_url }}
+                  source={{ uri: item.user_image }}
                   className="w-12 h-12 rounded-full"
                 />
               ) : (
-                <MaterialIcons name="person" size={24} color="#9CA3AF" />
+                <Text className="text-lg font-semibold text-gray-500">
+                  {item.user_name[0]?.toUpperCase()}
+                </Text>
               )}
             </View>
 
@@ -169,18 +248,18 @@ export default function MessagesScreen() {
             <View className="flex-1">
               <View className="flex-row justify-between items-center">
                 <Text className="font-semibold text-base">
-                  {item.other_user.display_name || item.other_user.email.split('@')[0]}
+                  {item.user_name}
                 </Text>
-                <Text className="text-gray-500 text-sm">
-                  {formatTimestamp(item.last_message.created_at)}
-                </Text>
+                {item.last_message_time && (
+                  <Text className="text-gray-500 text-sm">
+                    {formatTimestamp(item.last_message_time)}
+                  </Text>
+                )}
               </View>
+              
               <View className="flex-row justify-between items-center">
-                <Text 
-                  className="text-gray-500 text-sm"
-                  numberOfLines={1}
-                >
-                  {item.last_message.text}
+                <Text className="text-sm text-gray-600" numberOfLines={1}>
+                  {item.listing_title || "General Chat"}
                 </Text>
                 {item.unread_count > 0 && (
                   <View className="bg-[#C1501F] rounded-full w-5 h-5 items-center justify-center">
@@ -190,6 +269,12 @@ export default function MessagesScreen() {
                   </View>
                 )}
               </View>
+
+              {item.last_message && (
+                <Text className="text-gray-500 text-sm" numberOfLines={1}>
+                  {item.last_message}
+                </Text>
+              )}
             </View>
           </TouchableOpacity>
         )}

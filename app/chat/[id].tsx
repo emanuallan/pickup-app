@@ -1,105 +1,251 @@
 import { useState, useEffect, useRef } from 'react';
-import { View, Text, TextInput, TouchableOpacity, FlatList, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, FlatList, KeyboardAvoidingView, Platform, ActivityIndicator, Image, Alert, Pressable } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
-
-interface Message {
-  id: string;
-  text: string;
-  created_at: string;
-  sender_id: string;
-}
+import ChatHeader from '../../components/ChatHeader';
+import ChatSettingsModal from '../../components/modals/ChatSettingsModal';
+import { Message } from '../../types/chat';
+import { formatTime, shouldShowTimestamp, buildMessageQuery, isRelevantMessage } from '../../utils/chat';
 
 export default function ChatScreen() {
-  const { id: conversationId, otherUserName, otherUserId } = useLocalSearchParams();
+  const params = useLocalSearchParams();
+  const { otherUserName, otherUserId, listingId, listingTitle } = params;
   const { user } = useAuth();
   const router = useRouter();
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  const [otherUserImage, setOtherUserImage] = useState<string | null>(null);
   const flatListRef = useRef<FlatList>(null);
+  const [pressedMessageId, setPressedMessageId] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!otherUserId || !otherUserName) {
+      router.back();
+      return;
+    }
+
     if (user) {
       fetchMessages();
+      fetchOtherUserProfile();
+      const subscription = subscribeToMessages();
+      
+      return () => {
+        subscription?.unsubscribe();
+      };
     }
-  }, [user, conversationId]);
+  }, [user, otherUserId, otherUserName]);
+
+  const fetchOtherUserProfile = async () => {
+    if (!otherUserId) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('user_settings')
+        .select('profile_image_url')
+        .eq('email', otherUserId.toString())
+        .single();
+
+      if (error) throw error;
+      setOtherUserImage(data?.profile_image_url);
+    } catch (error) {
+      console.error('Error fetching user profile:', error);
+    }
+  };
+
+  const subscribeToMessages = () => {
+    if (!user?.email || !otherUserId) return;
+
+    const subscription = supabase
+      .channel('messages_channel')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'messages'
+        },
+        async (payload) => {
+          const message = (payload.new || payload.old) as Message;
+          
+          if (!isRelevantMessage(
+            message, 
+            user?.email || '', 
+            otherUserId.toString(), 
+            listingId?.toString() || "general"
+          )) {
+            return;
+          }
+          
+          if (payload.eventType === 'INSERT') {
+            const newMessage = payload.new as Message;
+            setMessages(prev => [...prev, newMessage]);
+            
+            if (newMessage.sender_id === otherUserId) {
+              await supabase
+                .from('messages')
+                .update({ read: true })
+                .eq('id', newMessage.id);
+            }
+          } 
+          else if (payload.eventType === 'UPDATE') {
+            const updatedMessage = payload.new as Message;
+            setMessages(prev => 
+              prev.map(msg => 
+                msg.id === updatedMessage.id ? updatedMessage : msg
+              )
+            );
+          }
+          else if (payload.eventType === 'DELETE') {
+            const deletedMessage = payload.old as Message;
+            setMessages(prev => 
+              prev.filter(msg => msg.id !== deletedMessage.id)
+            );
+          }
+        }
+      )
+      .subscribe();
+
+    return subscription;
+  };
 
   const fetchMessages = async () => {
+    if (!user?.email || !otherUserId) return;
+
     try {
       setLoading(true);
-      // For now, we'll use mock data
-      // In a real app, you would fetch this from your database
-      const mockMessages: Message[] = [
-        {
-          id: '1',
-          text: 'Hi, is this still available?',
-          created_at: new Date(Date.now() - 1000 * 60 * 60).toISOString(),
-          sender_id: otherUserId as string
-        },
-        {
-          id: '2',
-          text: 'Yes, it is! When would you like to meet?',
-          created_at: new Date(Date.now() - 1000 * 60 * 30).toISOString(),
-          sender_id: user?.id || ''
-        },
-        {
-          id: '3',
-          text: 'How about tomorrow at 2pm?',
-          created_at: new Date(Date.now() - 1000 * 60 * 20).toISOString(),
-          sender_id: otherUserId as string
-        },
-        {
-          id: '4',
-          text: 'That works for me!',
-          created_at: new Date(Date.now() - 1000 * 60 * 15).toISOString(),
-          sender_id: user?.id || ''
-        }
-      ];
+      
+      const { data: messages, error } = await buildMessageQuery(
+        supabase,
+        user.email,
+        otherUserId as string,
+        (listingId as string) || "general"
+      );
 
-      setMessages(mockMessages);
+      if (error) throw error;
+
+      setMessages(messages || []);
+
+      const unreadMessages = (messages || []).filter(
+        (msg: Message) => !msg.read && msg.sender_id === otherUserId
+      );
+
+      if (unreadMessages.length > 0) {
+        await supabase
+          .from('messages')
+          .update({ read: true })
+          .in(
+            'id',
+            unreadMessages.map((msg: Message) => msg.id)
+          );
+      }
     } catch (error) {
       console.error('Error fetching messages:', error);
+      Alert.alert('Error', 'Failed to load messages');
     } finally {
       setLoading(false);
     }
   };
 
   const sendMessage = async () => {
-    if (!newMessage.trim() || !user) return;
+    if (!user?.email || !otherUserId || !newMessage.trim()) return;
 
     try {
       setSending(true);
       
-      // In a real app, you would send this to your database
-      const mockMessage: Message = {
-        id: Date.now().toString(),
-        text: newMessage,
-        created_at: new Date().toISOString(),
-        sender_id: user.id
+      const messageData = {
+        sender_id: user.email,
+        receiver_id: otherUserId,
+        content: newMessage.trim(),
+        listing_id: listingId === "general" ? null : listingId,
+        read: false,
       };
 
-      setMessages(prev => [...prev, mockMessage]);
-      setNewMessage('');
-      
-      // Scroll to bottom
-      setTimeout(() => {
-        flatListRef.current?.scrollToEnd({ animated: true });
-      }, 100);
+      const { error } = await supabase
+        .from('messages')
+        .insert([messageData]);
 
+      if (error) throw error;
+
+      setNewMessage('');
     } catch (error) {
       console.error('Error sending message:', error);
+      Alert.alert('Error', 'Failed to send message');
     } finally {
       setSending(false);
     }
   };
 
-  const formatTime = (timestamp: string) => {
-    const date = new Date(timestamp);
-    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  const handleDeleteConversation = async () => {
+    if (!user?.email || !otherUserId) return;
+
+    try {
+      Alert.alert(
+        "Delete Conversation",
+        "Are you sure you want to delete this conversation? This cannot be undone.",
+        [
+          {
+            text: "Cancel",
+            style: "cancel"
+          },
+          {
+            text: "Delete",
+            style: "destructive",
+            onPress: async () => {
+              setShowSettings(false);
+              const { error } = await supabase
+                .from("messages")
+                .delete()
+                .or(
+                  `and(sender_id.eq.${user.email},receiver_id.eq.${otherUserId}),and(sender_id.eq.${otherUserId},receiver_id.eq.${user.email})`
+                )
+                .eq("listing_id", listingId === "general" ? null : listingId);
+
+              if (error) {
+                Alert.alert("Error", "Failed to delete conversation");
+              } else {
+                router.back();
+              }
+            }
+          }
+        ]
+      );
+    } catch (error) {
+      console.error('Error deleting conversation:', error);
+      Alert.alert("Error", "Failed to delete conversation");
+    }
+  };
+
+  const handleBlock = () => {
+    Alert.alert(
+      "Block User",
+      "Are you sure you want to block this user? You won't receive messages from them.",
+      [
+        {
+          text: "Cancel",
+          style: "cancel"
+        },
+        {
+          text: "Block",
+          style: "destructive",
+          onPress: () => {
+            setShowSettings(false);
+            // TODO: Implement block functionality
+            Alert.alert("Coming Soon", "This feature will be available soon!");
+          }
+        }
+      ]
+    );
+  };
+
+  const handleReport = () => {
+    setShowSettings(false);
+    // TODO: Implement report functionality
+    Alert.alert("Coming Soon", "This feature will be available soon!");
   };
 
   if (loading) {
@@ -110,46 +256,102 @@ export default function ChatScreen() {
     );
   }
 
+  if (!otherUserId || !otherUserName) {
+    return null;
+  }
+
   return (
     <KeyboardAvoidingView 
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       className="flex-1 bg-white"
     >
+      <ChatHeader
+        otherUserName={otherUserName.toString()}
+        otherUserImage={otherUserImage}
+        listingId={listingId?.toString() || "general"}
+        listingTitle={listingTitle?.toString() || ""}
+        onSettingsPress={() => setShowSettings(true)}
+      />
+
       {/* Messages */}
       <FlatList
         ref={flatListRef}
         data={messages}
         keyExtractor={(item) => item.id}
-        className="flex-1 px-4"
+        className="flex-1 p-4"
         onLayout={() => flatListRef.current?.scrollToEnd({ animated: false })}
-        renderItem={({ item }) => {
-          const isOwnMessage = item.sender_id === user?.id;
+        renderItem={({ item, index }) => {
+          const isOwnMessage = item.sender_id === user?.email;
+          const prevMessage = index > 0 ? messages[index - 1] : null;
+          const showTimestamp = shouldShowTimestamp(item, prevMessage);
+          const nextMessage = index < messages.length - 1 ? messages[index + 1] : null;
+          const isLastInGroup = !nextMessage || nextMessage.sender_id !== item.sender_id;
+
           return (
-            <View className={`flex-row ${isOwnMessage ? 'justify-end' : 'justify-start'} mb-3`}>
-              <View 
-                className={`
-                  px-4 py-2 rounded-2xl max-w-[80%]
-                  ${isOwnMessage ? 'bg-[#C1501F]' : 'bg-gray-100'}
-                `}
+            <View>
+              <Pressable 
+                onLongPress={() => setPressedMessageId(item.id)}
+                onPressOut={() => setPressedMessageId(null)}
+                className={`flex-row items-end ${
+                  isOwnMessage ? 'justify-end' : 'justify-start'
+                } ${!isLastInGroup ? 'mb-1' : 'mb-3'}`}
               >
-                <Text 
-                  className={`text-base ${isOwnMessage ? 'text-white' : 'text-black'}`}
+                {!isOwnMessage && (
+                  <View className="w-8 h-8 rounded-full bg-gray-200 justify-center items-center mr-2">
+                    {otherUserImage ? (
+                      <Image
+                        source={{ uri: otherUserImage }}
+                        className="w-8 h-8 rounded-full"
+                      />
+                    ) : (
+                      <Text className="text-sm font-semibold text-gray-500">
+                        {otherUserName?.[0]?.toUpperCase()}
+                      </Text>
+                    )}
+                  </View>
+                )}
+                <View 
+                  className={`
+                    px-4 py-2 rounded-2xl max-w-[75%]
+                    ${isOwnMessage 
+                      ? 'bg-[#C1501F] rounded-br-sm' 
+                      : 'bg-gray-200 rounded-bl-sm'
+                    }
+                  `}
                 >
-                  {item.text}
+                  <Text 
+                    className={`text-base ${
+                      isOwnMessage ? 'text-white' : 'text-black'
+                    }`}
+                  >
+                    {item.content}
+                  </Text>
+                  {pressedMessageId === item.id && (
+                    <Text 
+                      className={`text-xs mt-1 ${
+                        isOwnMessage ? 'text-white/70' : 'text-gray-500'
+                      }`}
+                    >
+                      {formatTime(item.created_at)}
+                    </Text>
+                  )}
+                </View>
+              </Pressable>
+              {isLastInGroup && showTimestamp && nextMessage && (
+                <Text className="text-gray-500 text-xs text-center my-2">
+                  {formatTime(nextMessage.created_at)}
                 </Text>
-                <Text 
-                  className={`text-xs mt-1 ${isOwnMessage ? 'text-white/70' : 'text-gray-500'}`}
-                >
-                  {formatTime(item.created_at)}
-                </Text>
-              </View>
+              )}
             </View>
           );
+        }}
+        onContentSizeChange={() => {
+          flatListRef.current?.scrollToEnd({ animated: true });
         }}
       />
 
       {/* Message Input */}
-      <View className="px-4 py-2 border-t border-gray-200 flex-row items-center">
+      <View className="px-4 py-2 border-t border-gray-200 flex-row items-center pb-10">
         <TextInput
           className="flex-1 bg-gray-100 rounded-full px-4 py-2 mr-2"
           placeholder="Message..."
@@ -173,6 +375,14 @@ export default function ChatScreen() {
           />
         </TouchableOpacity>
       </View>
+
+      <ChatSettingsModal
+        visible={showSettings}
+        onClose={() => setShowSettings(false)}
+        onBlock={handleBlock}
+        onReport={handleReport}
+        onDelete={handleDeleteConversation}
+      />
     </KeyboardAvoidingView>
   );
 } 

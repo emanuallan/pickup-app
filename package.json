@@ -63,6 +63,7 @@
     "react-native-vector-icons": "^10.2.0",
     "react-native-web": "^0.20.0",
     "tailwind-merge": "^2.2.1",
+    "timeago.js": "^4.0.2",
     "zustand": "^4.5.1"
   },
   "devDependencies": {

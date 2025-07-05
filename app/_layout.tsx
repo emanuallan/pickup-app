@@ -13,7 +13,6 @@ import { Pressable, View } from 'react-native';
 
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
-import { ThemeToggle } from '~/components/ThemeToggle';
 import { cn } from '~/lib/cn';
 import { useColorScheme, useInitialAndroidBarSync } from '~/lib/useColorScheme';
 import { NAV_THEME } from '~/theme';
@@ -105,10 +104,3 @@ function SettingsIcon() {
     </Link>
   );
 }
-
-const MODAL_OPTIONS = {
-  presentation: 'modal',
-  animation: 'fade_from_bottom', // for android
-  title: 'Settings',
-  headerRight: () => <ThemeToggle />,
-} as const;
