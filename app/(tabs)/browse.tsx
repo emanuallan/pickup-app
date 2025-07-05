@@ -7,7 +7,6 @@ import CategoryButtons from '~/components/CategoryButtons';
 import ListingCard from '~/components/ListingCard';
 import FilterModal from '~/components/FilterModal';
 import { COLORS } from '~/theme/colors';
-import * as timeago from 'timeago.js';
 
 interface Listing {
   id: number;
@@ -47,6 +46,35 @@ const { width } = Dimensions.get('window');
 const numColumns = 2;
 const itemWidth = (width - 32) / numColumns; // 32 = padding (16 * 2)
 
+function getTimeAgo(dateString: string) {
+  const now = new Date();
+  const date = new Date(dateString);
+  const diff = now.getTime() - date.getTime();
+
+  if (isNaN(date.getTime())) return '';
+
+  const seconds = Math.floor(diff / 1000);
+  if (seconds < 60) return 'just now';
+
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes} minute${minutes !== 1 ? 's' : ''} ago`;
+
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours} hour${hours !== 1 ? 's' : ''} ago`;
+
+  const days = Math.floor(hours / 24);
+  if (days < 7) return `${days} day${days !== 1 ? 's' : ''} ago`;
+
+  const weeks = Math.floor(days / 7);
+  if (weeks < 4) return `${weeks} week${weeks !== 1 ? 's' : ''} ago`;
+
+  const months = Math.floor(days / 30);
+  if (months < 12) return `${months} month${months !== 1 ? 's' : ''} ago`;
+
+  const years = Math.floor(days / 365);
+  return `${years} year${years !== 1 ? 's' : ''} ago`;
+}
+
 export default function BrowseScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
@@ -61,6 +89,13 @@ export default function BrowseScreen() {
   const [listings, setListings] = useState<Listing[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+
+  const formatTime = (time: string) => {
+    if (time) {
+      return getTimeAgo(time);
+    }
+    return '';
+  }
 
   useEffect(() => {
     fetchListings();
@@ -216,7 +251,7 @@ export default function BrowseScreen() {
             <View style={{ width: itemWidth, padding: 1 }}>
               <ListingCard
                 {...item}
-                timePosted={timeago.format(item.created_at)}
+                timePosted={formatTime(item.created_at)}
                 user={{
                   name: item.user_name,
                   image: item.user_image,
