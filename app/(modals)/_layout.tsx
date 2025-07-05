@@ -7,6 +7,9 @@ export default function ModalsLayout() {
         headerShown: false,
         animation: 'slide_from_right',
       }}
-    />
+    >
+      <Stack.Screen name="settings" />
+      <Stack.Screen name="chat/[id]" />
+    </Stack>
   );
 } 

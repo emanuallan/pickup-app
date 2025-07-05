@@ -49,7 +49,7 @@ function Header() {
             <TouchableOpacity onPress={() => router.push('/messages')}>
               <MessageCircle size={24} color="black" strokeWidth={1.5} />
             </TouchableOpacity>
-            <TouchableOpacity onPress={() => router.push('/profile')}>
+            <TouchableOpacity onPress={() => router.push('/(modals)/settings')}>
               <Settings size={24} color="black" strokeWidth={1.5} />
             </TouchableOpacity>
           </>
@@ -76,6 +76,5 @@ function Header() {
     </View>
   );
 }
-
 // Memoize the header to prevent unnecessary re-renders
 export default memo(Header);
