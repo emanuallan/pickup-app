@@ -16,29 +16,17 @@ interface UserSettings {
   bio: string | null;
 }
 
-interface ListingItem {
-  id: number;
-  title: string;
-  price: number;
-  image: string;
-  location: string;
-}
-
 export default function Settings() {
   const { user, signOut } = useAuth();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [settings, setSettings] = useState<UserSettings | null>(null);
-  const [myListings, setMyListings] = useState<ListingItem[]>([]);
   const [bio, setBio] = useState('');
   const [editingBio, setEditingBio] = useState(false);
   const [savingBio, setSavingBio] = useState(false);
 
   useEffect(() => {
-    if (user) {
-      fetchSettings();
-      fetchMyListings();
-    }
+    if (user) fetchSettings();
   }, [user]);
 
   const fetchSettings = async () => {
@@ -56,31 +44,6 @@ export default function Settings() {
       setBio(data?.bio || '');
     } catch (error) {
       console.error('Error fetching settings:', error);
-    }
-  };
-
-  const fetchMyListings = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('listings')
-        .select('*')
-        .eq('user_id', user?.email)
-        .order('created_at', { ascending: false })
-        .limit(5);
-
-      if (error) throw error;
-
-      if (data) {
-        setMyListings(data.map(item => ({
-          id: item.id,
-          title: item.title,
-          price: item.price,
-          image: item.images?.[0] || 'https://picsum.photos/200',
-          location: item.location
-        })));
-      }
-    } catch (error) {
-      console.error('Error fetching my listings:', error);
     }
   };
 
@@ -169,29 +132,6 @@ export default function Settings() {
     }
   };
 
-  const renderListingItem = ({ item }: { item: ListingItem }) => (
-    <TouchableOpacity 
-      className="mr-4"
-      onPress={() => router.push({
-        pathname: '/browse',
-        params: { itemId: item.id }
-      })}
-    >
-      <View className="w-40 bg-white rounded-lg overflow-hidden shadow-sm">
-        <Image
-          source={{ uri: item.image }}
-          className="w-full h-40"
-          resizeMode="cover"
-        />
-        <View className="p-2">
-          <Text className="font-medium text-gray-900">{item.title}</Text>
-          <Text style={{ color: COLORS.utOrange, fontWeight: 'bold' }}>${item.price}</Text>
-          <Text className="text-gray-500 text-sm">{item.location}</Text>
-        </View>
-      </View>
-    </TouchableOpacity>
-  );
-
   return (
     <View className="flex-1 bg-gray-50">
       <ModalHeader title="Settings" />
@@ -277,37 +217,6 @@ export default function Settings() {
               </Text>
             )}
           </View>
-        </View>
-
-        {/* My Listings Section */}
-        <View className="mb-6">
-          <View className="flex-row justify-between items-center px-4 mb-4">
-            <Text className="text-lg font-bold text-gray-900">My Listings</Text>
-            <TouchableOpacity onPress={() => router.push('/my-listings')}>
-              <Text style={{ color: COLORS.utOrange }}>See All</Text>
-            </TouchableOpacity>
-          </View>
-
-          {myListings.length > 0 ? (
-            <FlatList
-              data={myListings}
-              renderItem={renderListingItem}
-              keyExtractor={item => item.id.toString()}
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={{ paddingHorizontal: 16 }}
-            />
-          ) : (
-            <View className="px-4">
-              <Text className="text-gray-500">You haven't created any listings yet.</Text>
-              <TouchableOpacity 
-                onPress={() => router.push('/create')}
-                className="mt-2"
-              >
-                <Text style={{ color: COLORS.utOrange }}>Create your first listing →</Text>
-              </TouchableOpacity>
-            </View>
-          )}
         </View>
 
         {/* Sign Out Button */}
