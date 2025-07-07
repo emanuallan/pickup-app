@@ -4,6 +4,8 @@ const IOS_SYSTEM_COLORS = {
   white: 'rgb(255, 255, 255)',
   black: 'rgb(0, 0, 0)',
   utOrange: '#C1501F',
+  iconBg: '#fef7ed',
+  iconBgOpacity: '15',
   light: {
     grey6: 'rgb(242, 242, 247)',
     grey5: 'rgb(230, 230, 235)',
@@ -38,6 +40,8 @@ const ANDROID_COLORS = {
   white: 'rgb(255, 255, 255)',
   black: 'rgb(0, 0, 0)',
   utOrange: '#C1501F',
+  iconBg: '#fef7ed',
+  iconBgOpacity: '15',
   light: {
     grey6: 'rgb(249, 249, 255)',
     grey5: 'rgb(215, 217, 228)',

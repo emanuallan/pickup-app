@@ -72,7 +72,7 @@ export default function TabBar({
               <Animated.View
                 style={{
                   transform: [{ scale: scaleAnim }],
-                  backgroundColor: isFocused ? `${COLORS.utOrange}15` : 'transparent',
+                  backgroundColor: isFocused ? COLORS.iconBg : 'transparent',
                   paddingHorizontal: 16,
                   paddingVertical: 8,
                   borderRadius: 12,

@@ -26,12 +26,12 @@ interface Item {
 }
 
 const categories: Category[] = [
-  { id: 1, name: 'Textbooks', icon: <BookOpen size={18} color="white" />, color: '#3b82f6' },
-  { id: 2, name: 'Electronics', icon: <Smartphone size={18} color="white" />, color: '#8b5cf6' },
-  { id: 3, name: 'Furniture', icon: <Armchair size={18} color="white" />, color: '#06b6d4' },
-  { id: 4, name: 'Clothing', icon: <Shirt size={18} color="white" />, color: '#ec4899' },
-  { id: 5, name: 'Housing', icon: <Home size={18} color="white" />, color: '#10b981' },
-  { id: 6, name: 'Services', icon: <Wrench size={18} color="white" />, color: '#f59e0b' },
+  { id: 1, name: 'Textbooks', icon: <BookOpen size={18} color={COLORS.utOrange} />, color: COLORS.iconBg },
+  { id: 2, name: 'Electronics', icon: <Smartphone size={18} color={COLORS.utOrange} />, color: COLORS.iconBg },
+  { id: 3, name: 'Furniture', icon: <Armchair size={18} color={COLORS.utOrange} />, color: COLORS.iconBg },
+  { id: 4, name: 'Clothing', icon: <Shirt size={18} color={COLORS.utOrange} />, color: COLORS.iconBg },
+  { id: 5, name: 'Housing', icon: <Home size={18} color={COLORS.utOrange} />, color: COLORS.iconBg },
+  { id: 6, name: 'Services', icon: <Wrench size={18} color={COLORS.utOrange} />, color: COLORS.iconBg },
 ];
 
 // Animated Button Component with Press Effects
@@ -262,121 +262,6 @@ const HeroSection = () => {
   );
 };
 
-// Modern Quick Actions with Enhanced Animations
-const QuickActions = () => {
-  const router = useRouter();
-  const { user } = useAuth();
-
-  const primaryActions = [
-    {
-      id: 1,
-      title: "Browse Marketplace",
-      subtitle: "Discover items from fellow students",
-      icon: <Eye size={24} color="white" />,
-      bgColor: COLORS.utOrange,
-      onPress: () => router.push('/browse')
-    },
-    {
-      id: 2,
-      title: "My Activity",
-      subtitle: "Manage listings and messages",
-      icon: <Star size={24} color="white" />,
-      bgColor: '#6366f1',
-      onPress: () => user ? router.push('/my-listings') : router.push('/(auth)/login')
-    }
-  ];
-
-  const secondaryActions = [
-    {
-      id: 3,
-      title: "Messages",
-      icon: <MessageCircle size={20} color="#6b7280" />,
-      onPress: () => user ? router.push('/messages') : router.push('/(auth)/login')
-    },
-    {
-      id: 4,
-      title: "Profile",
-      icon: <Users size={20} color="#6b7280" />,
-      onPress: () => user ? router.push('/profile') : router.push('/(auth)/login')
-    }
-  ];
-
-  return (
-    <View className="px-6 mb-8">
-      <Text className="text-xl font-bold text-gray-900 mb-6">Quick Actions</Text>
-      
-      {/* Primary Actions - Full Width Cards */}
-      <View className="mb-4">
-        {primaryActions.map((action) => (
-          <AnimatedButton
-            key={action.id}
-            onPress={action.onPress}
-            hapticType="medium"
-            scaleValue={0.98}
-            style={{
-              backgroundColor: action.bgColor,
-              borderRadius: 20,
-              padding: 24,
-              shadowColor: action.bgColor,
-              shadowOffset: { width: 0, height: 6 },
-              shadowOpacity: 0.2,
-              shadowRadius: 12,
-              elevation: 6,
-              marginBottom: 16,
-            }}
-          >
-            <View className="flex-row items-center justify-between">
-              <View className="flex-1">
-                <Text className="text-white font-bold text-lg mb-2">{action.title}</Text>
-                <Text style={{ color: 'rgba(255,255,255,0.9)', fontSize: 15 }}>
-                  {action.subtitle}
-                </Text>
-              </View>
-              <View className="ml-4">
-                {action.icon}
-              </View>
-            </View>
-          </AnimatedButton>
-        ))}
-      </View>
-
-      {/* Secondary Actions - Horizontal List */}
-      <View className="flex-row justify-between">
-        {secondaryActions.map((action) => (
-          <AnimatedButton
-            key={action.id}
-            onPress={action.onPress}
-            hapticType="light"
-            scaleValue={0.96}
-            style={{ width: '48%' }}
-          >
-            <View
-              style={{
-                backgroundColor: 'white',
-                borderRadius: 16,
-                padding: 20,
-                shadowColor: '#000',
-                shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: 0.04,
-                shadowRadius: 8,
-                elevation: 2,
-                borderWidth: 1,
-                borderColor: '#f3f4f6',
-                alignItems: 'center',
-              }}
-            >
-              {action.icon}
-              <Text className="text-gray-700 font-semibold text-sm mt-3 text-center">
-                {action.title}
-              </Text>
-            </View>
-          </AnimatedButton>
-        ))}
-      </View>
-    </View>
-  );
-};
-
 // Modern Categories
 const CategoriesSection = () => {
   const router = useRouter();
@@ -405,7 +290,6 @@ const CategoriesSection = () => {
             hapticType="light"
             scaleValue={0.94}
             style={{ marginRight: 16 }}
-            className="first:ml-6"
           >
             <View className="items-center">
               <View
@@ -422,11 +306,13 @@ const CategoriesSection = () => {
                   shadowOpacity: 0.25,
                   shadowRadius: 8,
                   elevation: 5,
+                  borderWidth: 1,
+                  borderColor: '#fed7aa',
                 }}
               >
                 {item.icon}
               </View>
-              <Text className="text-sm text-gray-700 font-medium text-center" style={{ width: 70 }}>
+              <Text className="text-xs text-gray-700 font-medium text-center" style={{ width: 70 }}>
                 {item.name}
               </Text>
             </View>
@@ -435,64 +321,8 @@ const CategoriesSection = () => {
         keyExtractor={item => item.id.toString()}
         horizontal
         showsHorizontalScrollIndicator={false}
-        contentContainerStyle={{ paddingRight: 24 }}
+        contentContainerStyle={{ paddingLeft: 24, paddingRight: 24 }}
       />
-    </View>
-  );
-};
-
-// Process Steps
-const ProcessSteps = () => {
-  const steps = [
-    { title: "Sign In", desc: "Use your UT email", icon: <Users size={20} color={COLORS.utOrange} /> },
-    { title: "Browse", desc: "Find what you need", icon: <Search size={20} color={COLORS.utOrange} /> },
-    { title: "Connect", desc: "Message sellers", icon: <MessageCircle size={20} color={COLORS.utOrange} /> },
-    { title: "Trade", desc: "Complete your deal", icon: <CheckCircle size={20} color={COLORS.utOrange} /> },
-  ];
-
-  return (
-    <View className="px-6 mb-8">
-      <View 
-        style={{
-          backgroundColor: 'white',
-          borderRadius: 20,
-          padding: 24,
-          shadowColor: '#000',
-          shadowOffset: { width: 0, height: 2 },
-          shadowOpacity: 0.04,
-          shadowRadius: 12,
-          elevation: 2,
-        }}
-      >
-        <View className="flex-row items-center mb-6">
-          <Zap size={22} color={COLORS.utOrange} />
-          <Text className="text-xl font-bold text-gray-900 ml-3">How It Works</Text>
-        </View>
-        
-        <View className="flex-row justify-between">
-          {steps.map((step, index) => (
-            <View key={index} className="items-center" style={{ width: '22%' }}>
-              <View 
-                style={{
-                  width: 52,
-                  height: 52,
-                  backgroundColor: '#fef7ed',
-                  borderRadius: 16,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  marginBottom: 12,
-                  borderWidth: 1,
-                  borderColor: '#fed7aa',
-                }}
-              >
-                {step.icon}
-              </View>
-              <Text className="font-bold text-sm text-gray-900 mb-1 text-center">{step.title}</Text>
-              <Text className="text-xs text-gray-500 text-center leading-tight">{step.desc}</Text>
-            </View>
-          ))}
-        </View>
-      </View>
     </View>
   );
 };
@@ -566,7 +396,6 @@ export default function HomeScreen() {
       hapticType="light"
       scaleValue={0.96}
       style={{ marginRight: 16, width: 160 }}
-      className="first:ml-6"
     >
       <View 
         style={{
@@ -636,17 +465,8 @@ export default function HomeScreen() {
         {/* Hero Section */}
         <HeroSection />
 
-        {/* Quick Actions */}
-        <QuickActions />
-
         {/* Categories */}
         <CategoriesSection />
-
-        {/* Process Steps */}
-        <ProcessSteps />
-
-        {/* Trust Badge */}
-        <TrustBadge />
 
         {/* Recent Listings */}
         <View className="mb-8">
@@ -672,7 +492,7 @@ export default function HomeScreen() {
               keyExtractor={item => item.id.toString()}
               horizontal
               showsHorizontalScrollIndicator={false}
-              contentContainerStyle={{ paddingRight: 24 }}
+              contentContainerStyle={{ paddingLeft: 24, paddingRight: 24 }}
             />
           ) : (
             <View className="px-6">
@@ -680,6 +500,9 @@ export default function HomeScreen() {
             </View>
           )}
         </View>
+
+        {/* Trust Badge */}
+        <TrustBadge />
       </ScrollView>
     </View>
   );
