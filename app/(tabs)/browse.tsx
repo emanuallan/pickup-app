@@ -216,7 +216,7 @@ export default function BrowseScreen() {
   };
 
   return (
-    <View className="flex-1 bg-gray-50">
+    <View className="flex-1 bg-gray-50 pb-24">
       {/* Search */}
       <SearchBar
         value={searchQuery}

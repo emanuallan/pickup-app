@@ -91,7 +91,7 @@ export default function Settings() {
         
         const { error: uploadError } = await supabase.storage
           .from('avatars')
-          .upload(filePath, decode(file.base64), {
+          .upload(filePath, decode(file.base64 || ''), {
             contentType: 'image/jpeg',
             upsert: true
           });

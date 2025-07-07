@@ -1,7 +1,7 @@
 import { Tabs } from "expo-router";
 import TabBar from "~/components/TabBar";
 import Header from "~/components/Header";
-import { View } from "react-native";
+import { View, ScrollView } from "react-native";
 
 export default function TabsLayout() {
   return (
@@ -41,8 +41,8 @@ export default function TabsLayout() {
           name="create"
           options={{
             title: 'Create',
-          }}
-        />
+            }}
+          />
       </Tabs>
     </View>
   );
