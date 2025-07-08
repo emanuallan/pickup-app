@@ -9,7 +9,7 @@ interface SearchBarProps {
   onFilterPress: () => void;
 }
 
-const SearchBar: React.FC<SearchBarProps> = ({
+export const SearchBar: React.FC<SearchBarProps> = ({
   value,
   onChangeText,
   onFilterPress,
@@ -31,6 +31,4 @@ const SearchBar: React.FC<SearchBarProps> = ({
       </TouchableOpacity>
     </View>
   );
-};
-
-export default SearchBar; 
+}; 
