@@ -177,17 +177,7 @@ export default function ListingScreen() {
   const isOwner = user?.email === listing.user_id;
 
   return (
-    <SafeAreaView className="flex-1 bg-white" edges={[]}>
-      {/* Header */}
-      <View className="flex-row items-center px-4 py-3 border-b border-gray-200">
-        <TouchableOpacity onPress={() => router.back()} className="mr-4">
-          <ArrowLeft size={24} color="#374151" />
-        </TouchableOpacity>
-        <Text className="text-lg font-semibold text-gray-900 flex-1">
-          {isOwner ? 'Your Listing' : 'Listing Details'}
-        </Text>
-      </View>
-
+    <SafeAreaView className="flex-1 bg-white" edges={[]}>      
       {/* Conditionally render owner or buyer view */}
       {isOwner ? (
         <ListingOwnerView
@@ -209,7 +199,6 @@ export default function ListingScreen() {
           scrollViewRef={scrollViewRef}
           formatTimeAgo={formatTimeAgo}
           handleImageScroll={handleImageScroll}
-          onMessageSeller={handleMessageSeller}
         />
       )}
     </SafeAreaView>
