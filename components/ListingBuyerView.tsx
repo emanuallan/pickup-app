@@ -60,14 +60,20 @@ export const ListingBuyerView: React.FC<ListingBuyerViewProps> = ({
   const router = useRouter();
   const { user } = useAuth();
   const [isSaved, setIsSaved] = useState(false);
+  const [isWatchlisted, setIsWatchlisted] = useState(false);
   const [showActionsModal, setShowActionsModal] = useState(false);
   const [sellerRating, setSellerRating] = useState<{ average: number; count: number } | null>(null);
+  const [engagementStats, setEngagementStats] = useState({ favorites: 0, watchlist: 0 });
   
   const isOwnerViewing = user?.email === listing.user_id && onBackToOwnerView;
 
   useEffect(() => {
     fetchSellerRating();
-  }, [listing.user_id]);
+    fetchEngagementStats();
+    if (user?.email) {
+      fetchUserFavoriteStatus();
+    }
+  }, [listing.user_id, user?.email]);
 
   const fetchSellerRating = async () => {
     try {
@@ -91,6 +97,48 @@ export const ListingBuyerView: React.FC<ListingBuyerViewProps> = ({
     }
   };
 
+  const fetchUserFavoriteStatus = async () => {
+    if (!user?.email) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('user_favorites')
+        .select('type')
+        .eq('user_id', user.email)
+        .eq('listing_id', listing.id);
+
+      if (error) throw error;
+
+      if (data) {
+        const hasFavorite = data.some(item => item.type === 'favorite');
+        const hasWatchlist = data.some(item => item.type === 'watchlist');
+        setIsSaved(hasFavorite);
+        setIsWatchlisted(hasWatchlist);
+      }
+    } catch (error) {
+      console.error('Error fetching user favorite status:', error);
+    }
+  };
+
+  const fetchEngagementStats = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('user_favorites')
+        .select('type')
+        .eq('listing_id', listing.id);
+
+      if (error) throw error;
+
+      if (data) {
+        const favorites = data.filter(item => item.type === 'favorite').length;
+        const watchlist = data.filter(item => item.type === 'watchlist').length;
+        setEngagementStats({ favorites, watchlist });
+      }
+    } catch (error) {
+      console.error('Error fetching engagement stats:', error);
+    }
+  };
+
   const handleMessageSeller = () => {
     if (listing.is_sold) {
       Alert.alert(
@@ -111,10 +159,86 @@ export const ListingBuyerView: React.FC<ListingBuyerViewProps> = ({
     Alert.alert('Message Seller', 'Message functionality coming soon!');
   };
 
-  const handleSaveListing = () => {
-    setIsSaved(!isSaved);
-    // Implement save/unsave functionality with backend
-    Alert.alert(isSaved ? 'Removed from Saved' : 'Saved!', isSaved ? 'Item removed from your saved listings' : 'Item saved to your favorites');
+  const handleSaveListing = async () => {
+    if (!user?.email) {
+      Alert.alert('Sign In Required', 'Please sign in to save listings.');
+      return;
+    }
+
+    try {
+      if (isSaved) {
+        // Remove from favorites
+        const { error } = await supabase
+          .from('user_favorites')
+          .delete()
+          .eq('user_id', user.email)
+          .eq('listing_id', listing.id)
+          .eq('type', 'favorite');
+
+        if (error) throw error;
+        setIsSaved(false);
+        fetchEngagementStats(); // Refresh counts
+        Alert.alert('Removed from Favorites', 'Item removed from your favorites');
+      } else {
+        // Add to favorites
+        const { error } = await supabase
+          .from('user_favorites')
+          .insert({
+            user_id: user.email,
+            listing_id: listing.id,
+            type: 'favorite'
+          });
+
+        if (error) throw error;
+        setIsSaved(true);
+        fetchEngagementStats(); // Refresh counts
+        Alert.alert('Added to Favorites', 'Item saved to your favorites');
+      }
+    } catch (error) {
+      console.error('Error updating favorite status:', error);
+      Alert.alert('Error', 'Failed to update favorite status');
+    }
+  };
+
+  const handleWatchlistToggle = async () => {
+    if (!user?.email) {
+      Alert.alert('Sign In Required', 'Please sign in to add items to watchlist.');
+      return;
+    }
+
+    try {
+      if (isWatchlisted) {
+        // Remove from watchlist
+        const { error } = await supabase
+          .from('user_favorites')
+          .delete()
+          .eq('user_id', user.email)
+          .eq('listing_id', listing.id)
+          .eq('type', 'watchlist');
+
+        if (error) throw error;
+        setIsWatchlisted(false);
+        fetchEngagementStats(); // Refresh counts
+        Alert.alert('Removed from Watchlist', 'Item removed from your watchlist');
+      } else {
+        // Add to watchlist
+        const { error } = await supabase
+          .from('user_favorites')
+          .insert({
+            user_id: user.email,
+            listing_id: listing.id,
+            type: 'watchlist'
+          });
+
+        if (error) throw error;
+        setIsWatchlisted(true);
+        fetchEngagementStats(); // Refresh counts
+        Alert.alert('Added to Watchlist', 'Item added to your watchlist');
+      }
+    } catch (error) {
+      console.error('Error updating watchlist status:', error);
+      Alert.alert('Error', 'Failed to update watchlist status');
+    }
   };
 
   const handleShareListing = async () => {
@@ -359,6 +483,27 @@ export const ListingBuyerView: React.FC<ListingBuyerViewProps> = ({
               </View>
             </TouchableOpacity>
           </View>
+
+          {/* Engagement Stats */}
+          <View className="bg-gray-50 rounded-xl p-5 mb-6">
+            <Text className="text-lg font-semibold text-gray-800 mb-4">Listing Engagement</Text>
+            <View className="flex-row justify-around">
+              <View className="items-center">
+                <View className="bg-red-100 rounded-full p-3 mb-2">
+                  <Heart size={20} color="#ef4444" />
+                </View>
+                <Text className="text-sm text-gray-600 mb-1">Favorites</Text>
+                <Text className="font-bold text-gray-900 text-lg">{engagementStats.favorites}</Text>
+              </View>
+              <View className="items-center">
+                <View className="bg-blue-100 rounded-full p-3 mb-2">
+                  <Eye size={20} color="#3b82f6" />
+                </View>
+                <Text className="text-sm text-gray-600 mb-1">Watching</Text>
+                <Text className="font-bold text-gray-900 text-lg">{engagementStats.watchlist}</Text>
+              </View>
+            </View>
+          </View>
         </View>
       </ScrollView>
 
@@ -434,7 +579,9 @@ export const ListingBuyerView: React.FC<ListingBuyerViewProps> = ({
         onSave={handleSaveListing}
         onShare={handleShareListing}
         onReport={handleReportListing}
+        onWatchlist={handleWatchlistToggle}
         isSaved={isSaved}
+        isWatchlisted={isWatchlisted}
       />
     </>
   );

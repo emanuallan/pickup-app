@@ -307,6 +307,51 @@ export default function ProfileScreen() {
           </AnimatedButton>
         </View>
 
+        {/* Favorites & Watchlist */}
+        <View className="flex-row gap-3 mb-6">
+          <AnimatedButton
+            onPress={() => router.push('/favorites/favorite')}
+            hapticType="light"
+            scaleValue={0.97}
+            style={{
+              borderColor: '#ef4444',
+              borderWidth: 2,
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'center',
+              paddingVertical: 12,
+              paddingHorizontal: 16,
+              borderRadius: 12,
+              backgroundColor: 'white',
+              flex: 1,
+            }}
+          >
+            <Heart size={18} color="#ef4444" />
+            <Text className="font-semibold ml-2" style={{ color: '#ef4444' }}>Favorites</Text>
+          </AnimatedButton>
+          
+          <AnimatedButton
+            onPress={() => router.push('/favorites/watchlist')}
+            hapticType="light"
+            scaleValue={0.97}
+            style={{
+              borderColor: '#3b82f6',
+              borderWidth: 2,
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'center',
+              paddingVertical: 12,
+              paddingHorizontal: 16,
+              borderRadius: 12,
+              backgroundColor: 'white',
+              flex: 1,
+            }}
+          >
+            <Eye size={18} color="#3b82f6" />
+            <Text className="font-semibold ml-2" style={{ color: '#3b82f6' }}>Watchlist</Text>
+          </AnimatedButton>
+        </View>
+
         {/* Management Tools */}
         <View className="bg-gray-50 rounded-xl p-4 mb-6">
           <Text className="text-lg font-semibold text-gray-800 mb-3">Account Tools</Text>
