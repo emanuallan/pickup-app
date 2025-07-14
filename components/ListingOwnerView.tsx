@@ -5,7 +5,7 @@ import { MapPin, Calendar, Tag, Edit3, Trash2, Eye, CheckCircle, MessageCircle, 
 import { AnimatedButton } from './AnimatedButton';
 import { ListingActionsModal } from './ListingActionsModal';
 import { supabase } from '~/lib/supabase';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -50,6 +50,33 @@ export const ListingOwnerView: React.FC<ListingOwnerViewProps> = ({
   const router = useRouter();
   const [updating, setUpdating] = useState(false);
   const [showActionsModal, setShowActionsModal] = useState(false);
+  const [favoriteCounts, setFavoriteCounts] = useState({
+    favorites: 0,
+    watchlist: 0
+  });
+
+  useEffect(() => {
+    fetchFavoriteCounts();
+  }, [listing.id]);
+
+  const fetchFavoriteCounts = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('user_favorites')
+        .select('type')
+        .eq('listing_id', listing.id);
+
+      if (error) throw error;
+
+      if (data) {
+        const favorites = data.filter(item => item.type === 'favorite').length;
+        const watchlist = data.filter(item => item.type === 'watchlist').length;
+        setFavoriteCounts({ favorites, watchlist });
+      }
+    } catch (error) {
+      console.error('Error fetching favorite counts:', error);
+    }
+  };
 
   const handleMarkAsSold = async () => {
     Alert.alert(
@@ -265,27 +292,38 @@ export const ListingOwnerView: React.FC<ListingOwnerViewProps> = ({
             <Text className="text-lg font-semibold text-gray-800 mb-4">Manage Your Listing</Text>
             
             {/* Quick Stats */}
-            <View className="flex-row justify-between p-4 bg-white rounded-xl shadow-sm">
-              <View className="items-center flex-1">
-                <View className="bg-orange-50 rounded-full p-3 mb-2">
-                  <Eye size={20} color={COLORS.utOrange} />
+            <View className="bg-white rounded-xl shadow-sm">
+              <View className="flex-row justify-between p-4 border-b border-gray-100">
+                <View className="items-center flex-1">
+                  <View className="bg-orange-50 rounded-full p-3 mb-2">
+                    <Eye size={20} color={COLORS.utOrange} />
+                  </View>
+                  <Text className="text-sm text-gray-600 mb-1">Views</Text>
+                  <Text className="font-bold text-gray-900 text-lg">--</Text>
                 </View>
-                <Text className="text-sm text-gray-600 mb-1">Views</Text>
-                <Text className="font-bold text-gray-900 text-lg">--</Text>
+                <View className="items-center flex-1">
+                  <View className="bg-orange-50 rounded-full p-3 mb-2">
+                    <MessageCircle size={20} color={COLORS.utOrange} />
+                  </View>
+                  <Text className="text-sm text-gray-600 mb-1">Messages</Text>
+                  <Text className="font-bold text-gray-900 text-lg">--</Text>
+                </View>
               </View>
-              <View className="items-center flex-1">
-                <View className="bg-orange-50 rounded-full p-3 mb-2">
-                  <MessageCircle size={20} color={COLORS.utOrange} />
+              <View className="flex-row justify-between p-4">
+                <View className="items-center flex-1">
+                  <View className="bg-red-50 rounded-full p-3 mb-2">
+                    <Heart size={20} color="#ef4444" />
+                  </View>
+                  <Text className="text-sm text-gray-600 mb-1">Favorites</Text>
+                  <Text className="font-bold text-gray-900 text-lg">{favoriteCounts.favorites}</Text>
                 </View>
-                <Text className="text-sm text-gray-600 mb-1">Messages</Text>
-                <Text className="font-bold text-gray-900 text-lg">--</Text>
-              </View>
-              <View className="items-center flex-1">
-                <View className="bg-orange-50 rounded-full p-3 mb-2">
-                  <Heart size={20} color={COLORS.utOrange} />
+                <View className="items-center flex-1">
+                  <View className="bg-blue-50 rounded-full p-3 mb-2">
+                    <Eye size={20} color="#3b82f6" />
+                  </View>
+                  <Text className="text-sm text-gray-600 mb-1">Watchlist</Text>
+                  <Text className="font-bold text-gray-900 text-lg">{favoriteCounts.watchlist}</Text>
                 </View>
-                <Text className="text-sm text-gray-600 mb-1">Favorites</Text>
-                <Text className="font-bold text-gray-900 text-lg">--</Text>
               </View>
             </View>
           </View>

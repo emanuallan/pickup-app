@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, Modal, TouchableOpacity, Dimensions } from 'react-native';
-import { X, MessageCircle, Heart, Share2, Shield, AlertTriangle, Eye, Flag } from 'lucide-react-native';
+import { X, MessageCircle, Heart, Share2, Shield, AlertTriangle, Eye, Flag, Bookmark } from 'lucide-react-native';
 import { COLORS } from '~/theme/colors';
 import { AnimatedButton } from './AnimatedButton';
 
@@ -18,7 +18,9 @@ interface ListingBuyerActionsModalProps {
   onSave: () => void;
   onShare: () => void;
   onReport: () => void;
+  onWatchlist?: () => void;
   isSaved: boolean;
+  isWatchlisted?: boolean;
 }
 
 export const ListingBuyerActionsModal: React.FC<ListingBuyerActionsModalProps> = ({
@@ -29,7 +31,9 @@ export const ListingBuyerActionsModal: React.FC<ListingBuyerActionsModalProps> =
   onSave,
   onShare,
   onReport,
-  isSaved
+  onWatchlist,
+  isSaved,
+  isWatchlisted = false
 }) => {
   return (
     <Modal
@@ -115,31 +119,60 @@ export const ListingBuyerActionsModal: React.FC<ListingBuyerActionsModalProps> =
                 </AnimatedButton>
               )}
 
-              <View className="flex-row gap-3">
-                <AnimatedButton
-                  onPress={() => {
-                    onSave();
-                    onClose();
-                  }}
-                  hapticType="light"
-                  scaleValue={0.97}
-                  style={{
-                    borderColor: COLORS.utOrange,
-                    borderWidth: 2,
-                    flexDirection: 'row',
-                    alignItems: 'center',
-                    paddingVertical: 16,
-                    paddingHorizontal: 18,
-                    borderRadius: 14,
-                    backgroundColor: 'white',
-                    flex: 1,
-                  }}
-                >
-                  <Heart size={20} color={isSaved ? '#ef4444' : COLORS.utOrange} fill={isSaved ? '#ef4444' : 'transparent'} />
-                  <Text className="font-semibold text-base ml-2 flex-1" style={{ color: isSaved ? '#ef4444' : COLORS.utOrange }}>
-                    {isSaved ? 'Saved' : 'Save'}
-                  </Text>
-                </AnimatedButton>
+              <View className="gap-3">
+                <View className="flex-row gap-3">
+                  <AnimatedButton
+                    onPress={() => {
+                      onSave();
+                      onClose();
+                    }}
+                    hapticType="light"
+                    scaleValue={0.97}
+                    style={{
+                      borderColor: COLORS.utOrange,
+                      borderWidth: 2,
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      paddingVertical: 16,
+                      paddingHorizontal: 18,
+                      borderRadius: 14,
+                      backgroundColor: 'white',
+                      flex: 1,
+                    }}
+                  >
+                    <Heart size={20} color={isSaved ? '#ef4444' : COLORS.utOrange} fill={isSaved ? '#ef4444' : 'transparent'} />
+                    <Text className="font-semibold text-base ml-2 flex-1" style={{ color: isSaved ? '#ef4444' : COLORS.utOrange }}>
+                      {isSaved ? 'Favorited' : 'Favorite'}
+                    </Text>
+                  </AnimatedButton>
+
+                  {onWatchlist && (
+                    <AnimatedButton
+                      onPress={() => {
+                        onWatchlist();
+                        onClose();
+                      }}
+                      hapticType="light"
+                      scaleValue={0.97}
+                      style={{
+                        borderColor: '#3b82f6',
+                        borderWidth: 2,
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        paddingVertical: 16,
+                        paddingHorizontal: 18,
+                        borderRadius: 14,
+                        backgroundColor: 'white',
+                        flex: 1,
+                      }}
+                    >
+                      <Eye size={20} color={isWatchlisted ? '#3b82f6' : '#6b7280'} fill={isWatchlisted ? '#3b82f6' : 'transparent'} />
+                      <Text className="font-semibold text-base ml-2 flex-1" style={{ color: isWatchlisted ? '#3b82f6' : '#6b7280' }}>
+                        {isWatchlisted ? 'Watching' : 'Watch'}
+                      </Text>
+                    </AnimatedButton>
+                  )}
+                </View>
 
                 <AnimatedButton
                   onPress={() => {
@@ -157,7 +190,6 @@ export const ListingBuyerActionsModal: React.FC<ListingBuyerActionsModalProps> =
                     paddingHorizontal: 18,
                     borderRadius: 14,
                     backgroundColor: 'white',
-                    flex: 1,
                   }}
                 >
                   <Share2 size={20} color="#6b7280" />
