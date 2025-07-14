@@ -46,6 +46,7 @@ export default function ListingScreen() {
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [userSettings, setUserSettings] = useState<UserSettings | null>(null);
   const [userListingCount, setUserListingCount] = useState(0);
+  const [viewAsBuyer, setViewAsBuyer] = useState(false);
   const scrollViewRef = useRef<ScrollView>(null);
 
   useEffect(() => {
@@ -175,21 +176,12 @@ export default function ListingScreen() {
   }
 
   const isOwner = user?.email === listing.user_id;
+  const shouldShowBuyerView = !isOwner || viewAsBuyer;
 
   return (
     <SafeAreaView className="flex-1 bg-white" edges={[]}>      
       {/* Conditionally render owner or buyer view */}
-      {isOwner ? (
-        <ListingOwnerView
-          listing={listing}
-          selectedImageIndex={selectedImageIndex}
-          setSelectedImageIndex={setSelectedImageIndex}
-          scrollViewRef={scrollViewRef}
-          formatTimeAgo={formatTimeAgo}
-          handleImageScroll={handleImageScroll}
-          onListingUpdated={handleListingUpdated}
-        />
-      ) : (
+      {shouldShowBuyerView ? (
         <ListingBuyerView
           listing={listing}
           userSettings={userSettings}
@@ -199,6 +191,18 @@ export default function ListingScreen() {
           scrollViewRef={scrollViewRef}
           formatTimeAgo={formatTimeAgo}
           handleImageScroll={handleImageScroll}
+          onBackToOwnerView={isOwner ? () => setViewAsBuyer(false) : undefined}
+        />
+      ) : (
+        <ListingOwnerView
+          listing={listing}
+          selectedImageIndex={selectedImageIndex}
+          setSelectedImageIndex={setSelectedImageIndex}
+          scrollViewRef={scrollViewRef}
+          formatTimeAgo={formatTimeAgo}
+          handleImageScroll={handleImageScroll}
+          onListingUpdated={handleListingUpdated}
+          onViewAsBuyer={() => setViewAsBuyer(true)}
         />
       )}
     </SafeAreaView>

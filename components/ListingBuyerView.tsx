@@ -1,10 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, Image, TouchableOpacity, Alert, Share, Dimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import { COLORS } from '~/theme/colors';
-import { MapPin, Calendar, Tag, Star, MessageCircle, MoreHorizontal, Heart, Share2 } from 'lucide-react-native';
+import { MapPin, Calendar, Tag, Star, MessageCircle, MoreHorizontal, Heart, Share2, Eye, ArrowLeft } from 'lucide-react-native';
 import { AnimatedButton } from './AnimatedButton';
 import { ListingBuyerActionsModal } from './ListingBuyerActionsModal';
+import { useAuth } from '~/contexts/AuthContext';
+import { supabase } from '~/lib/supabase';
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -41,6 +43,7 @@ interface ListingBuyerViewProps {
   scrollViewRef: React.RefObject<ScrollView | null>;
   formatTimeAgo: (dateString: string) => string;
   handleImageScroll: (direction: 'left' | 'right') => void;
+  onBackToOwnerView?: () => void;
 }
 
 export const ListingBuyerView: React.FC<ListingBuyerViewProps> = ({
@@ -51,11 +54,42 @@ export const ListingBuyerView: React.FC<ListingBuyerViewProps> = ({
   setSelectedImageIndex,
   scrollViewRef,
   formatTimeAgo,
-  handleImageScroll
+  handleImageScroll,
+  onBackToOwnerView
 }) => {
   const router = useRouter();
+  const { user } = useAuth();
   const [isSaved, setIsSaved] = useState(false);
   const [showActionsModal, setShowActionsModal] = useState(false);
+  const [sellerRating, setSellerRating] = useState<{ average: number; count: number } | null>(null);
+  
+  const isOwnerViewing = user?.email === listing.user_id && onBackToOwnerView;
+
+  useEffect(() => {
+    fetchSellerRating();
+  }, [listing.user_id]);
+
+  const fetchSellerRating = async () => {
+    try {
+      const { data: ratingsData } = await supabase
+        .from('ratings')
+        .select('rating')
+        .eq('rated_id', listing.user_id);
+
+      if (ratingsData && ratingsData.length > 0) {
+        const average = ratingsData.reduce((sum, r) => sum + r.rating, 0) / ratingsData.length;
+        setSellerRating({
+          average: parseFloat(average.toFixed(1)),
+          count: ratingsData.length
+        });
+      } else {
+        setSellerRating({ average: 0, count: 0 });
+      }
+    } catch (error) {
+      console.error('Error fetching seller rating:', error);
+      setSellerRating({ average: 0, count: 0 });
+    }
+  };
 
   const handleMessageSeller = () => {
     if (listing.is_sold) {
@@ -95,12 +129,10 @@ export const ListingBuyerView: React.FC<ListingBuyerViewProps> = ({
   };
 
   const handleViewSellerProfile = () => {
-    // Navigate to seller profile
-    Alert.alert('View Profile', `Navigate to ${listing.user_name}'s profile - coming soon!`);
-    // router.push({
-    //   pathname: '/profile/[userId]',
-    //   params: { userId: listing.user_id }
-    // });
+    router.push({
+      pathname: '/profile/[userId]',
+      params: { userId: listing.user_id }
+    });
   };
 
   const handleReportListing = () => {
@@ -124,6 +156,31 @@ export const ListingBuyerView: React.FC<ListingBuyerViewProps> = ({
   return (
     <>
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
+        {/* Owner Viewing Banner */}
+        {isOwnerViewing && (
+          <View className="bg-blue-50 border-b border-blue-200 px-4 py-4">
+            <View className="flex-row items-center justify-between">
+              <View className="flex-row items-center flex-1">
+                <View className="bg-blue-100 rounded-full p-2 mr-3">
+                  <Eye size={16} color="#1e40af" />
+                </View>
+                <Text className="font-semibold text-base" style={{ color: '#1e40af' }}>
+                  Viewing as buyer
+                </Text>
+              </View>
+              <TouchableOpacity
+                onPress={onBackToOwnerView}
+                className="flex-row items-center bg-blue-100 rounded-full px-3 py-2"
+              >
+                <ArrowLeft size={16} color="#1e40af" />
+                <Text className="font-medium text-sm ml-1" style={{ color: '#1e40af' }}>
+                  Back to owner view
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
+
         {/* Images */}
         <View className="relative">
           {listing.images && listing.images.length > 0 ? (
@@ -201,15 +258,15 @@ export const ListingBuyerView: React.FC<ListingBuyerViewProps> = ({
           <View className="absolute top-4 right-4 flex-row gap-2">
             <TouchableOpacity
               onPress={handleSaveListing}
-              className="bg-white/80 backdrop-blur-sm rounded-full p-2"
+              className="bg-white/90 backdrop-blur-sm rounded-full p-3 shadow-sm"
             >
-              <Heart size={20} color={isSaved ? '#ef4444' : '#6b7280'} fill={isSaved ? '#ef4444' : 'transparent'} />
+              <Heart size={22} color={isSaved ? '#ef4444' : '#6b7280'} fill={isSaved ? '#ef4444' : 'transparent'} />
             </TouchableOpacity>
             <TouchableOpacity
               onPress={handleShareListing}
-              className="bg-white/80 backdrop-blur-sm rounded-full p-2"
+              className="bg-white/90 backdrop-blur-sm rounded-full p-3 shadow-sm"
             >
-              <Share2 size={20} color="#6b7280" />
+              <Share2 size={22} color="#6b7280" />
             </TouchableOpacity>
           </View>
         </View>
@@ -260,18 +317,18 @@ export const ListingBuyerView: React.FC<ListingBuyerViewProps> = ({
           )}
 
           {/* Seller Info */}
-          <View className="bg-gray-50 rounded-xl p-4 mb-6">
-            <Text className="text-lg font-semibold text-gray-800 mb-3">Seller Information</Text>
+          <View className="bg-gray-50 rounded-xl p-5 mb-6">
+            <Text className="text-lg font-semibold text-gray-800 mb-4">Seller Information</Text>
             <TouchableOpacity onPress={handleViewSellerProfile}>
               <View className="flex-row items-center">
-                <View className="w-12 h-12 rounded-full bg-gray-300 items-center justify-center mr-4">
+                <View className="w-14 h-14 rounded-full bg-gray-300 items-center justify-center mr-4 shadow-sm">
                   {listing.user_image ? (
                     <Image 
                       source={{ uri: listing.user_image }} 
-                      className="w-12 h-12 rounded-full"
+                      className="w-14 h-14 rounded-full"
                     />
                   ) : (
-                    <Text className="text-gray-600 font-bold text-lg">
+                    <Text className="text-gray-600 font-bold text-xl">
                       {listing.user_name.charAt(0).toUpperCase()}
                     </Text>
                   )}
@@ -282,11 +339,21 @@ export const ListingBuyerView: React.FC<ListingBuyerViewProps> = ({
                   </Text>
                   <View className="flex-row items-center mt-1">
                     <Star size={14} color="#fbbf24" fill="#fbbf24" />
-                    <Text className="text-gray-600 ml-1 text-sm">New Seller</Text>
+                    <Text className="text-gray-600 ml-1 text-sm">
+                      {sellerRating ? (
+                        sellerRating.count > 0 ? (
+                          `${sellerRating.average} (${sellerRating.count} review${sellerRating.count !== 1 ? 's' : ''})`
+                        ) : (
+                          'No reviews yet'
+                        )
+                      ) : (
+                        'Loading...'
+                      )}
+                    </Text>
                   </View>
                   <Text className="text-gray-500 text-xs mt-1">Tap to view profile</Text>
                 </View>
-                <View className="items-center justify-center bg-gray-200 rounded-full px-3 py-2">
+                <View className="items-center justify-center bg-gray-200 rounded-full px-4 py-2">
                   <Text className="text-xs text-gray-600 font-medium">View Profile</Text>
                 </View>
               </View>
@@ -297,31 +364,36 @@ export const ListingBuyerView: React.FC<ListingBuyerViewProps> = ({
 
        {/* Fixed Bottom Button */}
        <View className="p-4 border-t border-gray-200 bg-white">
-        <View className="flex-row gap-3 justify-center ">
+        <View className="flex-row gap-3 justify-center">
           {!listing.is_sold && (
-                          <AnimatedButton
-                onPress={handleMessageSeller}
-                hapticType="medium"
-                scaleValue={0.97}
-                style={{
-                  backgroundColor: COLORS.utOrange,
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  paddingVertical: 16,
-                  paddingHorizontal: 10,
-                  borderRadius: 12,
-                  flex: 2,
-                }}
-              >
-                <MessageCircle size={20} color="white" />
-                <Text style={{ 
-                  color: 'white', 
-                  fontWeight: 'bold', 
-                  fontSize: 16,
-                  marginLeft: 8 
-                }}>Message</Text>
-              </AnimatedButton>
+            <AnimatedButton
+              onPress={handleMessageSeller}
+              hapticType="medium"
+              scaleValue={0.97}
+              style={{
+                backgroundColor: COLORS.utOrange,
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'center',
+                paddingVertical: 18,
+                paddingHorizontal: 12,
+                borderRadius: 16,
+                flex: 2,
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.1,
+                shadowRadius: 4,
+                elevation: 3,
+              }}
+            >
+              <MessageCircle size={22} color="white" />
+              <Text style={{ 
+                color: 'white', 
+                fontWeight: 'bold', 
+                fontSize: 16,
+                marginLeft: 8 
+              }}>Message</Text>
+            </AnimatedButton>
           )}
           
           <AnimatedButton
@@ -334,13 +406,13 @@ export const ListingBuyerView: React.FC<ListingBuyerViewProps> = ({
               flexDirection: 'row',
               alignItems: 'center',
               justifyContent: 'center',
-              paddingVertical: 16,
-              borderRadius: 12,
+              paddingVertical: 18,
+              borderRadius: 16,
               backgroundColor: 'white',
               flex: listing.is_sold ? 2 : 1,
             }}
           >
-            <MoreHorizontal size={20} color={COLORS.utOrange} />
+            <MoreHorizontal size={22} color={COLORS.utOrange} />
             <Text style={{ 
               color: COLORS.utOrange, 
               fontWeight: 'bold', 

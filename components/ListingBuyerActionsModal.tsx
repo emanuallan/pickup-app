@@ -100,12 +100,17 @@ export const ListingBuyerActionsModal: React.FC<ListingBuyerActionsModalProps> =
                     backgroundColor: COLORS.utOrange,
                     flexDirection: 'row',
                     alignItems: 'center',
-                    paddingVertical: 16,
-                    paddingHorizontal: 20,
+                    paddingVertical: 18,
+                    paddingHorizontal: 24,
                     borderRadius: 16,
+                    shadowColor: '#000',
+                    shadowOffset: { width: 0, height: 2 },
+                    shadowOpacity: 0.1,
+                    shadowRadius: 4,
+                    elevation: 3,
                   }}
                 >
-                  <MessageCircle size={20} color="white" />
+                  <MessageCircle size={22} color="white" />
                   <Text className="text-white font-bold text-lg ml-3 flex-1">Message Seller</Text>
                 </AnimatedButton>
               )}
@@ -123,15 +128,15 @@ export const ListingBuyerActionsModal: React.FC<ListingBuyerActionsModalProps> =
                     borderWidth: 2,
                     flexDirection: 'row',
                     alignItems: 'center',
-                    paddingVertical: 14,
-                    paddingHorizontal: 16,
-                    borderRadius: 12,
+                    paddingVertical: 16,
+                    paddingHorizontal: 18,
+                    borderRadius: 14,
                     backgroundColor: 'white',
                     flex: 1,
                   }}
                 >
-                  <Heart size={18} color={isSaved ? '#ef4444' : COLORS.utOrange} fill={isSaved ? '#ef4444' : 'transparent'} />
-                  <Text className="font-semibold text-base ml-2 flex-1" style={{ color: COLORS.utOrange }}>
+                  <Heart size={20} color={isSaved ? '#ef4444' : COLORS.utOrange} fill={isSaved ? '#ef4444' : 'transparent'} />
+                  <Text className="font-semibold text-base ml-2 flex-1" style={{ color: isSaved ? '#ef4444' : COLORS.utOrange }}>
                     {isSaved ? 'Saved' : 'Save'}
                   </Text>
                 </AnimatedButton>
@@ -148,15 +153,15 @@ export const ListingBuyerActionsModal: React.FC<ListingBuyerActionsModalProps> =
                     borderWidth: 2,
                     flexDirection: 'row',
                     alignItems: 'center',
-                    paddingVertical: 14,
-                    paddingHorizontal: 16,
-                    borderRadius: 12,
+                    paddingVertical: 16,
+                    paddingHorizontal: 18,
+                    borderRadius: 14,
                     backgroundColor: 'white',
                     flex: 1,
                   }}
                 >
-                  <Share2 size={18} color="#6b7280" />
-                  <Text className="text-gray-700 font-semibold text-base ml-2 flex-1">Share</Text>
+                  <Share2 size={20} color="#6b7280" />
+                  <Text className="font-semibold text-base ml-2 flex-1" style={{ color: '#6b7280' }}>Share</Text>
                 </AnimatedButton>
               </View>
             </View>
@@ -165,25 +170,25 @@ export const ListingBuyerActionsModal: React.FC<ListingBuyerActionsModalProps> =
             <View className="bg-blue-50 rounded-xl p-4 mb-4">
               <View className="flex-row items-center mb-3">
                 <Shield size={20} color="#1e40af" />
-                <Text className="text-blue-900 font-bold text-lg ml-2">Safety Tips</Text>
+                <Text className="font-bold text-lg ml-2" style={{ color: '#1e3a8a' }}>Safety Tips</Text>
               </View>
               
               <View className="gap-3">
                 <View className="flex-row items-start">
                   <View className="w-2 h-2 rounded-full bg-blue-600 mt-2 mr-3" />
-                  <Text className="text-blue-800 flex-1">Meet in public places on campus</Text>
+                  <Text className="flex-1" style={{ color: '#1e40af' }}>Meet in public places on campus</Text>
                 </View>
                 <View className="flex-row items-start">
                   <View className="w-2 h-2 rounded-full bg-blue-600 mt-2 mr-3" />
-                  <Text className="text-blue-800 flex-1">Verify the item&apos;s condition before paying</Text>
+                  <Text className="flex-1" style={{ color: '#1e40af' }}>Verify the item&apos;s condition before paying</Text>
                 </View>
                 <View className="flex-row items-start">
                   <View className="w-2 h-2 rounded-full bg-blue-600 mt-2 mr-3" />
-                  <Text className="text-blue-800 flex-1">Trust your instincts - if something feels off, walk away</Text>
+                  <Text className="flex-1" style={{ color: '#1e40af' }}>Trust your instincts - if something feels off, walk away</Text>
                 </View>
                 <View className="flex-row items-start">
                   <View className="w-2 h-2 rounded-full bg-blue-600 mt-2 mr-3" />
-                  <Text className="text-blue-800 flex-1">Use cash or secure payment methods</Text>
+                  <Text className="flex-1" style={{ color: '#1e40af' }}>Use cash or secure payment methods</Text>
                 </View>
               </View>
             </View>
@@ -193,9 +198,9 @@ export const ListingBuyerActionsModal: React.FC<ListingBuyerActionsModalProps> =
               <View className="bg-red-50 rounded-xl p-4 mb-4">
                 <View className="flex-row items-center">
                   <AlertTriangle size={20} color="#dc2626" />
-                  <Text className="text-red-900 font-bold text-base ml-2">Item Sold</Text>
+                  <Text className="font-bold text-base ml-2" style={{ color: '#dc2626' }}>Item Sold</Text>
                 </View>
-                <Text className="text-red-800 mt-2">
+                <Text className="mt-2" style={{ color: '#dc2626' }}>
                   This item has been marked as sold by the seller. You can still message them to check if it&apos;s still available.
                 </Text>
               </View>

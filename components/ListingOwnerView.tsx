@@ -34,6 +34,7 @@ interface ListingOwnerViewProps {
   formatTimeAgo: (dateString: string) => string;
   handleImageScroll: (direction: 'left' | 'right') => void;
   onListingUpdated: () => void;
+  onViewAsBuyer?: () => void;
 }
 
 export const ListingOwnerView: React.FC<ListingOwnerViewProps> = ({
@@ -43,7 +44,8 @@ export const ListingOwnerView: React.FC<ListingOwnerViewProps> = ({
   scrollViewRef,
   formatTimeAgo,
   handleImageScroll,
-  onListingUpdated
+  onListingUpdated,
+  onViewAsBuyer
 }) => {
   const router = useRouter();
   const [updating, setUpdating] = useState(false);
@@ -113,27 +115,18 @@ export const ListingOwnerView: React.FC<ListingOwnerViewProps> = ({
   };
 
   const handleEditListing = () => {
-    // Navigate to edit screen - you'll need to implement this
-    Alert.alert('Edit Listing', 'Edit functionality coming soon!');
+    router.push(`/listing/edit/${listing.id}`);
   };
 
   const handleViewAsPublic = () => {
-    Alert.alert('Public View', 'This is how buyers see your listing');
+    if (onViewAsBuyer) {
+      onViewAsBuyer();
+    }
   };
 
   return (
     <>
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
-        {/* Owner Status Banner */}
-        <View className="bg-blue-50 border-b border-blue-200 px-4 py-3">
-          <View className="flex-row items-center justify-center">
-            <FileText size={16} color="#1e40af" />
-            <Text className="text-blue-800 font-semibold ml-2">
-              You are viewing your own listing
-            </Text>
-          </View>
-        </View>
-
         {/* Images */}
         <View className="relative">
           {listing.images && listing.images.length > 0 ? (
@@ -220,16 +213,16 @@ export const ListingOwnerView: React.FC<ListingOwnerViewProps> = ({
 
           {/* Status Indicators */}
           <View className="flex-row flex-wrap gap-2 mb-4">
-            <View className={`px-3 py-1 rounded-full flex-row items-center ${listing.is_sold ? 'bg-red-100' : 'bg-green-100'}`}>
-              <CheckCircle size={14} color={listing.is_sold ? '#dc2626' : '#16a34a'} />
-              <Text className={`font-semibold text-sm ml-1 ${listing.is_sold ? 'text-red-800' : 'text-green-800'}`}>
+            <View className={`px-4 py-2 rounded-full flex-row items-center ${listing.is_sold ? 'bg-red-100' : 'bg-green-100'}`}>
+              <CheckCircle size={16} color={listing.is_sold ? '#dc2626' : '#16a34a'} />
+              <Text className={`font-semibold text-sm ml-2 ${listing.is_sold ? 'text-red-800' : 'text-green-800'}`}>
                 {listing.is_sold ? 'Sold' : 'Available'}
               </Text>
             </View>
             {listing.is_draft && (
-              <View className="bg-gray-100 px-3 py-1 rounded-full flex-row items-center">
-                <FileText size={14} color="#6b7280" />
-                <Text className="text-gray-800 font-semibold text-sm ml-1">Draft</Text>
+              <View className="bg-gray-100 px-4 py-2 rounded-full flex-row items-center">
+                <FileText size={16} color="#6b7280" />
+                <Text className="text-gray-800 font-semibold text-sm ml-2">Draft</Text>
               </View>
             )}
           </View>
@@ -268,25 +261,31 @@ export const ListingOwnerView: React.FC<ListingOwnerViewProps> = ({
           )}
 
           {/* Owner Actions Section */}
-          <View className="bg-gray-50 rounded-xl p-4 mb-6">
-            <Text className="text-lg font-semibold text-gray-800 mb-3">Manage Your Listing</Text>
+          <View className="bg-gray-50 rounded-xl p-5 mb-6">
+            <Text className="text-lg font-semibold text-gray-800 mb-4">Manage Your Listing</Text>
             
             {/* Quick Stats */}
-            <View className="flex-row justify-between p-3 bg-white rounded-lg">
+            <View className="flex-row justify-between p-4 bg-white rounded-xl shadow-sm">
               <View className="items-center flex-1">
-                <Eye size={20} color={COLORS.utOrange} />
-                <Text className="text-sm text-gray-600 mt-1">Views</Text>
-                <Text className="font-bold text-gray-900">--</Text>
+                <View className="bg-orange-50 rounded-full p-3 mb-2">
+                  <Eye size={20} color={COLORS.utOrange} />
+                </View>
+                <Text className="text-sm text-gray-600 mb-1">Views</Text>
+                <Text className="font-bold text-gray-900 text-lg">--</Text>
               </View>
               <View className="items-center flex-1">
-                <MessageCircle size={20} color={COLORS.utOrange} />
-                <Text className="text-sm text-gray-600 mt-1">Messages</Text>
-                <Text className="font-bold text-gray-900">--</Text>
+                <View className="bg-orange-50 rounded-full p-3 mb-2">
+                  <MessageCircle size={20} color={COLORS.utOrange} />
+                </View>
+                <Text className="text-sm text-gray-600 mb-1">Messages</Text>
+                <Text className="font-bold text-gray-900 text-lg">--</Text>
               </View>
               <View className="items-center flex-1">
-                <Heart size={20} color={COLORS.utOrange} />
-                <Text className="text-sm text-gray-600 mt-1">Favorites</Text>
-                <Text className="font-bold text-gray-900">--</Text>
+                <View className="bg-orange-50 rounded-full p-3 mb-2">
+                  <Heart size={20} color={COLORS.utOrange} />
+                </View>
+                <Text className="text-sm text-gray-600 mb-1">Favorites</Text>
+                <Text className="font-bold text-gray-900 text-lg">--</Text>
               </View>
             </View>
           </View>
@@ -304,11 +303,16 @@ export const ListingOwnerView: React.FC<ListingOwnerViewProps> = ({
             flexDirection: 'row',
             alignItems: 'center',
             justifyContent: 'center',
-            paddingVertical: 16,
-            borderRadius: 12,
+            paddingVertical: 18,
+            borderRadius: 16,
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.1,
+            shadowRadius: 4,
+            elevation: 3,
           }}
         >
-          <Settings size={20} color="white" />
+          <Settings size={22} color="white" />
           <Text className="text-white font-bold text-lg ml-2">Manage Listing</Text>
         </AnimatedButton>
       </View>

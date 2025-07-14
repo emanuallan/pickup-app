@@ -96,12 +96,17 @@ export const ListingActionsModal: React.FC<ListingActionsModalProps> = ({
                 backgroundColor: COLORS.utOrange,
                 flexDirection: 'row',
                 alignItems: 'center',
-                paddingVertical: 16,
-                paddingHorizontal: 20,
+                paddingVertical: 18,
+                paddingHorizontal: 24,
                 borderRadius: 16,
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.1,
+                shadowRadius: 4,
+                elevation: 3,
               }}
             >
-              <Edit3 size={20} color="white" />
+              <Edit3 size={22} color="white" />
               <Text className="text-white font-bold text-lg ml-3 flex-1">Edit Listing</Text>
             </AnimatedButton>
 
@@ -118,13 +123,18 @@ export const ListingActionsModal: React.FC<ListingActionsModalProps> = ({
                 backgroundColor: listing.is_sold ? '#10b981' : '#ef4444',
                 flexDirection: 'row',
                 alignItems: 'center',
-                paddingVertical: 16,
-                paddingHorizontal: 20,
+                paddingVertical: 18,
+                paddingHorizontal: 24,
                 borderRadius: 16,
                 opacity: updating ? 0.7 : 1,
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.1,
+                shadowRadius: 4,
+                elevation: 3,
               }}
             >
-              <CheckCircle size={20} color="white" />
+              <CheckCircle size={22} color="white" />
               <Text className="text-white font-bold text-lg ml-3 flex-1">
                 {listing.is_sold ? 'Mark as Available' : 'Mark as Sold'}
               </Text>
@@ -143,13 +153,13 @@ export const ListingActionsModal: React.FC<ListingActionsModalProps> = ({
                 borderWidth: 2,
                 flexDirection: 'row',
                 alignItems: 'center',
-                paddingVertical: 16,
-                paddingHorizontal: 20,
+                paddingVertical: 18,
+                paddingHorizontal: 24,
                 borderRadius: 16,
                 backgroundColor: 'white',
               }}
             >
-              <Eye size={20} color={COLORS.utOrange} />
+              <Eye size={22} color={COLORS.utOrange} />
               <Text className="font-bold text-lg ml-3 flex-1" style={{ color: COLORS.utOrange }}>
                 View as Buyer
               </Text>
@@ -171,13 +181,18 @@ export const ListingActionsModal: React.FC<ListingActionsModalProps> = ({
                 backgroundColor: '#dc2626',
                 flexDirection: 'row',
                 alignItems: 'center',
-                paddingVertical: 16,
-                paddingHorizontal: 20,
+                paddingVertical: 18,
+                paddingHorizontal: 24,
                 borderRadius: 16,
                 opacity: updating ? 0.7 : 1,
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.1,
+                shadowRadius: 4,
+                elevation: 3,
               }}
             >
-              <Trash2 size={20} color="white" />
+              <Trash2 size={22} color="white" />
               <Text className="text-white font-bold text-lg ml-3 flex-1">Delete Listing</Text>
             </AnimatedButton>
           </View>
