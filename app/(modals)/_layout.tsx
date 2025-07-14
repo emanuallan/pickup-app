@@ -9,6 +9,7 @@ export default function ModalsLayout() {
       }}
     >
       <Stack.Screen name="settings" />
+      <Stack.Screen name="notifications" />
       {/* <Stack.Screen name="chat/[id]" /> */}
     </Stack>
   );

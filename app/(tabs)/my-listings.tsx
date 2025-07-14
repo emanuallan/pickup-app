@@ -108,7 +108,7 @@ export default function MyListingsScreen() {
   }
 
   return (
-    <View className="flex-1 bg-gray-50 p-4">
+    <View className="flex-1 bg-gray-50 p-4 pb-20">
         <Text className="text-2xl font-bold text-gray-900">My Listings</Text>
         <View className="flex-row items-center justify-between mb-4">
             <Text className="text-gray-500">Total Listings: {listings.length}</Text>

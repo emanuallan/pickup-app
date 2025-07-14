@@ -1,11 +1,12 @@
-import { View, Text, Image, FlatList, TouchableOpacity, ActivityIndicator, RefreshControl, ScrollView } from 'react-native';
+import { View, Text, Image, FlatList, TouchableOpacity, ActivityIndicator, RefreshControl, ScrollView, Alert } from 'react-native';
 import { useAuth } from '~/contexts/AuthContext';
 import { useEffect, useState } from 'react';
 import { supabase } from '~/lib/supabase';
 import { COLORS } from '~/theme/colors';
 import { useRouter } from 'expo-router';
-import { Star, CheckCircle2, Settings2 } from 'lucide-react-native';
+import { Star, CheckCircle2, Settings2, User, Calendar, MapPin, Plus, Edit3, Eye, BarChart3, MessageCircle, Heart, FileText } from 'lucide-react-native';
 import { getTimeAgo } from '../../utils/timeago';
+import { AnimatedButton } from '~/components/AnimatedButton';
 
 interface UserSettings {
   display_name: string | null;
@@ -30,6 +31,7 @@ interface Rating {
   comment: string;
   created_at: string;
   rater_id: string;
+  rater_name: string;
 }
 
 export default function ProfileScreen() {
@@ -58,16 +60,35 @@ export default function ProfileScreen() {
         .from('listings')
         .select('*')
         .eq('user_id', user.email)
-        .order('created_at', { ascending: false })
-        .limit(5);
+        .eq('is_draft', false)
+        .order('created_at', { ascending: false });
       setListings(listingsData || []);
 
       // 3. Fetch ratings
       const { data: ratingsData } = await supabase
         .from('ratings')
         .select('*')
-        .eq('rated_id', user.email);
-      setRatings(ratingsData || []);
+        .eq('rated_id', user.email)
+        .order('created_at', { ascending: false });
+      
+      // Get rater names for each rating
+      const formattedRatings = [];
+      if (ratingsData) {
+        for (const rating of ratingsData) {
+          const { data: raterData } = await supabase
+            .from('user_settings')
+            .select('display_name')
+            .eq('email', rating.rater_id)
+            .single();
+          
+          formattedRatings.push({
+            ...rating,
+            rater_name: raterData?.display_name || 'Anonymous User'
+          });
+        }
+      }
+      
+      setRatings(formattedRatings);
     } catch (error) {
       console.error('Error fetching profile data:', error);
     } finally {
@@ -110,6 +131,7 @@ export default function ProfileScreen() {
     return (
       <View className="flex-1 bg-white justify-center items-center">
         <ActivityIndicator size="large" color={COLORS.utOrange} />
+        <Text className="text-gray-500 mt-4">Loading profile...</Text>
       </View>
     );
   }
@@ -136,18 +158,46 @@ export default function ProfileScreen() {
           resizeMode="cover"
         />
         <View className="p-2">
-          <Text className="font-medium text-gray-900">{item.title}</Text>
+          <Text className="font-medium text-gray-900" numberOfLines={2}>{item.title}</Text>
           <Text style={{ color: COLORS.utOrange, fontWeight: 'bold' }}>${item.price}</Text>
-          <Text className="text-gray-500 text-sm">{getTimeAgo(item.created_at)}</Text>
+          <View className="flex-row items-center mt-1">
+            <MapPin size={12} color="#6b7280" />
+            <Text className="text-gray-500 text-xs ml-1">{item.location}</Text>
+          </View>
+          <Text className="text-gray-500 text-xs">{getTimeAgo(item.created_at)}</Text>
           {item.is_sold && (
             <View className="flex-row items-center mt-1">
-              <CheckCircle2 size={14} color={COLORS.utOrange} />
-              <Text className="text-utOrange text-sm ml-1">Sold</Text>
+              <CheckCircle2 size={14} color="#ef4444" />
+              <Text className="text-red-500 text-sm ml-1">Sold</Text>
             </View>
           )}
         </View>
       </View>
     </TouchableOpacity>
+  );
+
+  const renderRatingItem = ({ item }: { item: Rating }) => (
+    <View className="bg-gray-50 rounded-xl p-4 mb-3">
+      <View className="flex-row items-center justify-between mb-2">
+        <View className="flex-row items-center">
+          <View className="w-8 h-8 bg-gray-300 rounded-full items-center justify-center">
+            <User size={16} color="#6b7280" />
+          </View>
+          <Text className="font-medium text-gray-900 ml-2">{item.rater_name}</Text>
+        </View>
+        <View className="flex-row items-center">
+          <Star size={16} color="#FFB800" fill="#FFB800" />
+          <Text className="font-bold text-gray-900 ml-1">{item.rating}</Text>
+        </View>
+      </View>
+      {item.comment && (
+        <Text className="text-gray-700 mb-2">{item.comment}</Text>
+      )}
+      <View className="flex-row items-center">
+        <Calendar size={12} color="#6b7280" />
+        <Text className="text-gray-500 text-xs ml-1">{getTimeAgo(item.created_at)}</Text>
+      </View>
+    </View>
   );
 
   return (
@@ -156,20 +206,21 @@ export default function ProfileScreen() {
       refreshControl={
         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
       }
+      showsVerticalScrollIndicator={false}
     >
       {/* Profile Header */}
-      <View className="p-4">
-        <View className="flex-row justify-between items-center mb-4">
+      <View className="p-6">
+        <View className="flex-row items-center justify-between mb-4">
           <View className="flex-row items-center flex-1">
             <View className="mr-4">
               {profile?.profile_image_url ? (
                 <Image
                   source={{ uri: profile.profile_image_url }}
-                  className="w-20 h-20 rounded-full bg-gray-100"
+                  className="w-24 h-24 rounded-full bg-gray-100"
                 />
               ) : (
-                <View className="w-20 h-20 rounded-full bg-gray-100 items-center justify-center">
-                  <Text className="text-2xl text-gray-400">
+                <View className="w-24 h-24 rounded-full bg-gray-100 items-center justify-center">
+                  <Text className="text-3xl text-gray-400">
                     {(profile?.display_name || user.email)?.charAt(0).toUpperCase()}
                   </Text>
                 </View>
@@ -182,6 +233,12 @@ export default function ProfileScreen() {
               )}
             </View>
           </View>
+          <TouchableOpacity
+            onPress={() => router.push('/(modals)/settings')}
+            className="p-2 rounded-full bg-gray-100"
+          >
+            <Settings2 size={24} color="#6b7280" />
+          </TouchableOpacity>
         </View>
 
         {/* Stats Row */}
@@ -201,18 +258,97 @@ export default function ProfileScreen() {
             </View>
             <Text className="text-gray-600">Rating</Text>
           </View>
+          <View className="items-center">
+            <Text className="font-bold text-lg">{ratings.length}</Text>
+            <Text className="text-gray-600">Reviews</Text>
+          </View>
+        </View>
+
+        {/* Quick Actions */}
+        <View className="flex-row gap-3 mb-6">
+          <AnimatedButton
+            onPress={() => router.push('/create')}
+            hapticType="light"
+            scaleValue={0.97}
+            style={{
+              backgroundColor: COLORS.utOrange,
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'center',
+              paddingVertical: 12,
+              paddingHorizontal: 16,
+              borderRadius: 12,
+              flex: 1,
+            }}
+          >
+            <Plus size={18} color="white" />
+            <Text className="text-white font-semibold ml-2">Create Listing</Text>
+          </AnimatedButton>
+          
+          <AnimatedButton
+            onPress={() => router.push('/(tabs)/my-listings')}
+            hapticType="light"
+            scaleValue={0.97}
+            style={{
+              borderColor: COLORS.utOrange,
+              borderWidth: 2,
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'center',
+              paddingVertical: 12,
+              paddingHorizontal: 16,
+              borderRadius: 12,
+              backgroundColor: 'white',
+              flex: 1,
+            }}
+          >
+            <FileText size={18} color={COLORS.utOrange} />
+            <Text className="font-semibold ml-2" style={{ color: COLORS.utOrange }}>My Listings</Text>
+          </AnimatedButton>
+        </View>
+
+        {/* Management Tools */}
+        <View className="bg-gray-50 rounded-xl p-4 mb-6">
+          <Text className="text-lg font-semibold text-gray-800 mb-3">Account Tools</Text>
+          <View className="flex-row justify-between">
+            <TouchableOpacity 
+              onPress={() => router.push('/(modals)/settings')}
+              className="items-center flex-1"
+            >
+              <View className="bg-white rounded-full p-3 mb-2">
+                <Edit3 size={20} color={COLORS.utOrange} />
+              </View>
+              <Text className="text-sm text-gray-600">Edit Profile</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              onPress={() => router.push('/(tabs)/my-listings')}
+              className="items-center flex-1"
+            >
+              <View className="bg-white rounded-full p-3 mb-2">
+                <BarChart3 size={20} color={COLORS.utOrange} />
+              </View>
+              <Text className="text-sm text-gray-600">Analytics</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              onPress={() => router.push('/(tabs)/messages')}
+              className="items-center flex-1"
+            >
+              <View className="bg-white rounded-full p-3 mb-2">
+                <MessageCircle size={20} color={COLORS.utOrange} />
+              </View>
+              <Text className="text-sm text-gray-600">Messages</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
 
       {/* Active Listings */}
       <View className="mb-6">
-        <View className="flex-row justify-between items-center px-4 mb-4">
+        <View className="flex-row justify-between items-center px-6 mb-4">
           <Text className="text-lg font-bold text-gray-900">Active Listings</Text>
-          {activeListings.length > 0 && (
-            <TouchableOpacity onPress={() => router.push('/my-listings')}>
-              <Text style={{ color: COLORS.utOrange }}>See All</Text>
-            </TouchableOpacity>
-          )}
+          <Text className="text-gray-500">{activeListings.length} items</Text>
         </View>
 
         {activeListings.length > 0 ? (
@@ -222,41 +358,65 @@ export default function ProfileScreen() {
             keyExtractor={item => item.id}
             horizontal
             showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ paddingHorizontal: 16 }}
+            contentContainerStyle={{ paddingHorizontal: 24 }}
           />
         ) : (
-          <View className="px-4">
-            <Text className="text-gray-500">No active listings</Text>
+          <View className="px-6">
+            <Text className="text-gray-500 text-center">No active listings</Text>
             <TouchableOpacity 
               onPress={() => router.push('/create')}
               className="mt-2"
             >
-              <Text style={{ color: COLORS.utOrange }}>Create your first listing →</Text>
+              <Text style={{ color: COLORS.utOrange }} className="text-center">Create your first listing →</Text>
             </TouchableOpacity>
           </View>
         )}
       </View>
 
       {/* Sold Listings */}
-      {soldListings.length > 0 && (
-        <View className="mb-6">
-          <View className="flex-row justify-between items-center px-4 mb-4">
-            <Text className="text-lg font-bold text-gray-900">Sold Listings</Text>
-            <TouchableOpacity onPress={() => router.push('/my-listings')}>
-              <Text style={{ color: COLORS.utOrange }}>See All</Text>
-            </TouchableOpacity>
-          </View>
+      <View className="mb-6">
+        <View className="flex-row justify-between items-center px-6 mb-4">
+          <Text className="text-lg font-bold text-gray-900">Sold Listings</Text>
+          <Text className="text-gray-500">{soldListings.length} items</Text>
+        </View>
 
+        {soldListings.length > 0 ? (
           <FlatList
             data={soldListings}
             renderItem={renderListingItem}
             keyExtractor={item => item.id}
             horizontal
             showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ paddingHorizontal: 16 }}
+            contentContainerStyle={{ paddingHorizontal: 24 }}
           />
+        ) : (
+          <View className="px-6">
+            <Text className="text-gray-500 text-center">No sold listings</Text>
+          </View>
+        )}
+      </View>
+
+      {/* Reviews */}
+      <View className="mb-6">
+        <View className="flex-row justify-between items-center px-6 mb-4">
+          <Text className="text-lg font-bold text-gray-900">Reviews</Text>
+          <Text className="text-gray-500">{ratings.length} reviews</Text>
         </View>
-      )}
+
+        <View className="px-6 pb-20">
+          {ratings.length > 0 ? (
+            <FlatList
+              data={ratings}
+              renderItem={renderRatingItem}
+              keyExtractor={item => item.id}
+              scrollEnabled={false}
+              showsVerticalScrollIndicator={false}
+            />
+          ) : (
+            <Text className="text-gray-500 text-center">No reviews yet</Text>
+          )}
+        </View>
+      </View>
     </ScrollView>
   );
-} 
+}

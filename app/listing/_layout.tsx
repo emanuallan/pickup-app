@@ -6,11 +6,14 @@ export default function CreateLayout() {
     <Stack
       screenOptions={{
         headerShown: true,
-        header: ({ route }) => <ModalHeader title={route.name === '[id]' ? 'Listing' : 'Create'} />,
+        header: ({ route }) => (
+          <ModalHeader
+            title={route.name === '[id]' ? 'You are viewing your own listing' : 'Edit Listing'}
+          />
+        ),
         animation: 'slide_from_right',
-      }}
-    >
+      }}>
       <Stack.Screen name="[id]" />
     </Stack>
   );
-} 
+}
