@@ -1,12 +1,16 @@
-import { Tabs } from "expo-router";
+import { Tabs, usePathname } from "expo-router";
 import TabBar from "~/components/TabBar";
 import Header from "~/components/Header";
 import { View, ScrollView } from "react-native";
 
+function ConditionalHeader() {
+  return <Header />;
+}
+
 export default function TabsLayout() {
   return (
     <View className="flex-1">
-      <Header />
+      <ConditionalHeader />
       <Tabs
         screenOptions={{
           headerShown: false,

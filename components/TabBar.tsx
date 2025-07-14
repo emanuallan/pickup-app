@@ -3,7 +3,9 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Home, Search, MessageCircle, User, Plus } from "lucide-react-native";
 import { COLORS } from "~/theme/colors";
 import * as Haptics from 'expo-haptics';
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useState } from "react";
+import { useAuth } from "~/contexts/AuthContext";
+import { supabase } from "~/lib/supabase";
 
 const tabRoutes = [
   { name: "index", icon: Home },
@@ -21,7 +23,19 @@ export default function TabBar({
   navigation: any;
 }) {
   const insets = useSafeAreaInsets();
+  const { user } = useAuth();
+  const [unreadMessageCount, setUnreadMessageCount] = useState(0);
   const tabAnimations = useRef(tabRoutes.map(() => new Animated.Value(1))).current;
+  
+  // TODO: Implement actual unread message count fetching
+  // For now, this is a placeholder - you would implement this when you have a messages system
+  useEffect(() => {
+    if (user?.email) {
+      // Placeholder for unread message count
+      // This would be replaced with actual message count fetching
+      setUnreadMessageCount(0);
+    }
+  }, [user?.email]);
   
   return (
     <View 
@@ -76,6 +90,7 @@ export default function TabBar({
                   paddingHorizontal: 16,
                   paddingVertical: 8,
                   borderRadius: 12,
+                  position: 'relative',
                 }}
               >
                 <Icon 
@@ -83,6 +98,20 @@ export default function TabBar({
                   color={isFocused ? COLORS.utOrange : COLORS.light.grey} 
                   strokeWidth={isFocused ? 2.5 : 2}
                 />
+                {/* Unread message indicator */}
+                {tab.name === 'messages' && unreadMessageCount > 0 && (
+                  <View 
+                    style={{
+                      position: 'absolute',
+                      top: 4,
+                      right: 12,
+                      width: 8,
+                      height: 8,
+                      borderRadius: 4,
+                      backgroundColor: '#ef4444',
+                    }}
+                  />
+                )}
               </Animated.View>
             </TouchableOpacity>
           );

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Image, RefreshControl, Alert, FlatList, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Image, RefreshControl, Alert, FlatList } from 'react-native';
 import { Stack, useRouter, useLocalSearchParams } from 'expo-router';
 import { COLORS } from '~/theme/colors';
 import { Heart, Eye, Star, MapPin, Calendar, Trash2, MessageCircle, ArrowLeft } from 'lucide-react-native';
@@ -136,14 +136,10 @@ export default function FavoritesScreen() {
   };
 
   const handleListingPress = (listing: Listing) => {
-    // Navigate back to the main app first, then go to the listing
-    router.back();
-    setTimeout(() => {
-      router.push({
-        pathname: '/listing/[id]',
-        params: { id: listing.id }
-      });
-    }, 100); // Small delay to ensure back navigation completes
+    router.push({
+      pathname: '/listing/[id]',
+      params: { id: listing.id }
+    });
   };
 
   const handleMessageSeller = (listing: Listing) => {
@@ -282,17 +278,17 @@ export default function FavoritesScreen() {
     );
   };
 
-  if (loading) {
-    return (
-      <View className="flex-1 bg-white justify-center items-center">
-        <ActivityIndicator size="large" color={COLORS.utOrange} />
-        <Text className="text-gray-500 mt-4">Loading {title.toLowerCase()}...</Text>
-      </View>
-    );
-  }
-
   return (
     <View className="flex-1 bg-gray-50">
+      <Stack.Screen 
+        options={{ 
+          title: title,
+          headerShown: true,
+          headerStyle: { backgroundColor: 'white' },
+          headerTitleStyle: { color: '#1f2937', fontWeight: 'bold' },
+          headerTintColor: COLORS.utOrange,
+        }} 
+      />
       
       {items.length > 0 ? (
         <FlatList
