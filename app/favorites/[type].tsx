@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Image, RefreshControl, Alert, FlatList } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Image, RefreshControl, Alert, FlatList, ActivityIndicator } from 'react-native';
 import { Stack, useRouter, useLocalSearchParams } from 'expo-router';
 import { COLORS } from '~/theme/colors';
-import { Heart, Eye, Star, MapPin, Calendar, Trash2, MessageCircle, ArrowLeft } from 'lucide-react-native';
+import { Heart, Eye, Star, MapPin, Calendar, Trash2, MessageCircle } from 'lucide-react-native';
 import { getTimeAgo } from '~/utils/timeago';
 import { supabase } from '~/lib/supabase';
 import { useAuth } from '~/contexts/AuthContext';
@@ -90,7 +90,7 @@ export default function FavoritesScreen() {
       if (error) throw error;
 
       // Filter out items where listing is null (listing might have been deleted)
-      const validItems = (data || []).filter(item => item.listing) as FavoriteItem[];
+      const validItems = (data || []).filter(item => item.listing) as unknown as FavoriteItem[];
       setItems(validItems);
     } catch (error) {
       console.error('Error fetching favorites:', error);
@@ -136,15 +136,22 @@ export default function FavoritesScreen() {
   };
 
   const handleListingPress = (listing: Listing) => {
-    router.push({
-      pathname: '/listing/[id]',
-      params: { id: listing.id }
-    });
+    // Navigate back to the main app first, then go to the listing
+    router.back();
+    setTimeout(() => {
+      router.push({
+        pathname: '/listing/[id]',
+        params: { id: listing.id }
+      });
+    }, 100); // Small delay to ensure back navigation completes
   };
 
   const handleMessageSeller = (listing: Listing) => {
     if (!user?.email) {
-      router.push('/(auth)/login');
+      router.back();
+      setTimeout(() => {
+        router.push('/(auth)/login');
+      }, 100);
       return;
     }
     
@@ -153,10 +160,13 @@ export default function FavoritesScreen() {
       return;
     }
 
-    router.push({
-      pathname: '/chat/[id]',
-      params: { id: listing.id }
-    });
+    router.back();
+    setTimeout(() => {
+      router.push({
+        pathname: '/chat/[id]',
+        params: { id: listing.id }
+      });
+    }, 100);
   };
 
   const renderListingItem = ({ item }: { item: FavoriteItem }) => {
@@ -290,7 +300,12 @@ export default function FavoritesScreen() {
         }} 
       />
       
-      {items.length > 0 ? (
+      {loading ? (
+        <View className="flex-1 items-center justify-center">
+          <ActivityIndicator size="large" color={COLORS.utOrange} />
+          <Text className="text-gray-500 mt-4">Loading {title.toLowerCase()}...</Text>
+        </View>
+      ) : items.length > 0 ? (
         <FlatList
           data={items}
           renderItem={renderListingItem}

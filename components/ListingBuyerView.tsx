@@ -63,11 +63,13 @@ export const ListingBuyerView: React.FC<ListingBuyerViewProps> = ({
   const [isWatchlisted, setIsWatchlisted] = useState(false);
   const [showActionsModal, setShowActionsModal] = useState(false);
   const [sellerRating, setSellerRating] = useState<{ average: number; count: number } | null>(null);
+  const [engagementStats, setEngagementStats] = useState({ favorites: 0, watchlist: 0 });
   
   const isOwnerViewing = user?.email === listing.user_id && onBackToOwnerView;
 
   useEffect(() => {
     fetchSellerRating();
+    fetchEngagementStats();
     if (user?.email) {
       fetchUserFavoriteStatus();
     }
@@ -118,6 +120,25 @@ export const ListingBuyerView: React.FC<ListingBuyerViewProps> = ({
     }
   };
 
+  const fetchEngagementStats = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('user_favorites')
+        .select('type')
+        .eq('listing_id', listing.id);
+
+      if (error) throw error;
+
+      if (data) {
+        const favorites = data.filter(item => item.type === 'favorite').length;
+        const watchlist = data.filter(item => item.type === 'watchlist').length;
+        setEngagementStats({ favorites, watchlist });
+      }
+    } catch (error) {
+      console.error('Error fetching engagement stats:', error);
+    }
+  };
+
   const handleMessageSeller = () => {
     if (listing.is_sold) {
       Alert.alert(
@@ -156,6 +177,7 @@ export const ListingBuyerView: React.FC<ListingBuyerViewProps> = ({
 
         if (error) throw error;
         setIsSaved(false);
+        fetchEngagementStats(); // Refresh counts
         Alert.alert('Removed from Favorites', 'Item removed from your favorites');
       } else {
         // Add to favorites
@@ -169,6 +191,7 @@ export const ListingBuyerView: React.FC<ListingBuyerViewProps> = ({
 
         if (error) throw error;
         setIsSaved(true);
+        fetchEngagementStats(); // Refresh counts
         Alert.alert('Added to Favorites', 'Item saved to your favorites');
       }
     } catch (error) {
@@ -195,6 +218,7 @@ export const ListingBuyerView: React.FC<ListingBuyerViewProps> = ({
 
         if (error) throw error;
         setIsWatchlisted(false);
+        fetchEngagementStats(); // Refresh counts
         Alert.alert('Removed from Watchlist', 'Item removed from your watchlist');
       } else {
         // Add to watchlist
@@ -208,6 +232,7 @@ export const ListingBuyerView: React.FC<ListingBuyerViewProps> = ({
 
         if (error) throw error;
         setIsWatchlisted(true);
+        fetchEngagementStats(); // Refresh counts
         Alert.alert('Added to Watchlist', 'Item added to your watchlist');
       }
     } catch (error) {
@@ -457,6 +482,27 @@ export const ListingBuyerView: React.FC<ListingBuyerViewProps> = ({
                 </View>
               </View>
             </TouchableOpacity>
+          </View>
+
+          {/* Engagement Stats */}
+          <View className="bg-gray-50 rounded-xl p-5 mb-6">
+            <Text className="text-lg font-semibold text-gray-800 mb-4">Listing Engagement</Text>
+            <View className="flex-row justify-around">
+              <View className="items-center">
+                <View className="bg-red-100 rounded-full p-3 mb-2">
+                  <Heart size={20} color="#ef4444" />
+                </View>
+                <Text className="text-sm text-gray-600 mb-1">Favorites</Text>
+                <Text className="font-bold text-gray-900 text-lg">{engagementStats.favorites}</Text>
+              </View>
+              <View className="items-center">
+                <View className="bg-blue-100 rounded-full p-3 mb-2">
+                  <Eye size={20} color="#3b82f6" />
+                </View>
+                <Text className="text-sm text-gray-600 mb-1">Watching</Text>
+                <Text className="font-bold text-gray-900 text-lg">{engagementStats.watchlist}</Text>
+              </View>
+            </View>
           </View>
         </View>
       </ScrollView>

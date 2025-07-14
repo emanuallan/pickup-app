@@ -287,43 +287,24 @@ export const ListingOwnerView: React.FC<ListingOwnerViewProps> = ({
             </View>
           )}
 
-          {/* Owner Actions Section */}
+
+          {/* Public Engagement Stats */}
           <View className="bg-gray-50 rounded-xl p-5 mb-6">
-            <Text className="text-lg font-semibold text-gray-800 mb-4">Manage Your Listing</Text>
-            
-            {/* Quick Stats */}
-            <View className="bg-white rounded-xl shadow-sm">
-              <View className="flex-row justify-between p-4 border-b border-gray-100">
-                <View className="items-center flex-1">
-                  <View className="bg-orange-50 rounded-full p-3 mb-2">
-                    <Eye size={20} color={COLORS.utOrange} />
-                  </View>
-                  <Text className="text-sm text-gray-600 mb-1">Views</Text>
-                  <Text className="font-bold text-gray-900 text-lg">--</Text>
+            <Text className="text-lg font-semibold text-gray-800 mb-4">Community Interest</Text>
+            <View className="flex-row justify-around">
+              <View className="items-center">
+                <View className="bg-red-100 rounded-full p-3 mb-2">
+                  <Heart size={20} color="#ef4444" />
                 </View>
-                <View className="items-center flex-1">
-                  <View className="bg-orange-50 rounded-full p-3 mb-2">
-                    <MessageCircle size={20} color={COLORS.utOrange} />
-                  </View>
-                  <Text className="text-sm text-gray-600 mb-1">Messages</Text>
-                  <Text className="font-bold text-gray-900 text-lg">--</Text>
-                </View>
+                <Text className="text-sm text-gray-600 mb-1">People who liked this</Text>
+                <Text className="font-bold text-gray-900 text-lg">{favoriteCounts.favorites}</Text>
               </View>
-              <View className="flex-row justify-between p-4">
-                <View className="items-center flex-1">
-                  <View className="bg-red-50 rounded-full p-3 mb-2">
-                    <Heart size={20} color="#ef4444" />
-                  </View>
-                  <Text className="text-sm text-gray-600 mb-1">Favorites</Text>
-                  <Text className="font-bold text-gray-900 text-lg">{favoriteCounts.favorites}</Text>
+              <View className="items-center">
+                <View className="bg-blue-100 rounded-full p-3 mb-2">
+                  <Eye size={20} color="#3b82f6" />
                 </View>
-                <View className="items-center flex-1">
-                  <View className="bg-blue-50 rounded-full p-3 mb-2">
-                    <Eye size={20} color="#3b82f6" />
-                  </View>
-                  <Text className="text-sm text-gray-600 mb-1">Watchlist</Text>
-                  <Text className="font-bold text-gray-900 text-lg">{favoriteCounts.watchlist}</Text>
-                </View>
+                <Text className="text-sm text-gray-600 mb-1">People watching</Text>
+                <Text className="font-bold text-gray-900 text-lg">{favoriteCounts.watchlist}</Text>
               </View>
             </View>
           </View>
