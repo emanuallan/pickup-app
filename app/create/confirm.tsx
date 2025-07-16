@@ -95,7 +95,7 @@ export default function ConfirmScreen() {
       results.forEach((result, index) => {
         completed++;
         setUploadProgress((completed / total) * 100);
-        
+
         if (result.status === 'fulfilled') {
           uploadedUrls.push(result.value);
         } else {
@@ -108,7 +108,7 @@ export default function ConfirmScreen() {
       }
 
       return uploadedUrls;
-    } catch (error) {
+      } catch (error) {
       console.error('Error uploading images:', error);
       Alert.alert('Error', 'Failed to upload images. Please try again.');
       return uploadedUrls;

@@ -1,13 +1,30 @@
-import { View, Text, Image, FlatList, TouchableOpacity, ActivityIndicator, RefreshControl, ScrollView, Alert } from 'react-native';
+import {
+  View,
+  Text,
+  Image,
+  FlatList,
+  TouchableOpacity,
+  ActivityIndicator,
+  RefreshControl,
+  ScrollView,
+  Alert,
+} from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { supabase } from '~/lib/supabase';
 import { COLORS } from '~/theme/colors';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '~/contexts/AuthContext';
-import { Star, CheckCircle2, MessageCircle, Calendar, MapPin, User } from 'lucide-react-native';
+import {
+  Star,
+  CheckCircle2,
+  MessageCircle,
+  Calendar,
+  MapPin,
+  User,
+  FileText,
+} from 'lucide-react-native';
 import { getTimeAgo } from '../../utils/timeago';
-import { AnimatedButton } from '~/components/AnimatedButton';
 import ModalHeader from '~/components/ModalHeader';
 import { RatingSubmissionModal } from '~/components/RatingSubmissionModal';
 import UserRatingDisplay from '~/components/UserRatingDisplay';
@@ -43,7 +60,7 @@ export default function UserProfileScreen() {
   const { userId } = useLocalSearchParams();
   const router = useRouter();
   const { user } = useAuth();
-  
+
   const [profile, setProfile] = useState<UserSettings | null>(null);
   const [listings, setListings] = useState<Listing[]>([]);
   const [ratings, setRatings] = useState<Rating[]>([]);
@@ -61,13 +78,13 @@ export default function UserProfileScreen() {
         .select('email, display_name, profile_image_url, bio')
         .eq('email', userId)
         .single();
-      
+
       if (!userSettings) {
         Alert.alert('Error', 'User not found');
         router.back();
         return;
       }
-      
+
       setProfile(userSettings);
 
       // 2. Fetch listings (only non-draft, active listings)
@@ -85,7 +102,7 @@ export default function UserProfileScreen() {
         .select('*')
         .eq('rated_id', userId)
         .order('created_at', { ascending: false });
-      
+
       // Get rater names for each rating
       const formattedRatings = [];
       if (ratingsData) {
@@ -95,14 +112,14 @@ export default function UserProfileScreen() {
             .select('display_name')
             .eq('email', rating.rater_id)
             .single();
-          
+
           formattedRatings.push({
             ...rating,
-            rater_name: raterData?.display_name || 'Anonymous User'
+            rater_name: raterData?.display_name || 'Anonymous User',
           });
         }
       }
-      
+
       setRatings(formattedRatings);
     } catch (error) {
       console.error('Error fetching profile data:', error);
@@ -127,7 +144,7 @@ export default function UserProfileScreen() {
       router.push('/(auth)/login');
       return;
     }
-    
+
     if (user.email === profile?.email) {
       Alert.alert('Cannot Message', 'You cannot message yourself.');
       return;
@@ -136,13 +153,13 @@ export default function UserProfileScreen() {
     // Navigate to chat with this user
     router.push({
       pathname: '/chat/[id]',
-      params: { 
+      params: {
         id: `${profile?.email}:general`,
         otherUserName: profile?.display_name || profile?.email || 'User',
         otherUserId: profile?.email || '',
         listingId: 'general',
-        listingTitle: 'General Chat'
-      }
+        listingTitle: 'General Chat',
+      },
     });
   };
 
@@ -151,7 +168,7 @@ export default function UserProfileScreen() {
       router.push('/(auth)/login');
       return;
     }
-    
+
     if (user.email === profile?.email) {
       Alert.alert('Cannot Rate', 'You cannot rate yourself.');
       return;
@@ -168,9 +185,9 @@ export default function UserProfileScreen() {
   if (loading) {
     return (
       <SafeAreaView className="flex-1 bg-white">
-        <View className="flex-1 justify-center items-center">
+        <View className="flex-1 items-center justify-center">
           <ActivityIndicator size="large" color={COLORS.utOrange} />
-          <Text className="text-gray-500 mt-4">Loading profile...</Text>
+          <Text className="mt-4 text-gray-500">Loading profile...</Text>
         </View>
       </SafeAreaView>
     );
@@ -179,14 +196,13 @@ export default function UserProfileScreen() {
   if (!profile) {
     return (
       <SafeAreaView className="flex-1 bg-white">
-        <View className="flex-1 justify-center items-center">
-          <Text className="text-gray-500 text-center">Profile not found</Text>
+        <View className="flex-1 items-center justify-center">
+          <Text className="text-center text-gray-500">Profile not found</Text>
           <TouchableOpacity
             onPress={() => router.back()}
-            className="mt-4 px-6 py-3 rounded-xl"
-            style={{ backgroundColor: COLORS.utOrange }}
-          >
-            <Text className="text-white font-medium">Go Back</Text>
+            className="mt-4 rounded-xl px-6 py-3"
+            style={{ backgroundColor: COLORS.utOrange }}>
+            <Text className="font-medium text-white">Go Back</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -194,38 +210,41 @@ export default function UserProfileScreen() {
   }
 
   // Compute stats
-  const soldListings = listings.filter(l => l.is_sold);
-  const activeListings = listings.filter(l => !l.is_sold);
+  const soldListings = listings.filter((l) => l.is_sold);
+  const activeListings = listings.filter((l) => !l.is_sold);
   const avgRating = ratings.length
     ? (ratings.reduce((sum, r) => sum + Number(r.rating), 0) / ratings.length).toFixed(1)
     : 'N/A';
 
   const renderListingItem = ({ item }: { item: Listing }) => (
-    <TouchableOpacity 
+    <TouchableOpacity
       className="mr-4"
-      onPress={() => router.push({
-        pathname: '/listing/[id]',
-        params: { id: item.id }
-      })}
-    >
-      <View className="w-40 bg-white rounded-lg overflow-hidden shadow-sm">
+      onPress={() =>
+        router.push({
+          pathname: '/listing/[id]',
+          params: { id: item.id },
+        })
+      }>
+      <View className="w-40 overflow-hidden rounded-lg bg-white shadow-sm">
         <Image
           source={{ uri: item.images?.[0] || 'https://picsum.photos/200' }}
-          className="w-full h-40"
+          className="h-40 w-full"
           resizeMode="cover"
         />
         <View className="p-2">
-          <Text className="font-medium text-gray-900" numberOfLines={2}>{item.title}</Text>
+          <Text className="font-medium text-gray-900" numberOfLines={2}>
+            {item.title}
+          </Text>
           <Text style={{ color: COLORS.utOrange, fontWeight: 'bold' }}>${item.price}</Text>
-          <View className="flex-row items-center mt-1">
+          <View className="mt-1 flex-row items-center">
             <MapPin size={12} color="#6b7280" />
-            <Text className="text-gray-500 text-xs ml-1">{item.location}</Text>
+            <Text className="ml-1 text-xs text-gray-500">{item.location}</Text>
           </View>
-          <Text className="text-gray-500 text-xs">{getTimeAgo(item.created_at)}</Text>
+          <Text className="text-xs text-gray-500">{getTimeAgo(item.created_at)}</Text>
           {item.is_sold && (
-            <View className="flex-row items-center mt-1">
+            <View className="mt-1 flex-row items-center">
               <CheckCircle2 size={14} color="#ef4444" />
-              <Text className="text-red-500 text-sm ml-1">Sold</Text>
+              <Text className="ml-1 text-sm text-red-500">Sold</Text>
             </View>
           )}
         </View>
@@ -234,198 +253,205 @@ export default function UserProfileScreen() {
   );
 
   const renderRatingItem = ({ item }: { item: Rating }) => (
-    <View className="bg-gray-50 rounded-xl p-4 mb-3">
-      <View className="flex-row items-center justify-between mb-2">
-        <View className="flex-row items-center">
-          <View className="w-8 h-8 bg-gray-300 rounded-full items-center justify-center">
-            <User size={16} color="#6b7280" />
+    <View className="mb-4 rounded-2xl bg-gray-50 p-5">
+      <View className="mb-3 flex-row items-center justify-between">
+        <TouchableOpacity
+          className="flex-row items-center"
+          onPress={() =>
+            router.push({
+              pathname: '/profile/[userId]',
+              params: { userId: item.rater_id },
+            })
+          }
+          activeOpacity={0.8}>
+          <View
+            className="mr-3 h-12 w-12 items-center justify-center rounded-full"
+            style={{ backgroundColor: COLORS.utOrange }}>
+            <Text className="text-lg font-bold text-white">
+              {item.rater_name.charAt(0).toUpperCase()}
+            </Text>
           </View>
-          <Text className="font-medium text-gray-900 ml-2">{item.rater_name}</Text>
-        </View>
-        <View className="flex-row items-center">
-          <UserRatingDisplay 
-            userId={item.rater_id} 
-            rating={item.rating} 
-          />
+          <View>
+            <Text className="text-lg font-semibold text-gray-900">{item.rater_name}</Text>
+            <View className="mt-1 flex-row items-center">
+              <Calendar size={12} color="#6b7280" />
+              <Text className="ml-1 text-xs text-gray-500">{getTimeAgo(item.created_at)}</Text>
+            </View>
+          </View>
+        </TouchableOpacity>
+        <View className="rounded-full border border-gray-200 bg-white px-3 py-1">
+          <UserRatingDisplay userId={item.rater_id} rating={item.rating} />
         </View>
       </View>
       {item.comment && (
-        <Text className="text-gray-700 mb-2">{item.comment}</Text>
+        <Text className="text-base leading-relaxed text-gray-700">{item.comment}</Text>
       )}
-      <View className="flex-row items-center">
-        <Calendar size={12} color="#6b7280" />
-        <Text className="text-gray-500 text-xs ml-1">{getTimeAgo(item.created_at)}</Text>
-      </View>
     </View>
   );
 
   return (
-    <SafeAreaView className="flex-1 bg-white" edges={['bottom']}>
+    <SafeAreaView className="flex-1 bg-gray-50" edges={['bottom']}>
       {/* Header */}
-      <ModalHeader title={profile.display_name || profile.email} />
+      <ModalHeader title="" />
 
-      <ScrollView 
+      <ScrollView
         className="flex-1"
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }
-        showsVerticalScrollIndicator={false}
-      >
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+        showsVerticalScrollIndicator={false}>
         {/* Profile Header */}
-        <View className="p-6">
-          <View className="flex-row items-center mb-4">
-            <View className="mr-4">
+        <View className="mx-4 mt-4 rounded-3xl bg-white p-8 shadow-sm">
+          <View className="mb-6 items-center">
+            <View className="mb-4">
               {profile.profile_image_url ? (
                 <Image
                   source={{ uri: profile.profile_image_url }}
-                  className="w-24 h-24 rounded-full bg-gray-100"
+                  className="h-32 w-32 rounded-full bg-gray-100"
                 />
               ) : (
-                <View className="w-24 h-24 rounded-full bg-gray-100 items-center justify-center">
-                  <Text className="text-3xl text-gray-400">
+                <View
+                  className="h-32 w-32 items-center justify-center rounded-full shadow-lg"
+                  style={{ backgroundColor: COLORS.utOrange }}>
+                  <Text className="text-4xl font-bold text-white">
                     {(profile.display_name || profile.email)?.charAt(0).toUpperCase()}
                   </Text>
                 </View>
               )}
             </View>
-            <View className="flex-1">
-              <Text className="text-2xl font-bold">{profile.display_name || profile.email}</Text>
-              {profile.bio && (
-                <Text className="text-gray-600 mt-1">{profile.bio}</Text>
-              )}
-            </View>
+
+            <Text className="mb-2 text-3xl font-bold text-gray-900">
+              {profile.display_name || profile.email}
+            </Text>
+
+            {profile.bio && (
+              <Text className="max-w-sm text-center text-lg leading-relaxed text-gray-600">
+                {profile.bio}
+              </Text>
+            )}
+          </View>
+
+          {/* Rating Display */}
+          <View className="mb-4 items-center">
+            <UserRatingDisplay
+              userId={userId as string}
+              rating={avgRating !== 'N/A' ? parseFloat(avgRating) : null}
+            />
           </View>
 
           {/* Stats Row */}
-          <View className="flex-row justify-around py-4 bg-gray-50 rounded-xl mb-4">
+          <View className="mb-6 flex-row justify-around rounded-2xl bg-gray-50 py-6">
             <View className="items-center">
-              <Text className="font-bold text-lg">{activeListings.length}</Text>
-              <Text className="text-gray-600">Active</Text>
-            </View>
-            <View className="items-center">
-              <Text className="font-bold text-lg">{soldListings.length}</Text>
-              <Text className="text-gray-600">Sold</Text>
-            </View>
-            <View className="items-center">
-              <View className="flex-row items-center">
-                <UserRatingDisplay 
-                  userId={userId as string} 
-                  rating={ratings.length > 0 ? parseFloat(avgRating) : null} 
-                />
+              <Text className="text-2xl font-bold text-gray-900">{activeListings.length}</Text>
+              <View className="mt-1 flex-row items-center">
+                <FileText size={12} color="#6b7280" />
+                <Text className="ml-1 text-sm font-medium text-gray-500">Active</Text>
               </View>
-              <Text className="text-gray-600">Rating</Text>
             </View>
             <View className="items-center">
-              <Text className="font-bold text-lg">{ratings.length}</Text>
-              <Text className="text-gray-600">Reviews</Text>
+              <Text className="text-2xl font-bold text-gray-900">{soldListings.length}</Text>
+              <View className="mt-1 flex-row items-center">
+                <CheckCircle2 size={12} color="#6b7280" />
+                <Text className="ml-1 text-sm font-medium text-gray-500">Sold</Text>
+              </View>
+            </View>
+            <View className="items-center">
+              <Text className="text-2xl font-bold text-gray-900">{ratings.length}</Text>
+              <View className="mt-1 flex-row items-center">
+                <MessageCircle size={12} color="#6b7280" />
+                <Text className="ml-1 text-sm font-medium text-gray-500">Reviews</Text>
+              </View>
             </View>
           </View>
 
+          {/* Rating Modal */}
+          <RatingSubmissionModal
+            visible={showRatingModal}
+            onClose={() => setShowRatingModal(false)}
+            ratedUserId={profile?.email || ''}
+            ratedUserName={profile?.display_name || profile?.email || ''}
+            onRatingSubmitted={handleRatingSubmitted}
+          />
+
           {/* Action Buttons */}
-          {user?.email !== profile.email && (
-            <View className="flex-row gap-3 mb-6">
-              <AnimatedButton
-                onPress={handleMessageUser}
-                hapticType="medium"
-                scaleValue={0.97}
-                style={{
-                  backgroundColor: COLORS.utOrange,
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  paddingVertical: 16,
-                  borderRadius: 16,
-                  flex: 1,
-                  shadowColor: '#000',
-                  shadowOffset: { width: 0, height: 2 },
-                  shadowOpacity: 0.1,
-                  shadowRadius: 4,
-                  elevation: 3,
-                }}
-              >
-                <MessageCircle size={22} color="white" />
-                <Text className="text-white font-bold text-lg ml-2">Message</Text>
-              </AnimatedButton>
-              
-              <AnimatedButton
-                onPress={handleRateUser}
-                hapticType="medium"
-                scaleValue={0.97}
-                style={{
-                  borderColor: COLORS.utOrange,
-                  borderWidth: 2,
-                  backgroundColor: 'white',
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  paddingVertical: 16,
-                  borderRadius: 16,
-                  flex: 1,
-                  shadowColor: '#000',
-                  shadowOffset: { width: 0, height: 2 },
-                  shadowOpacity: 0.1,
-                  shadowRadius: 4,
-                  elevation: 3,
-                }}
-              >
-                <Star size={22} color={COLORS.utOrange} />
-                <Text className="font-bold text-lg ml-2" style={{ color: COLORS.utOrange }}>Rate</Text>
-              </AnimatedButton>
-            </View>
-          )}
+          <View className="flex-row gap-4">
+            <TouchableOpacity
+              onPress={handleMessageUser}
+              className="flex-1 flex-row items-center justify-center rounded-2xl px-6 py-4 shadow-sm"
+              style={{ backgroundColor: COLORS.utOrange }}
+              activeOpacity={0.8}>
+              <MessageCircle size={20} color="white" />
+              <Text className="ml-2 text-lg font-semibold text-white">Message</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={handleRateUser}
+              className="flex-1 flex-row items-center justify-center rounded-2xl bg-white px-6 py-4"
+              style={{ borderWidth: 2, borderColor: COLORS.utOrange }}
+              activeOpacity={0.8}>
+              <Star size={20} color={COLORS.utOrange} />
+              <Text className="ml-2 text-lg font-semibold" style={{ color: COLORS.utOrange }}>
+                Rate
+              </Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* Active Listings */}
-        <View className="mb-6">
-          <View className="flex-row justify-between items-center px-6 mb-4">
-            <Text className="text-lg font-bold text-gray-900">Active Listings</Text>
-            <Text className="text-gray-500">{activeListings.length} items</Text>
+        <View className="mx-4 mt-6 overflow-hidden rounded-3xl bg-white shadow-sm">
+          <View className="flex-row items-center justify-between border-b border-gray-100 px-6 py-5">
+            <Text className="text-2xl font-bold text-gray-900">Active Listings</Text>
+            <View className="rounded-full px-3 py-1" style={{ backgroundColor: COLORS.utOrange }}>
+              <Text className="text-sm font-semibold text-white">{activeListings.length}</Text>
+            </View>
           </View>
 
           {activeListings.length > 0 ? (
             <FlatList
               data={activeListings}
               renderItem={renderListingItem}
-              keyExtractor={item => item.id}
+              keyExtractor={(item) => item.id}
               horizontal
               showsHorizontalScrollIndicator={false}
-              contentContainerStyle={{ paddingHorizontal: 24 }}
+              contentContainerStyle={{ paddingHorizontal: 24, paddingVertical: 20 }}
             />
           ) : (
-            <View className="px-6">
-              <Text className="text-gray-500 text-center">No active listings</Text>
+            <View className="px-6 py-12">
+              <Text className="text-center text-lg text-gray-400">No active listings</Text>
             </View>
           )}
         </View>
 
         {/* Sold Listings */}
-        <View className="mb-6">
-          <View className="flex-row justify-between items-center px-6 mb-4">
-            <Text className="text-lg font-bold text-gray-900">Sold Listings</Text>
-            <Text className="text-gray-500">{soldListings.length} items</Text>
+        <View className="mx-4 mt-6 overflow-hidden rounded-3xl bg-white shadow-sm">
+          <View className="flex-row items-center justify-between border-b border-gray-100 px-6 py-5">
+            <Text className="text-2xl font-bold text-gray-900">Sold Listings</Text>
+            <View className="rounded-full bg-green-500 px-3 py-1">
+              <Text className="text-sm font-semibold text-white">{soldListings.length}</Text>
+            </View>
           </View>
 
           {soldListings.length > 0 ? (
             <FlatList
               data={soldListings}
               renderItem={renderListingItem}
-              keyExtractor={item => item.id}
+              keyExtractor={(item) => item.id}
               horizontal
               showsHorizontalScrollIndicator={false}
-              contentContainerStyle={{ paddingHorizontal: 24 }}
+              contentContainerStyle={{ paddingHorizontal: 24, paddingVertical: 20 }}
             />
           ) : (
-            <View className="px-6">
-              <Text className="text-gray-500 text-center">No sold listings</Text>
+            <View className="px-6 py-12">
+              <Text className="text-center text-lg text-gray-400">No sold listings</Text>
             </View>
           )}
         </View>
 
         {/* Reviews */}
-        <View className="mb-6">
-          <View className="flex-row justify-between items-center px-6 mb-4">
-            <Text className="text-lg font-bold text-gray-900">Reviews</Text>
-            <Text className="text-gray-500">{ratings.length} reviews</Text>
+        <View className="mx-4 mb-6 mt-6 overflow-hidden rounded-3xl bg-white shadow-sm">
+          <View className="flex-row items-center justify-between border-b border-gray-100 px-6 py-5">
+            <Text className="text-2xl font-bold text-gray-900">Reviews</Text>
+            <View className="rounded-full bg-yellow-500 px-3 py-1">
+              <Text className="text-sm font-semibold text-white">{ratings.length}</Text>
+            </View>
           </View>
 
           <View className="px-6">
@@ -433,25 +459,19 @@ export default function UserProfileScreen() {
               <FlatList
                 data={ratings}
                 renderItem={renderRatingItem}
-                keyExtractor={item => item.id}
+                keyExtractor={(item) => item.id}
                 scrollEnabled={false}
                 showsVerticalScrollIndicator={false}
+                contentContainerStyle={{ paddingVertical: 20 }}
               />
             ) : (
-              <Text className="text-gray-500 text-center">No reviews yet</Text>
+              <View className="py-12">
+                <Text className="text-center text-lg text-gray-400">No reviews yet</Text>
+              </View>
             )}
           </View>
         </View>
       </ScrollView>
-
-      {/* Rating Modal */}
-      <RatingSubmissionModal
-        visible={showRatingModal}
-        onClose={() => setShowRatingModal(false)}
-        ratedUserId={profile?.email || ''}
-        ratedUserName={profile?.display_name || profile?.email || ''}
-        onRatingSubmitted={handleRatingSubmitted}
-      />
     </SafeAreaView>
   );
 }

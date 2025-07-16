@@ -47,12 +47,15 @@ const UserRatingDisplay: React.FC<UserRatingDisplayProps> = ({
         <Text className="text-gray-400">Loading...</Text>
       ) : displayRating !== null && displayRating > 0 ? (
         <View className="flex-row items-center gap-1">
-          <Star 
-            size={14} 
-            color="#FFB800" 
-            fill="#FFB800" 
-          />
-          <Text className="text-xs font-semibold text-yellow-600">
+          {[1, 2, 3, 4, 5].map((star) => (
+            <Star
+              key={star}
+              size={14}
+              color={star <= displayRating ? '#FFB800' : '#e5e7eb'}
+              fill={star <= displayRating ? '#FFB800' : '#e5e7eb'}
+            />
+          ))}
+          <Text className="text-xs font-semibold text-yellow-600 ml-1">
             {displayRating.toFixed(1)}
           </Text>
         </View>

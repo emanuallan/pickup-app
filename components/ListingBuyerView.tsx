@@ -544,10 +544,12 @@ export const ListingBuyerView: React.FC<ListingBuyerViewProps> = ({
             </View>
           </View>
         </View>
+
+        
       </ScrollView>
 
-       {/* Fixed Bottom Button */}
-       <View className="p-4 border-t border-gray-200 bg-white">
+      {/* Fixed Bottom Button */}
+      <View className="p-4 border-t border-gray-200 bg-white" style={{ flex: 0, marginBottom: 20 }}>
         <View className="flex-row gap-3 justify-center">
           {!listing.is_sold && (
             <AnimatedButton
@@ -563,6 +565,7 @@ export const ListingBuyerView: React.FC<ListingBuyerViewProps> = ({
                 paddingHorizontal: 12,
                 borderRadius: 16,
                 flex: 2,
+                minHeight: 56,
                 shadowColor: '#000',
                 shadowOffset: { width: 0, height: 2 },
                 shadowOpacity: 0.1,
@@ -571,12 +574,7 @@ export const ListingBuyerView: React.FC<ListingBuyerViewProps> = ({
               }}
             >
               <MessageCircle size={22} color="white" />
-              <Text style={{ 
-                color: 'white', 
-                fontWeight: 'bold', 
-                fontSize: 16,
-                marginLeft: 8 
-              }}>Message</Text>
+              <Text className="text-white font-bold text-base ml-2">Message</Text>
             </AnimatedButton>
           )}
           
@@ -590,24 +588,29 @@ export const ListingBuyerView: React.FC<ListingBuyerViewProps> = ({
               flexDirection: 'row',
               alignItems: 'center',
               justifyContent: 'center',
-              paddingVertical: 18,
+              paddingVertical: 10,
+              paddingHorizontal: 12,
               borderRadius: 16,
               backgroundColor: 'white',
               flex: listing.is_sold ? 2 : 1,
+              minHeight: 56,
             }}
           >
             <MoreHorizontal size={22} color={COLORS.utOrange} />
-            <Text style={{ 
-              color: COLORS.utOrange, 
-              fontWeight: 'bold', 
-              fontSize: 16,
-              marginLeft: 8 
-            }}>
+            <Text 
+              className="font-bold text-base ml-2" 
+              style={{ 
+                color: COLORS.utOrange,
+                minHeight: 20,
+                lineHeight: 20
+              }}
+            >
               {listing.is_sold ? 'Actions & Tips' : 'More'}
             </Text>
           </AnimatedButton>
         </View>
       </View>
+
 
       {/* Actions Modal */}
       <ListingBuyerActionsModal

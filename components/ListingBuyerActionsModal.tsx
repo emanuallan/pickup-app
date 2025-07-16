@@ -80,12 +80,12 @@ export const ListingBuyerActionsModal: React.FC<ListingBuyerActionsModalProps> =
 
           {/* Listing Context */}
           <View className="px-6 py-3 bg-gray-50">
-            <Text className="text-sm text-gray-600">Item:</Text>
+            <Text className="text-sm text-gray-600 font-medium">Item:</Text>
             <Text className="text-base font-semibold text-gray-900" numberOfLines={2}>
               {listing.title}
             </Text>
             <Text className="text-sm text-gray-600 mt-1">
-              Sold by: <Text className="font-medium">{listing.user_name}</Text>
+              Sold by: <Text className="font-medium text-gray-900">{listing.user_name}</Text>
             </Text>
           </View>
 
@@ -141,7 +141,10 @@ export const ListingBuyerActionsModal: React.FC<ListingBuyerActionsModalProps> =
                     }}
                   >
                     <Heart size={20} color={isSaved ? '#ef4444' : COLORS.utOrange} fill={isSaved ? '#ef4444' : 'transparent'} />
-                    <Text className="font-semibold text-base ml-2 flex-1" style={{ color: isSaved ? '#ef4444' : COLORS.utOrange }}>
+                    <Text 
+                      className="font-semibold text-base ml-2 flex-1" 
+                      style={{ color: isSaved ? '#ef4444' : COLORS.utOrange }}
+                    >
                       {isSaved ? 'Favorited' : 'Favorite'}
                     </Text>
                   </AnimatedButton>
@@ -167,7 +170,10 @@ export const ListingBuyerActionsModal: React.FC<ListingBuyerActionsModalProps> =
                       }}
                     >
                       <Eye size={20} color={isWatchlisted ? '#3b82f6' : '#6b7280'} fill={isWatchlisted ? '#3b82f6' : 'transparent'} />
-                      <Text className="font-semibold text-base ml-2 flex-1" style={{ color: isWatchlisted ? '#3b82f6' : '#6b7280' }}>
+                      <Text 
+                        className="font-semibold text-base ml-2 flex-1" 
+                        style={{ color: isWatchlisted ? '#3b82f6' : '#6b7280' }}
+                      >
                         {isWatchlisted ? 'Watching' : 'Watch'}
                       </Text>
                     </AnimatedButton>
@@ -193,7 +199,12 @@ export const ListingBuyerActionsModal: React.FC<ListingBuyerActionsModalProps> =
                   }}
                 >
                   <Share2 size={20} color="#6b7280" />
-                  <Text className="font-semibold text-base ml-2 flex-1" style={{ color: '#6b7280' }}>Share</Text>
+                  <Text 
+                    className="font-semibold text-base ml-2 flex-1" 
+                    style={{ color: '#6b7280' }}
+                  >
+                    Share
+                  </Text>
                 </AnimatedButton>
               </View>
             </View>
@@ -202,25 +213,50 @@ export const ListingBuyerActionsModal: React.FC<ListingBuyerActionsModalProps> =
             <View className="bg-blue-50 rounded-xl p-4 mb-4">
               <View className="flex-row items-center mb-3">
                 <Shield size={20} color="#1e40af" />
-                <Text className="font-bold text-lg ml-2" style={{ color: '#1e3a8a' }}>Safety Tips</Text>
+                <Text 
+                  className="font-bold text-lg ml-2" 
+                  style={{ color: '#1e3a8a' }}
+                >
+                  Safety Tips
+                </Text>
               </View>
               
               <View className="gap-3">
                 <View className="flex-row items-start">
                   <View className="w-2 h-2 rounded-full bg-blue-600 mt-2 mr-3" />
-                  <Text className="flex-1" style={{ color: '#1e40af' }}>Meet in public places on campus</Text>
+                  <Text 
+                    className="flex-1 text-base" 
+                    style={{ color: '#1e40af' }}
+                  >
+                    Meet in public places on campus
+                  </Text>
                 </View>
                 <View className="flex-row items-start">
                   <View className="w-2 h-2 rounded-full bg-blue-600 mt-2 mr-3" />
-                  <Text className="flex-1" style={{ color: '#1e40af' }}>Verify the item&apos;s condition before paying</Text>
+                  <Text 
+                    className="flex-1 text-base" 
+                    style={{ color: '#1e40af' }}
+                  >
+                    Verify the item&apos;s condition before paying
+                  </Text>
                 </View>
                 <View className="flex-row items-start">
                   <View className="w-2 h-2 rounded-full bg-blue-600 mt-2 mr-3" />
-                  <Text className="flex-1" style={{ color: '#1e40af' }}>Trust your instincts - if something feels off, walk away</Text>
+                  <Text 
+                    className="flex-1 text-base" 
+                    style={{ color: '#1e40af' }}
+                  >
+                    Trust your instincts - if something feels off, walk away
+                  </Text>
                 </View>
                 <View className="flex-row items-start">
                   <View className="w-2 h-2 rounded-full bg-blue-600 mt-2 mr-3" />
-                  <Text className="flex-1" style={{ color: '#1e40af' }}>Use cash or secure payment methods</Text>
+                  <Text 
+                    className="flex-1 text-base" 
+                    style={{ color: '#1e40af' }}
+                  >
+                    Use cash or secure payment methods
+                  </Text>
                 </View>
               </View>
             </View>
@@ -230,9 +266,17 @@ export const ListingBuyerActionsModal: React.FC<ListingBuyerActionsModalProps> =
               <View className="bg-red-50 rounded-xl p-4 mb-4">
                 <View className="flex-row items-center">
                   <AlertTriangle size={20} color="#dc2626" />
-                  <Text className="font-bold text-base ml-2" style={{ color: '#dc2626' }}>Item Sold</Text>
+                  <Text 
+                    className="font-bold text-base ml-2" 
+                    style={{ color: '#dc2626' }}
+                  >
+                    Item Sold
+                  </Text>
                 </View>
-                <Text className="mt-2" style={{ color: '#dc2626' }}>
+                <Text 
+                  className="mt-2 text-base" 
+                  style={{ color: '#dc2626' }}
+                >
                   This item has been marked as sold by the seller. You can still message them to check if it&apos;s still available.
                 </Text>
               </View>
@@ -240,7 +284,7 @@ export const ListingBuyerActionsModal: React.FC<ListingBuyerActionsModalProps> =
 
             {/* Report Section */}
             <View className="border-t border-gray-200 pt-4">
-              <Text className="text-gray-500 text-sm mb-3">Need help?</Text>
+              <Text className="text-gray-600 text-sm mb-3 font-medium">Need help?</Text>
               <AnimatedButton
                 onPress={() => {
                   onReport();

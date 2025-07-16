@@ -1,5 +1,5 @@
 import { View, Text, ActivityIndicator, TouchableOpacity, Alert, ScrollView, Dimensions } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter, useNavigation } from 'expo-router';
 import { useEffect, useState, useRef } from 'react';
 import { supabase } from '~/lib/supabase';
 import { useAuth } from '~/contexts/AuthContext';
@@ -39,6 +39,7 @@ interface UserSettings {
 export default function ListingScreen() {
   const { id } = useLocalSearchParams();
   const router = useRouter();
+  const navigation = useNavigation();
   const { user } = useAuth();
   const [listing, setListing] = useState<Listing | null>(null);
   const [loading, setLoading] = useState(true);
@@ -69,6 +70,11 @@ export default function ListingScreen() {
       if (!listingData) throw new Error('Listing not found');
 
       setListing(listingData);
+
+      // Set navigation title to listing title
+      navigation.setOptions({
+        title: listingData.title
+      });
 
       // Fetch user settings for the listing owner
       const { data: userData } = await supabase

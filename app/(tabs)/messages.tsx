@@ -199,7 +199,7 @@ export default function MessagesScreen() {
   }
 
   if (conversations.length === 0) {
-    return (
+  return (
       <View className="flex-1 bg-white px-4 py-8">
         <View className="items-center">
           <View className="w-16 h-16 bg-orange-100 rounded-full items-center justify-center mb-4">
@@ -255,8 +255,8 @@ export default function MessagesScreen() {
                     {formatTimestamp(item.last_message_time)}
                   </Text>
                 )}
-              </View>
-              
+      </View>
+
               <View className="flex-row justify-between items-center">
                 <Text className="text-sm text-gray-600" numberOfLines={1}>
                   {item.listing_title || "General Chat"}
