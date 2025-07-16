@@ -76,7 +76,7 @@ export const ListingActionsModal: React.FC<ListingActionsModalProps> = ({
 
           {/* Listing Title */}
           <View className="px-6 py-3 bg-gray-50">
-            <Text className="text-sm text-gray-600">Current Listing:</Text>
+            <Text className="text-sm text-gray-600 font-medium">Current Listing:</Text>
             <Text className="text-base font-semibold text-gray-900" numberOfLines={2}>
               {listing.title}
             </Text>
@@ -160,7 +160,10 @@ export const ListingActionsModal: React.FC<ListingActionsModalProps> = ({
               }}
             >
               <Eye size={22} color={COLORS.utOrange} />
-              <Text className="font-bold text-lg ml-3 flex-1" style={{ color: COLORS.utOrange }}>
+              <Text 
+                className="font-bold text-lg ml-3 flex-1" 
+                style={{ color: COLORS.utOrange }}
+              >
                 View as Buyer
               </Text>
             </AnimatedButton>

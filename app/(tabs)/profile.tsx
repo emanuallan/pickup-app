@@ -7,6 +7,7 @@ import { useRouter } from 'expo-router';
 import { Star, CheckCircle2, Settings2, User, Calendar, MapPin, Plus, Edit3, Eye, BarChart3, MessageCircle, Heart, FileText } from 'lucide-react-native';
 import { getTimeAgo } from '../../utils/timeago';
 import { AnimatedButton } from '~/components/AnimatedButton';
+import UserRatingDisplay from '~/components/UserRatingDisplay';
 
 interface UserSettings {
   display_name: string | null;
@@ -108,15 +109,25 @@ export default function ProfileScreen() {
 
   if (!user) {
     return (
-      <View className="flex-1 bg-white px-4 justify-center">
-        <View className="space-y-4">
-          <Text className="text-2xl font-bold text-center">Welcome to UT Marketplace</Text>
-          <Text className="text-base text-gray-600 text-center">
-            Sign in to manage your profile and listings
-          </Text>
+      <View className="flex-1 bg-gray-50 px-4 justify-center">
+        <View className="bg-white rounded-3xl p-8 shadow-sm">
+          <View className="items-center mb-8">
+            <View className="w-24 h-24 rounded-full items-center justify-center mb-4" style={{ backgroundColor: COLORS.utOrange }}>
+              <User size={48} color="white" />
+            </View>
+            <Text className="text-3xl font-bold text-gray-900 text-center mb-2">
+              Welcome to UT Marketplace
+            </Text>
+            <Text className="text-lg text-gray-600 text-center leading-relaxed">
+              Sign in to manage your profile and listings
+            </Text>
+          </View>
+          
           <TouchableOpacity
             onPress={() => router.push('/login')}
-            className="bg-[#C1501F] rounded-lg py-3 mt-4"
+            className="rounded-2xl py-4 px-6 shadow-sm"
+            style={{ backgroundColor: COLORS.utOrange }}
+            activeOpacity={0.8}
           >
             <Text className="text-white text-center font-semibold text-lg">
               Sign In
@@ -129,9 +140,9 @@ export default function ProfileScreen() {
 
   if (loading) {
     return (
-      <View className="flex-1 bg-white justify-center items-center">
+      <View className="flex-1 bg-gray-50 justify-center items-center">
         <ActivityIndicator size="large" color={COLORS.utOrange} />
-        <Text className="text-gray-500 mt-4">Loading profile...</Text>
+        <Text className="text-gray-500 mt-4 text-lg">Loading profile...</Text>
       </View>
     );
   }
@@ -177,223 +188,199 @@ export default function ProfileScreen() {
   );
 
   const renderRatingItem = ({ item }: { item: Rating }) => (
-    <View className="bg-gray-50 rounded-xl p-4 mb-3">
-      <View className="flex-row items-center justify-between mb-2">
-        <View className="flex-row items-center">
-          <View className="w-8 h-8 bg-gray-300 rounded-full items-center justify-center">
-            <User size={16} color="#6b7280" />
+    <View className="bg-gray-50 rounded-2xl p-5 mb-4">
+      <View className="flex-row items-center justify-between mb-3">
+        <TouchableOpacity 
+          className="flex-row items-center"
+          onPress={() => router.push({
+            pathname: '/profile/[userId]',
+            params: { userId: item.rater_id }
+          })}
+          activeOpacity={0.8}
+        >
+          <View className="w-12 h-12 rounded-full items-center justify-center mr-3" style={{ backgroundColor: COLORS.utOrange }}>
+            <Text className="text-white font-bold text-lg">
+              {item.rater_name.charAt(0).toUpperCase()}
+            </Text>
           </View>
-          <Text className="font-medium text-gray-900 ml-2">{item.rater_name}</Text>
-        </View>
-        <View className="flex-row items-center">
-          <Star size={16} color="#FFB800" fill="#FFB800" />
-          <Text className="font-bold text-gray-900 ml-1">{item.rating}</Text>
+          <View>
+            <Text className="font-semibold text-gray-900 text-lg">{item.rater_name}</Text>
+            <View className="flex-row items-center mt-1">
+              <Calendar size={12} color="#6b7280" />
+              <Text className="text-gray-500 text-xs ml-1">{getTimeAgo(item.created_at)}</Text>
+            </View>
+          </View>
+        </TouchableOpacity>
+        <View className="bg-white rounded-full px-3 py-1 border border-gray-200">
+          <UserRatingDisplay 
+            userId={item.rater_id} 
+            rating={item.rating} 
+          />
         </View>
       </View>
       {item.comment && (
-        <Text className="text-gray-700 mb-2">{item.comment}</Text>
+        <Text className="text-gray-700 text-base leading-relaxed">{item.comment}</Text>
       )}
-      <View className="flex-row items-center">
-        <Calendar size={12} color="#6b7280" />
-        <Text className="text-gray-500 text-xs ml-1">{getTimeAgo(item.created_at)}</Text>
-      </View>
     </View>
   );
 
   return (
     <ScrollView 
-      className="flex-1 bg-white"
+      className="flex-1 bg-gray-50"
       refreshControl={
         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
       }
       showsVerticalScrollIndicator={false}
     >
       {/* Profile Header */}
-      <View className="p-6">
-        <View className="flex-row items-center justify-between mb-4">
-          <View className="flex-row items-center flex-1">
-            <View className="mr-4">
+      <View className="bg-white mx-4 mt-4 rounded-3xl p-8 shadow-sm">
+        <View className="flex-row items-center justify-between mb-6">
+          <View className="items-center flex-1">
+            <View className="mb-4">
               {profile?.profile_image_url ? (
                 <Image
                   source={{ uri: profile.profile_image_url }}
-                  className="w-24 h-24 rounded-full bg-gray-100"
+                  className="w-32 h-32 rounded-full bg-gray-100"
                 />
               ) : (
-                <View className="w-24 h-24 rounded-full bg-gray-100 items-center justify-center">
-                  <Text className="text-3xl text-gray-400">
+                <View className="w-32 h-32 rounded-full items-center justify-center shadow-lg" style={{ backgroundColor: COLORS.utOrange }}>
+                  <Text className="text-4xl font-bold text-white">
                     {(profile?.display_name || user.email)?.charAt(0).toUpperCase()}
                   </Text>
                 </View>
               )}
             </View>
-            <View className="flex-1">
-              <Text className="text-2xl font-bold">{profile?.display_name || user.email}</Text>
-              {profile?.bio && (
-                <Text className="text-gray-600 mt-1">{profile.bio}</Text>
-              )}
-            </View>
+            
+            <Text className="text-3xl font-bold text-gray-900 mb-2">
+              {profile?.display_name || user.email}
+            </Text>
+            
+            {profile?.bio && (
+              <Text className="text-gray-600 text-center text-lg leading-relaxed max-w-sm">
+                {profile.bio}
+              </Text>
+            )}
           </View>
+          
           <TouchableOpacity
             onPress={() => router.push('/(modals)/settings')}
-            className="p-2 rounded-full bg-gray-100"
+            className="absolute top-0 right-0 p-3 rounded-full bg-gray-100"
           >
             <Settings2 size={24} color="#6b7280" />
           </TouchableOpacity>
         </View>
 
+        {/* Rating Display */}
+        <View className="items-center mb-4">
+          <UserRatingDisplay userId={user.email} rating={avgRating !== 'N/A' ? parseFloat(avgRating) : null} />
+        </View>
+
         {/* Stats Row */}
-        <View className="flex-row justify-around py-4 bg-gray-50 rounded-xl mb-4">
+        <View className="flex-row justify-around py-6 bg-gray-50 rounded-2xl mb-6">
           <View className="items-center">
-            <Text className="font-bold text-lg">{activeListings.length}</Text>
-            <Text className="text-gray-600">Active</Text>
-          </View>
-          <View className="items-center">
-            <Text className="font-bold text-lg">{soldListings.length}</Text>
-            <Text className="text-gray-600">Sold</Text>
-          </View>
-          <View className="items-center">
-            <View className="flex-row items-center">
-              <Star size={16} color="#FFB800" fill="#FFB800" />
-              <Text className="font-bold text-lg ml-1">{avgRating}</Text>
+            <Text className="font-bold text-2xl text-gray-900">{activeListings.length}</Text>
+            <View className="flex-row items-center mt-1">
+              <FileText size={12} color="#6b7280" />
+              <Text className="text-gray-500 text-sm font-medium ml-1">Active</Text>
             </View>
-            <Text className="text-gray-600">Rating</Text>
           </View>
           <View className="items-center">
-            <Text className="font-bold text-lg">{ratings.length}</Text>
-            <Text className="text-gray-600">Reviews</Text>
+            <Text className="font-bold text-2xl text-gray-900">{soldListings.length}</Text>
+            <View className="flex-row items-center mt-1">
+              <CheckCircle2 size={12} color="#6b7280" />
+              <Text className="text-gray-500 text-sm font-medium ml-1">Sold</Text>
+            </View>
+          </View>
+          <View className="items-center">
+            <Text className="font-bold text-2xl text-gray-900">{ratings.length}</Text>
+            <View className="flex-row items-center mt-1">
+              <MessageCircle size={12} color="#6b7280" />
+              <Text className="text-gray-500 text-sm font-medium ml-1">Reviews</Text>
+            </View>
           </View>
         </View>
 
         {/* Quick Actions */}
-        <View className="flex-row gap-3 mb-6">
-          <AnimatedButton
+        <View className="flex-row gap-4 mb-6">
+          <TouchableOpacity
             onPress={() => router.push('/create')}
-            hapticType="light"
-            scaleValue={0.97}
-            style={{
-              backgroundColor: COLORS.utOrange,
-              flexDirection: 'row',
-              alignItems: 'center',
-              justifyContent: 'center',
-              paddingVertical: 12,
-              paddingHorizontal: 16,
-              borderRadius: 12,
-              flex: 1,
-            }}
+            className="flex-1 rounded-2xl py-4 px-6 flex-row items-center justify-center shadow-sm"
+            style={{ backgroundColor: COLORS.utOrange }}
+            activeOpacity={0.8}
           >
-            <Plus size={18} color="white" />
-            <Text className="text-white font-semibold ml-2">Create Listing</Text>
-          </AnimatedButton>
+            <Plus size={20} color="white" />
+            <Text className="text-white font-semibold text-lg ml-2">Create </Text>
+          </TouchableOpacity>
           
-          <AnimatedButton
+          <TouchableOpacity
+            onPress={() => router.push('/(modals)/settings')}
+            className="flex-1 bg-white rounded-2xl py-4 px-6 flex-row items-center justify-center"
+            style={{ borderWidth: 2, borderColor: COLORS.utOrange }}
+            activeOpacity={0.8}
+          >
+            <Edit3 size={20} color={COLORS.utOrange} />
+            <Text className="font-semibold text-lg ml-2" style={{ color: COLORS.utOrange }}>Edit Profile</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      {/* Quick Access Grid */}
+      <View className="bg-white mx-4 mt-6 rounded-3xl p-6 shadow-sm">
+        <Text className="text-2xl font-bold text-gray-900 mb-6">Quick Access</Text>
+        <View className="flex-row flex-wrap gap-4">
+          <TouchableOpacity 
             onPress={() => router.push('/(tabs)/my-listings')}
-            hapticType="light"
-            scaleValue={0.97}
-            style={{
-              borderColor: COLORS.utOrange,
-              borderWidth: 2,
-              flexDirection: 'row',
-              alignItems: 'center',
-              justifyContent: 'center',
-              paddingVertical: 12,
-              paddingHorizontal: 16,
-              borderRadius: 12,
-              backgroundColor: 'white',
-              flex: 1,
-            }}
+            className="bg-gray-50 rounded-2xl p-4 flex-1 min-w-[45%] items-center"
+            activeOpacity={0.8}
           >
-            <FileText size={18} color={COLORS.utOrange} />
-            <Text className="font-semibold ml-2" style={{ color: COLORS.utOrange }}>My Listings</Text>
-          </AnimatedButton>
-        </View>
-
-        {/* Favorites & Watchlist */}
-        <View className="flex-row gap-3 mb-6">
-          <AnimatedButton
-            onPress={() => router.push('/favorites/favorite')}
-            hapticType="light"
-            scaleValue={0.97}
-            style={{
-              borderColor: '#ef4444',
-              borderWidth: 2,
-              flexDirection: 'row',
-              alignItems: 'center',
-              justifyContent: 'center',
-              paddingVertical: 12,
-              paddingHorizontal: 16,
-              borderRadius: 12,
-              backgroundColor: 'white',
-              flex: 1,
-            }}
-          >
-            <Heart size={18} color="#ef4444" />
-            <Text className="font-semibold ml-2" style={{ color: '#ef4444' }}>Favorites</Text>
-          </AnimatedButton>
+            <View className="w-12 h-12 rounded-full items-center justify-center mb-3" style={{ backgroundColor: COLORS.utOrange }}>
+              <FileText size={24} color="white" />
+            </View>
+            <Text className="text-gray-900 font-semibold text-center">My Listings</Text>
+          </TouchableOpacity>
           
-          <AnimatedButton
-            onPress={() => router.push('/favorites/watchlist')}
-            hapticType="light"
-            scaleValue={0.97}
-            style={{
-              borderColor: '#3b82f6',
-              borderWidth: 2,
-              flexDirection: 'row',
-              alignItems: 'center',
-              justifyContent: 'center',
-              paddingVertical: 12,
-              paddingHorizontal: 16,
-              borderRadius: 12,
-              backgroundColor: 'white',
-              flex: 1,
-            }}
+          <TouchableOpacity 
+            onPress={() => router.push('/favorites/favorite')}
+            className="bg-gray-50 rounded-2xl p-4 flex-1 min-w-[45%] items-center"
+            activeOpacity={0.8}
           >
-            <Eye size={18} color="#3b82f6" />
-            <Text className="font-semibold ml-2" style={{ color: '#3b82f6' }}>Watchlist</Text>
-          </AnimatedButton>
-        </View>
-
-        {/* Management Tools */}
-        <View className="bg-gray-50 rounded-xl p-4 mb-6">
-          <Text className="text-lg font-semibold text-gray-800 mb-3">Account Tools</Text>
-          <View className="flex-row justify-between">
-            <TouchableOpacity 
-              onPress={() => router.push('/(modals)/settings')}
-              className="items-center flex-1"
-            >
-              <View className="bg-white rounded-full p-3 mb-2">
-                <Edit3 size={20} color={COLORS.utOrange} />
-              </View>
-              <Text className="text-sm text-gray-600">Edit Profile</Text>
-            </TouchableOpacity>
-            
-            <TouchableOpacity 
-              onPress={() => router.push('/(tabs)/my-listings')}
-              className="items-center flex-1"
-            >
-              <View className="bg-white rounded-full p-3 mb-2">
-                <BarChart3 size={20} color={COLORS.utOrange} />
-              </View>
-              <Text className="text-sm text-gray-600">Analytics</Text>
-            </TouchableOpacity>
-            
-            <TouchableOpacity 
-              onPress={() => router.push('/(tabs)/messages')}
-              className="items-center flex-1"
-            >
-              <View className="bg-white rounded-full p-3 mb-2">
-                <MessageCircle size={20} color={COLORS.utOrange} />
-              </View>
-              <Text className="text-sm text-gray-600">Messages</Text>
-            </TouchableOpacity>
-          </View>
+            <View className="w-12 h-12 bg-red-500 rounded-full items-center justify-center mb-3">
+              <Heart size={24} color="white" />
+            </View>
+            <Text className="text-gray-900 font-semibold text-center">Favorites</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity 
+            onPress={() => router.push('/favorites/watchlist')}
+            className="bg-gray-50 rounded-2xl p-4 flex-1 min-w-[45%] items-center"
+            activeOpacity={0.8}
+          >
+            <View className="w-12 h-12 bg-blue-500 rounded-full items-center justify-center mb-3">
+              <Eye size={24} color="white" />
+            </View>
+            <Text className="text-gray-900 font-semibold text-center">Watchlist</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity 
+            onPress={() => router.push('/(tabs)/messages')}
+            className="bg-gray-50 rounded-2xl p-4 flex-1 min-w-[45%] items-center"
+            activeOpacity={0.8}
+          >
+            <View className="w-12 h-12 bg-green-500 rounded-full items-center justify-center mb-3">
+              <MessageCircle size={24} color="white" />
+            </View>
+            <Text className="text-gray-900 font-semibold text-center">Messages</Text>
+          </TouchableOpacity>
         </View>
       </View>
 
       {/* Active Listings */}
-      <View className="mb-6">
-        <View className="flex-row justify-between items-center px-6 mb-4">
-          <Text className="text-lg font-bold text-gray-900">Active Listings</Text>
-          <Text className="text-gray-500">{activeListings.length} items</Text>
+      <View className="bg-white mx-4 mt-6 rounded-3xl shadow-sm overflow-hidden">
+        <View className="flex-row justify-between items-center px-6 py-5 border-b border-gray-100">
+          <Text className="text-2xl font-bold text-gray-900">Active Listings</Text>
+          <View className="rounded-full px-3 py-1" style={{ backgroundColor: COLORS.utOrange }}>
+            <Text className="text-white font-semibold text-sm">{activeListings.length}</Text>
+          </View>
         </View>
 
         {activeListings.length > 0 ? (
@@ -403,26 +390,28 @@ export default function ProfileScreen() {
             keyExtractor={item => item.id}
             horizontal
             showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ paddingHorizontal: 24 }}
+            contentContainerStyle={{ paddingHorizontal: 24, paddingVertical: 20 }}
           />
         ) : (
-          <View className="px-6">
-            <Text className="text-gray-500 text-center">No active listings</Text>
+          <View className="px-6 py-12">
+            <Text className="text-gray-400 text-center text-lg mb-2">No active listings</Text>
             <TouchableOpacity 
               onPress={() => router.push('/create')}
               className="mt-2"
             >
-              <Text style={{ color: COLORS.utOrange }} className="text-center">Create your first listing →</Text>
+              <Text style={{ color: COLORS.utOrange }} className="text-center font-semibold">Create your first listing →</Text>
             </TouchableOpacity>
           </View>
         )}
       </View>
 
       {/* Sold Listings */}
-      <View className="mb-6">
-        <View className="flex-row justify-between items-center px-6 mb-4">
-          <Text className="text-lg font-bold text-gray-900">Sold Listings</Text>
-          <Text className="text-gray-500">{soldListings.length} items</Text>
+      <View className="bg-white mx-4 mt-6 rounded-3xl shadow-sm overflow-hidden">
+        <View className="flex-row justify-between items-center px-6 py-5 border-b border-gray-100">
+          <Text className="text-2xl font-bold text-gray-900">Sold Listings</Text>
+          <View className="bg-green-500 rounded-full px-3 py-1">
+            <Text className="text-white font-semibold text-sm">{soldListings.length}</Text>
+          </View>
         </View>
 
         {soldListings.length > 0 ? (
@@ -432,20 +421,22 @@ export default function ProfileScreen() {
             keyExtractor={item => item.id}
             horizontal
             showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ paddingHorizontal: 24 }}
+            contentContainerStyle={{ paddingHorizontal: 24, paddingVertical: 20 }}
           />
         ) : (
-          <View className="px-6">
-            <Text className="text-gray-500 text-center">No sold listings</Text>
+          <View className="px-6 py-12">
+            <Text className="text-gray-400 text-center text-lg">No sold listings</Text>
           </View>
         )}
       </View>
 
       {/* Reviews */}
-      <View className="mb-6">
-        <View className="flex-row justify-between items-center px-6 mb-4">
-          <Text className="text-lg font-bold text-gray-900">Reviews</Text>
-          <Text className="text-gray-500">{ratings.length} reviews</Text>
+      <View className="bg-white mx-4 mt-6 mb-6 rounded-3xl shadow-sm overflow-hidden">
+        <View className="flex-row justify-between items-center px-6 py-5 border-b border-gray-100">
+          <Text className="text-2xl font-bold text-gray-900">Reviews</Text>
+          <View className="bg-yellow-500 rounded-full px-3 py-1">
+            <Text className="text-white font-semibold text-sm">{ratings.length}</Text>
+          </View>
         </View>
 
         <View className="px-6 pb-20">
@@ -456,9 +447,12 @@ export default function ProfileScreen() {
               keyExtractor={item => item.id}
               scrollEnabled={false}
               showsVerticalScrollIndicator={false}
+              contentContainerStyle={{ paddingVertical: 20 }}
             />
           ) : (
-            <Text className="text-gray-500 text-center">No reviews yet</Text>
+            <View className="py-12">
+              <Text className="text-gray-400 text-center text-lg">No reviews yet</Text>
+            </View>
           )}
         </View>
       </View>
