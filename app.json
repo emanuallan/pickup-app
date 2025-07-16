@@ -7,7 +7,7 @@
     "web": {
       "bundler": "metro",
       "output": "static",
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/icons/ios-light.png"
     },
     "plugins": [
       "expo-router",
@@ -24,10 +24,10 @@
       "tsconfigPaths": true
     },
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/icons/ios-light.png",
     "userInterfaceStyle": "automatic",
     "splash": {
-      "image": "./assets/splash.png",
+      "image": "./assets/icons/ios-light.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
@@ -40,7 +40,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
+        "foregroundImage": "./assets/icons/ios-light.png",
         "backgroundColor": "#ffffff"
       },
       "package": "com.austin616.utmarketplaceapp"
@@ -48,7 +48,7 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "605280f5-93e7-4ae8-835b-f51154cf9578"
+        "projectId": "b88c6cfb-b498-4c87-94da-1be910d7b883"
       }
     }
   }

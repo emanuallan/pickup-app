@@ -9,6 +9,8 @@ import { Star, CheckCircle2, MessageCircle, Calendar, MapPin, User } from 'lucid
 import { getTimeAgo } from '../../utils/timeago';
 import { AnimatedButton } from '~/components/AnimatedButton';
 import ModalHeader from '~/components/ModalHeader';
+import { RatingSubmissionModal } from '~/components/RatingSubmissionModal';
+import UserRatingDisplay from '~/components/UserRatingDisplay';
 
 interface UserSettings {
   email: string;
@@ -47,6 +49,7 @@ export default function UserProfileScreen() {
   const [ratings, setRatings] = useState<Rating[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [showRatingModal, setShowRatingModal] = useState(false);
 
   const fetchData = async () => {
     if (!userId) return;
@@ -130,8 +133,36 @@ export default function UserProfileScreen() {
       return;
     }
 
-    // Navigate to messages
-    router.push('/(tabs)/messages');
+    // Navigate to chat with this user
+    router.push({
+      pathname: '/chat/[id]',
+      params: { 
+        id: `${profile?.email}:general`,
+        otherUserName: profile?.display_name || profile?.email || 'User',
+        otherUserId: profile?.email || '',
+        listingId: 'general',
+        listingTitle: 'General Chat'
+      }
+    });
+  };
+
+  const handleRateUser = () => {
+    if (!user?.email) {
+      router.push('/(auth)/login');
+      return;
+    }
+    
+    if (user.email === profile?.email) {
+      Alert.alert('Cannot Rate', 'You cannot rate yourself.');
+      return;
+    }
+
+    setShowRatingModal(true);
+  };
+
+  const handleRatingSubmitted = () => {
+    // Refresh the ratings after submission
+    fetchData();
   };
 
   if (loading) {
@@ -212,8 +243,10 @@ export default function UserProfileScreen() {
           <Text className="font-medium text-gray-900 ml-2">{item.rater_name}</Text>
         </View>
         <View className="flex-row items-center">
-          <Star size={16} color="#FFB800" fill="#FFB800" />
-          <Text className="font-bold text-gray-900 ml-1">{item.rating}</Text>
+          <UserRatingDisplay 
+            userId={item.rater_id} 
+            rating={item.rating} 
+          />
         </View>
       </View>
       {item.comment && (
@@ -275,8 +308,10 @@ export default function UserProfileScreen() {
             </View>
             <View className="items-center">
               <View className="flex-row items-center">
-                <Star size={16} color="#FFB800" fill="#FFB800" />
-                <Text className="font-bold text-lg ml-1">{avgRating}</Text>
+                <UserRatingDisplay 
+                  userId={userId as string} 
+                  rating={ratings.length > 0 ? parseFloat(avgRating) : null} 
+                />
               </View>
               <Text className="text-gray-600">Rating</Text>
             </View>
@@ -286,30 +321,57 @@ export default function UserProfileScreen() {
             </View>
           </View>
 
-          {/* Message Button */}
+          {/* Action Buttons */}
           {user?.email !== profile.email && (
-            <AnimatedButton
-              onPress={handleMessageUser}
-              hapticType="medium"
-              scaleValue={0.97}
-              style={{
-                backgroundColor: COLORS.utOrange,
-                flexDirection: 'row',
-                alignItems: 'center',
-                justifyContent: 'center',
-                paddingVertical: 16,
-                borderRadius: 16,
-                marginBottom: 24,
-                shadowColor: '#000',
-                shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: 0.1,
-                shadowRadius: 4,
-                elevation: 3,
-              }}
-            >
-              <MessageCircle size={22} color="white" />
-              <Text className="text-white font-bold text-lg ml-2">Message Seller</Text>
-            </AnimatedButton>
+            <View className="flex-row gap-3 mb-6">
+              <AnimatedButton
+                onPress={handleMessageUser}
+                hapticType="medium"
+                scaleValue={0.97}
+                style={{
+                  backgroundColor: COLORS.utOrange,
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  paddingVertical: 16,
+                  borderRadius: 16,
+                  flex: 1,
+                  shadowColor: '#000',
+                  shadowOffset: { width: 0, height: 2 },
+                  shadowOpacity: 0.1,
+                  shadowRadius: 4,
+                  elevation: 3,
+                }}
+              >
+                <MessageCircle size={22} color="white" />
+                <Text className="text-white font-bold text-lg ml-2">Message</Text>
+              </AnimatedButton>
+              
+              <AnimatedButton
+                onPress={handleRateUser}
+                hapticType="medium"
+                scaleValue={0.97}
+                style={{
+                  borderColor: COLORS.utOrange,
+                  borderWidth: 2,
+                  backgroundColor: 'white',
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  paddingVertical: 16,
+                  borderRadius: 16,
+                  flex: 1,
+                  shadowColor: '#000',
+                  shadowOffset: { width: 0, height: 2 },
+                  shadowOpacity: 0.1,
+                  shadowRadius: 4,
+                  elevation: 3,
+                }}
+              >
+                <Star size={22} color={COLORS.utOrange} />
+                <Text className="font-bold text-lg ml-2" style={{ color: COLORS.utOrange }}>Rate</Text>
+              </AnimatedButton>
+            </View>
           )}
         </View>
 
@@ -381,6 +443,15 @@ export default function UserProfileScreen() {
           </View>
         </View>
       </ScrollView>
+
+      {/* Rating Modal */}
+      <RatingSubmissionModal
+        visible={showRatingModal}
+        onClose={() => setShowRatingModal(false)}
+        ratedUserId={profile?.email || ''}
+        ratedUserName={profile?.display_name || profile?.email || ''}
+        onRatingSubmitted={handleRatingSubmitted}
+      />
     </SafeAreaView>
   );
 }

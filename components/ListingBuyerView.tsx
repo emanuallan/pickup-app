@@ -5,6 +5,8 @@ import { COLORS } from '~/theme/colors';
 import { MapPin, Calendar, Tag, Star, MessageCircle, MoreHorizontal, Heart, Share2, Eye, ArrowLeft } from 'lucide-react-native';
 import { AnimatedButton } from './AnimatedButton';
 import { ListingBuyerActionsModal } from './ListingBuyerActionsModal';
+import { RatingSubmissionModal } from './RatingSubmissionModal';
+import UserRatingDisplay from './UserRatingDisplay';
 import { useAuth } from '~/contexts/AuthContext';
 import { supabase } from '~/lib/supabase';
 
@@ -62,6 +64,7 @@ export const ListingBuyerView: React.FC<ListingBuyerViewProps> = ({
   const [isSaved, setIsSaved] = useState(false);
   const [isWatchlisted, setIsWatchlisted] = useState(false);
   const [showActionsModal, setShowActionsModal] = useState(false);
+  const [showRatingModal, setShowRatingModal] = useState(false);
   const [sellerRating, setSellerRating] = useState<{ average: number; count: number } | null>(null);
   const [engagementStats, setEngagementStats] = useState({ favorites: 0, watchlist: 0 });
   
@@ -277,6 +280,25 @@ export const ListingBuyerView: React.FC<ListingBuyerViewProps> = ({
     Alert.alert('Report Submitted', 'Thank you for your report. We will review it shortly.');
   };
 
+  const handleRateSeller = () => {
+    if (!user?.email) {
+      Alert.alert('Sign In Required', 'Please sign in to rate sellers.');
+      return;
+    }
+    
+    if (user.email === listing.user_id) {
+      Alert.alert('Cannot Rate', 'You cannot rate yourself.');
+      return;
+    }
+
+    setShowRatingModal(true);
+  };
+
+  const handleRatingSubmitted = () => {
+    // Refresh seller rating after submission
+    fetchSellerRating();
+  };
+
   return (
     <>
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
@@ -444,7 +466,7 @@ export const ListingBuyerView: React.FC<ListingBuyerViewProps> = ({
           <View className="bg-gray-50 rounded-xl p-5 mb-6">
             <Text className="text-lg font-semibold text-gray-800 mb-4">Seller Information</Text>
             <TouchableOpacity onPress={handleViewSellerProfile}>
-              <View className="flex-row items-center">
+              <View className="flex-row items-center mb-4">
                 <View className="w-14 h-14 rounded-full bg-gray-300 items-center justify-center mr-4 shadow-sm">
                   {listing.user_image ? (
                     <Image 
@@ -462,11 +484,15 @@ export const ListingBuyerView: React.FC<ListingBuyerViewProps> = ({
                     {listing.user_name}
                   </Text>
                   <View className="flex-row items-center mt-1">
-                    <Star size={14} color="#fbbf24" fill="#fbbf24" />
-                    <Text className="text-gray-600 ml-1 text-sm">
+                    <UserRatingDisplay 
+                      userId={listing.user_id} 
+                      rating={sellerRating?.average} 
+                      className="mr-2" 
+                    />
+                    <Text className="text-gray-600 text-sm">
                       {sellerRating ? (
                         sellerRating.count > 0 ? (
-                          `${sellerRating.average} (${sellerRating.count} review${sellerRating.count !== 1 ? 's' : ''})`
+                          `(${sellerRating.count} review${sellerRating.count !== 1 ? 's' : ''})`
                         ) : (
                           'No reviews yet'
                         )
@@ -482,6 +508,19 @@ export const ListingBuyerView: React.FC<ListingBuyerViewProps> = ({
                 </View>
               </View>
             </TouchableOpacity>
+            
+            {/* Rate Seller Button */}
+            {user?.email && user.email !== listing.user_id && (
+              <TouchableOpacity
+                onPress={handleRateSeller}
+                className="flex-row items-center justify-center bg-white rounded-lg py-3 px-4 border border-gray-200"
+              >
+                <Star size={18} color={COLORS.utOrange} />
+                <Text className="font-semibold ml-2" style={{ color: COLORS.utOrange }}>
+                  Rate This Seller
+                </Text>
+              </TouchableOpacity>
+            )}
           </View>
 
           {/* Engagement Stats */}
@@ -582,6 +621,15 @@ export const ListingBuyerView: React.FC<ListingBuyerViewProps> = ({
         onWatchlist={handleWatchlistToggle}
         isSaved={isSaved}
         isWatchlisted={isWatchlisted}
+      />
+
+      {/* Rating Modal */}
+      <RatingSubmissionModal
+        visible={showRatingModal}
+        onClose={() => setShowRatingModal(false)}
+        ratedUserId={listing.user_id}
+        ratedUserName={listing.user_name}
+        onRatingSubmitted={handleRatingSubmitted}
       />
     </>
   );

@@ -2,7 +2,7 @@ import { memo, useState, useEffect } from 'react';
 import { View, Image, TouchableOpacity, Text } from 'react-native';
 import { MessageCircle, Search, Bell, Settings } from 'lucide-react-native';
 import { usePathname, useRouter } from 'expo-router';
-import Logo from '../assets/utmplogo.png';
+import Icon from '../assets/ios-light.png';
 import { supabase } from '~/lib/supabase';
 import { useAuth } from '~/contexts/AuthContext';
 
@@ -80,7 +80,7 @@ function Header() {
     return (
       <View className="flex-row items-center">
         <TouchableOpacity onPress={() => router.push('/')}>
-          <Image source={Logo} className="w-14 h-14" />
+          <Image source={Icon} className="w-10 h-10 rounded-xl" />
         </TouchableOpacity>
       </View>
     );
@@ -92,16 +92,16 @@ function Header() {
         return (
           <>
             <TouchableOpacity onPress={() => router.push('/browse')} className="p-1">
-              <Search size={24} color="black" strokeWidth={1.5} />
+              <Search size={24} color="black" />
             </TouchableOpacity>
             <TouchableOpacity onPress={() => router.push('/messages')} className="p-1 relative">
-              <MessageCircle size={24} color="black" strokeWidth={1.5} />
+              <MessageCircle size={24} color="black" />
               {unreadMessageCount > 0 && (
                 <View className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full" />
               )}
             </TouchableOpacity>
             <TouchableOpacity onPress={() => router.push('/notifications')} className="p-1 relative">
-              <Bell size={24} color="black" strokeWidth={1.5} />
+              <Bell size={24} color="black" />
               {unreadCount > 0 && (
                 <View className="absolute -top-1 -right-1 bg-red-500 rounded-full min-w-[18px] h-[18px] items-center justify-center">
                   <Text className="text-white text-xs font-bold">
@@ -117,10 +117,10 @@ function Header() {
         return (
           <>
             <TouchableOpacity onPress={() => router.push('/messages')}>
-              <MessageCircle size={24} color="black" strokeWidth={1.5} />
+              <MessageCircle size={24} color="black" />
             </TouchableOpacity>
             <TouchableOpacity onPress={() => router.push('/(modals)/settings')}>
-              <Settings size={24} color="black" strokeWidth={1.5} />
+              <Settings size={24} color="black" />
             </TouchableOpacity>
           </>
         );
