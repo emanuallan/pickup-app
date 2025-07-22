@@ -76,7 +76,7 @@ export const ListingBuyerView: React.FC<ListingBuyerViewProps> = ({
     if (user?.email) {
       fetchUserFavoriteStatus();
     }
-  }, [listing.user_id, user?.email]);
+  }, [listing.id, listing.user_id, user?.email]);
 
   const fetchSellerRating = async () => {
     try {
@@ -104,19 +104,19 @@ export const ListingBuyerView: React.FC<ListingBuyerViewProps> = ({
     if (!user?.email) return;
 
     try {
+      // Use the database function to get user's favorite/watchlist status
       const { data, error } = await supabase
-        .from('user_favorites')
-        .select('type')
-        .eq('user_id', user.email)
-        .eq('listing_id', listing.id);
+        .rpc('get_user_listing_status', {
+          p_user_id: user.email,
+          p_listing_id: listing.id
+        });
 
       if (error) throw error;
 
-      if (data) {
-        const hasFavorite = data.some(item => item.type === 'favorite');
-        const hasWatchlist = data.some(item => item.type === 'watchlist');
-        setIsSaved(hasFavorite);
-        setIsWatchlisted(hasWatchlist);
+      if (data && data.length > 0) {
+        const status = data[0];
+        setIsSaved(status.is_favorited);
+        setIsWatchlisted(status.is_watchlisted);
       }
     } catch (error) {
       console.error('Error fetching user favorite status:', error);
@@ -125,20 +125,25 @@ export const ListingBuyerView: React.FC<ListingBuyerViewProps> = ({
 
   const fetchEngagementStats = async () => {
     try {
+      // Use the view to get engagement stats
       const { data, error } = await supabase
-        .from('user_favorites')
-        .select('type')
+        .from('listing_favorite_counts')
+        .select('favorite_count, watchlist_count')
         .eq('listing_id', listing.id);
 
       if (error) throw error;
 
-      if (data) {
-        const favorites = data.filter(item => item.type === 'favorite').length;
-        const watchlist = data.filter(item => item.type === 'watchlist').length;
-        setEngagementStats({ favorites, watchlist });
+      if (data && data.length > 0) {
+        setEngagementStats({ 
+          favorites: data[0].favorite_count || 0, 
+          watchlist: data[0].watchlist_count || 0 
+        });
+      } else {
+        setEngagementStats({ favorites: 0, watchlist: 0 });
       }
     } catch (error) {
       console.error('Error fetching engagement stats:', error);
+      setEngagementStats({ favorites: 0, watchlist: 0 });
     }
   };
 
@@ -158,8 +163,16 @@ export const ListingBuyerView: React.FC<ListingBuyerViewProps> = ({
   };
 
   const navigateToMessage = () => {
-    // Navigate to message screen - implement this based on your routing
-    Alert.alert('Message Seller', 'Message functionality coming soon!');
+    router.push({
+      pathname: '/chat/[id]',
+      params: { 
+        id: listing.user_id,
+        otherUserId: listing.user_id,
+        otherUserName: listing.user_name,
+        listingId: listing.id.toString(),
+        listingTitle: listing.title
+      }
+    });
   };
 
   const handleSaveListing = async () => {
@@ -169,33 +182,24 @@ export const ListingBuyerView: React.FC<ListingBuyerViewProps> = ({
     }
 
     try {
-      if (isSaved) {
-        // Remove from favorites
-        const { error } = await supabase
-          .from('user_favorites')
-          .delete()
-          .eq('user_id', user.email)
-          .eq('listing_id', listing.id)
-          .eq('type', 'favorite');
+      // Use the database function to toggle favorite status
+      const { data, error } = await supabase
+        .rpc('toggle_user_favorite', {
+          p_user_id: user.email,
+          p_listing_id: listing.id,
+          p_type: 'favorite'
+        });
 
-        if (error) throw error;
-        setIsSaved(false);
-        fetchEngagementStats(); // Refresh counts
-        Alert.alert('Removed from Favorites', 'Item removed from your favorites');
-      } else {
-        // Add to favorites
-        const { error } = await supabase
-          .from('user_favorites')
-          .insert({
-            user_id: user.email,
-            listing_id: listing.id,
-            type: 'favorite'
-          });
+      if (error) throw error;
 
-        if (error) throw error;
-        setIsSaved(true);
-        fetchEngagementStats(); // Refresh counts
+      // data returns true if added, false if removed
+      setIsSaved(data);
+      fetchEngagementStats(); // Refresh counts
+      
+      if (data) {
         Alert.alert('Added to Favorites', 'Item saved to your favorites');
+      } else {
+        Alert.alert('Removed from Favorites', 'Item removed from your favorites');
       }
     } catch (error) {
       console.error('Error updating favorite status:', error);
@@ -210,33 +214,24 @@ export const ListingBuyerView: React.FC<ListingBuyerViewProps> = ({
     }
 
     try {
-      if (isWatchlisted) {
-        // Remove from watchlist
-        const { error } = await supabase
-          .from('user_favorites')
-          .delete()
-          .eq('user_id', user.email)
-          .eq('listing_id', listing.id)
-          .eq('type', 'watchlist');
+      // Use the database function to toggle watchlist status
+      const { data, error } = await supabase
+        .rpc('toggle_user_favorite', {
+          p_user_id: user.email,
+          p_listing_id: listing.id,
+          p_type: 'watchlist'
+        });
 
-        if (error) throw error;
-        setIsWatchlisted(false);
-        fetchEngagementStats(); // Refresh counts
-        Alert.alert('Removed from Watchlist', 'Item removed from your watchlist');
-      } else {
-        // Add to watchlist
-        const { error } = await supabase
-          .from('user_favorites')
-          .insert({
-            user_id: user.email,
-            listing_id: listing.id,
-            type: 'watchlist'
-          });
+      if (error) throw error;
 
-        if (error) throw error;
-        setIsWatchlisted(true);
-        fetchEngagementStats(); // Refresh counts
+      // data returns true if added, false if removed
+      setIsWatchlisted(data);
+      fetchEngagementStats(); // Refresh counts
+      
+      if (data) {
         Alert.alert('Added to Watchlist', 'Item added to your watchlist');
+      } else {
+        Alert.alert('Removed from Watchlist', 'Item removed from your watchlist');
       }
     } catch (error) {
       console.error('Error updating watchlist status:', error);
@@ -483,13 +478,13 @@ export const ListingBuyerView: React.FC<ListingBuyerViewProps> = ({
                   <Text className="font-semibold text-gray-900 text-lg" numberOfLines={1}>
                     {listing.user_name}
                   </Text>
-                  <View className="flex-row items-center mt-1">
+                  <View className="flex-row items-center mt-1 flex-wrap">
                     <UserRatingDisplay 
                       userId={listing.user_id} 
                       rating={sellerRating?.average} 
-                      className="mr-2" 
+                      className="mr-2 flex-shrink-0" 
                     />
-                    <Text className="text-gray-600 text-sm">
+                    <Text className="text-gray-600 text-sm flex-shrink" numberOfLines={1}>
                       {sellerRating ? (
                         sellerRating.count > 0 ? (
                           `(${sellerRating.count} review${sellerRating.count !== 1 ? 's' : ''})`

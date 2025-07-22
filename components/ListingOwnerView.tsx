@@ -61,20 +61,25 @@ export const ListingOwnerView: React.FC<ListingOwnerViewProps> = ({
 
   const fetchFavoriteCounts = async () => {
     try {
+      // Use the view to get favorite counts
       const { data, error } = await supabase
-        .from('user_favorites')
-        .select('type')
+        .from('listing_favorite_counts')
+        .select('favorite_count, watchlist_count')
         .eq('listing_id', listing.id);
 
       if (error) throw error;
 
-      if (data) {
-        const favorites = data.filter(item => item.type === 'favorite').length;
-        const watchlist = data.filter(item => item.type === 'watchlist').length;
-        setFavoriteCounts({ favorites, watchlist });
+      if (data && data.length > 0) {
+        setFavoriteCounts({ 
+          favorites: data[0].favorite_count || 0, 
+          watchlist: data[0].watchlist_count || 0 
+        });
+      } else {
+        setFavoriteCounts({ favorites: 0, watchlist: 0 });
       }
     } catch (error) {
       console.error('Error fetching favorite counts:', error);
+      setFavoriteCounts({ favorites: 0, watchlist: 0 });
     }
   };
 
