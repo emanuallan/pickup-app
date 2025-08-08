@@ -10,6 +10,7 @@ import { COLORS } from '~/theme/colors';
 import * as Haptics from 'expo-haptics';
 import Reanimated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 import { useSettings } from '~/contexts/SettingsContext';
+import { SearchBar } from '~/components/SearchBar';
 
 const { width } = Dimensions.get('window');
 
@@ -41,8 +42,10 @@ const categories: Category[] = [
 // Home Content Section
 const HomeContent = () => {
   const router = useRouter();
+  const { hapticFeedbackEnabled } = useSettings();
   const scale = useSharedValue(1);
   const opacity = useSharedValue(1);
+  const [searchValue, setSearchValue] = useState('');
 
   const animatedStyle = useAnimatedStyle(() => {
     return {
@@ -54,12 +57,25 @@ const HomeContent = () => {
   const handlePressIn = () => {
     scale.value = withSpring(0.95, { damping: 15, stiffness: 400 });
     opacity.value = withSpring(0.8, { damping: 15, stiffness: 400 });
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (hapticFeedbackEnabled) {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
   };
 
   const handlePressOut = () => {
     scale.value = withSpring(1, { damping: 15, stiffness: 400 });
     opacity.value = withSpring(1, { damping: 15, stiffness: 400 });
+  };
+
+  const handleSearchSubmit = () => {
+    if (searchValue.trim()) {
+      router.push({
+        pathname: '/browse',
+        params: { q: searchValue.trim() }
+      });
+    } else {
+      router.push('/browse');
+    }
   };
 
   const getTimeOfDayGreeting = () => {
@@ -82,27 +98,13 @@ const HomeContent = () => {
       </View>
 
       {/* Search Bar */}
-      <Reanimated.View style={animatedStyle}>
-        <Pressable
-          onPressIn={handlePressIn}
-          onPressOut={handlePressOut}
-          onPress={() => router.push('/browse')}
-          className="bg-white rounded-lg p-4 flex-row items-center border border-gray-200 mb-6"
-          style={{
-            shadowColor: '#BF5700',
-            shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: 0.1,
-            shadowRadius: 8,
-            elevation: 3,
-          }}
-        >
-          <Search size={20} color="#9CA3AF" />
-          <Text className="ml-3 text-gray-500 text-base flex-1 font-medium">
-            What are you looking for?
-          </Text>
-          <ChevronRight size={16} color="#9CA3AF" />
-        </Pressable>
-      </Reanimated.View>
+      <SearchBar
+        value={searchValue}
+        onChangeText={setSearchValue}
+        onSubmit={handleSearchSubmit}
+        onFilterPress={() => router.push('/browse')}
+        placeholder="Search items, brands, categories..."
+      />
 
       {/* Quick Actions */}
       <View className="flex-row gap-3">
