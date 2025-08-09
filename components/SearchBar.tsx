@@ -1,10 +1,25 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, TextInput, TouchableOpacity, Pressable } from 'react-native';
 import { Search, SlidersHorizontal } from 'lucide-react-native';
 import { COLORS } from '~/theme/colors';
 import Reanimated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import { useSettings } from '~/contexts/SettingsContext';
+import { SearchSuggestions } from './SearchSuggestions';
+import { useDebounce } from '~/hooks/useDebounce';
+import { getSearchSuggestions } from '~/utils/search';
+
+interface Listing {
+  id: number;
+  title: string;
+  description: string;
+  category: string;
+  price: number;
+  location: string;
+  created_at: string;
+  user_name: string;
+  [key: string]: any;
+}
 
 interface SearchBarProps {
   value: string;
@@ -12,6 +27,7 @@ interface SearchBarProps {
   onSubmit: (text: string) => void;
   onFilterPress: () => void;
   placeholder?: string;
+  listings?: Listing[];
 }
 
 export const SearchBar: React.FC<SearchBarProps> = ({
@@ -20,8 +36,13 @@ export const SearchBar: React.FC<SearchBarProps> = ({
   onSubmit,
   onFilterPress,
   placeholder = "What are you looking for?",
+  listings = [],
 }) => {
   const { hapticFeedbackEnabled } = useSettings();
+  const [focused, setFocused] = useState(false);
+  const [suggestions, setSuggestions] = useState<string[]>([]);
+  const debouncedValue = useDebounce(value, 300);
+  
   const scale = useSharedValue(1);
   const opacity = useSharedValue(1);
   const filterScale = useSharedValue(1);
@@ -59,10 +80,43 @@ export const SearchBar: React.FC<SearchBarProps> = ({
     filterScale.value = withSpring(1, { damping: 15, stiffness: 400 });
   };
 
+  // Generate search suggestions based on debounced input
+  useEffect(() => {
+    if (debouncedValue.trim() && focused && listings.length > 0) {
+      const newSuggestions = getSearchSuggestions(debouncedValue, listings);
+      setSuggestions(newSuggestions);
+    } else {
+      setSuggestions([]);
+    }
+  }, [debouncedValue, focused, listings]);
+
+  const handleSuggestionPress = (suggestion: string) => {
+    onChangeText(suggestion);
+    onSubmit(suggestion);
+    setSuggestions([]);
+    setFocused(false);
+  };
+
+  const handleFocus = () => {
+    setFocused(true);
+    if (value.trim() && listings.length > 0) {
+      const newSuggestions = getSearchSuggestions(value, listings);
+      setSuggestions(newSuggestions);
+    }
+  };
+
+  const handleBlur = () => {
+    // Delay hiding suggestions to allow for suggestion tap
+    setTimeout(() => {
+      setFocused(false);
+      setSuggestions([]);
+    }, 150);
+  };
+
   return (
-    <View className="mb-6">
+    <View className="mb-6" style={{ zIndex: 1000 }}>
       <View className="flex-row items-center gap-3">
-        <Reanimated.View style={[{ flex: 1 }, animatedStyle]}>
+        <Reanimated.View style={[{ flex: 1, position: 'relative', zIndex: 1000 }, animatedStyle]}>
           <Pressable
             onPressIn={handleSearchPressIn}
             onPressOut={handleSearchPressOut}
@@ -83,10 +137,20 @@ export const SearchBar: React.FC<SearchBarProps> = ({
               value={value}
               onChangeText={onChangeText}
               onSubmitEditing={() => onSubmit(value)}
+              onFocus={handleFocus}
+              onBlur={handleBlur}
               returnKeyType="search"
               blurOnSubmit={false}
             />
           </Pressable>
+
+          {/* Search Suggestions Dropdown */}
+          <SearchSuggestions
+            suggestions={suggestions}
+            visible={focused && suggestions.length > 0}
+            onSuggestionPress={handleSuggestionPress}
+            onClose={() => setSuggestions([])}
+          />
         </Reanimated.View>
         
         <Reanimated.View style={filterAnimatedStyle}>

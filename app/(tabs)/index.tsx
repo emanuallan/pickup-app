@@ -11,6 +11,8 @@ import * as Haptics from 'expo-haptics';
 import Reanimated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 import { useSettings } from '~/contexts/SettingsContext';
 import { SearchBar } from '~/components/SearchBar';
+import ListingCard from '~/components/ListingCard';
+import HomeHeader from '~/components/HomeHeader';
 
 const { width } = Dimensions.get('window');
 
@@ -27,6 +29,9 @@ interface Item {
   price: number;
   image: string;
   location: string;
+  description?: string;
+  category?: string;
+  created_at?: string;
 }
 
 const categories: Category[] = [
@@ -39,144 +44,45 @@ const categories: Category[] = [
 ];
 
 
-// Home Content Section
-const HomeContent = () => {
+// Search Section Component
+const SearchSection = ({ recentListings }: { recentListings: Item[] }) => {
   const router = useRouter();
-  const { hapticFeedbackEnabled } = useSettings();
-  const scale = useSharedValue(1);
-  const opacity = useSharedValue(1);
   const [searchValue, setSearchValue] = useState('');
 
-  const animatedStyle = useAnimatedStyle(() => {
-    return {
-      transform: [{ scale: scale.value }],
-      opacity: opacity.value,
-    };
-  });
-
-  const handlePressIn = () => {
-    scale.value = withSpring(0.95, { damping: 15, stiffness: 400 });
-    opacity.value = withSpring(0.8, { damping: 15, stiffness: 400 });
-    if (hapticFeedbackEnabled) {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
-  };
-
-  const handlePressOut = () => {
-    scale.value = withSpring(1, { damping: 15, stiffness: 400 });
-    opacity.value = withSpring(1, { damping: 15, stiffness: 400 });
-  };
-
-  const handleSearchSubmit = () => {
-    if (searchValue.trim()) {
+  const handleSearchSubmit = (text: string) => {
+    if (text.trim()) {
       router.push({
         pathname: '/browse',
-        params: { q: searchValue.trim() }
+        params: { q: text.trim() }
       });
     } else {
       router.push('/browse');
     }
   };
 
-  const getTimeOfDayGreeting = () => {
-    const hour = new Date().getHours();
-    if (hour < 12) return 'Good morning';
-    if (hour < 17) return 'Good afternoon';
-    return 'Good evening';
-  };
-
   return (
-    <View className="px-6 pb-6 pt-6">
-      {/* Greeting */}
-      <View className="mb-6">
-        <Text className="text-3xl font-black text-gray-900 mb-1">
-          {getTimeOfDayGreeting()}
-        </Text>
-        <Text className="text-lg text-gray-600 font-medium">
-          Ready to find something great?
-        </Text>
-      </View>
-
-      {/* Search Bar */}
+    <View className="px-6 pb-4">
       <SearchBar
         value={searchValue}
         onChangeText={setSearchValue}
-        onSubmit={handleSearchSubmit}
+        onSubmit={(text) => handleSearchSubmit(text)}
         onFilterPress={() => router.push('/browse')}
         placeholder="Search items, brands, categories..."
+        listings={recentListings.map(item => ({
+          id: item.id,
+          title: item.title,
+          description: item.description || '',
+          category: item.category || '',
+          price: item.price,
+          location: item.location,
+          created_at: item.created_at || '',
+          user_name: ''
+        }))}
       />
-
-      {/* Quick Actions */}
-      <View className="flex-row gap-3">
-        <QuickActionCard 
-          title="Sell Item"
-          description="List something"
-          icon={<Plus size={18} color="#BF5700" />}
-          onPress={() => router.push('/create')}
-        />
-        <QuickActionCard 
-          title="Browse All"
-          description="Find deals"
-          icon={<Search size={18} color="#BF5700" />}
-          onPress={() => router.push('/browse')}
-        />
-      </View>
     </View>
   );
 };
 
-// Quick Action Card Component
-const QuickActionCard = ({ title, description, icon, onPress }: {
-  title: string;
-  description: string;
-  icon: React.ReactNode;
-  onPress: () => void;
-}) => {
-  const scale = useSharedValue(1);
-  const opacity = useSharedValue(1);
-
-  const animatedStyle = useAnimatedStyle(() => {
-    return {
-      transform: [{ scale: scale.value }],
-      opacity: opacity.value,
-    };
-  });
-
-  const handlePressIn = () => {
-    scale.value = withSpring(0.95, { damping: 15, stiffness: 400 });
-    opacity.value = withSpring(0.8, { damping: 15, stiffness: 400 });
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-  };
-
-  const handlePressOut = () => {
-    scale.value = withSpring(1, { damping: 15, stiffness: 400 });
-    opacity.value = withSpring(1, { damping: 15, stiffness: 400 });
-  };
-
-  return (
-    <Reanimated.View style={[{ flex: 1 }, animatedStyle]}>
-      <Pressable
-        onPressIn={handlePressIn}
-        onPressOut={handlePressOut}
-        onPress={onPress}
-        className="bg-white rounded-lg p-4 border border-gray-200 flex-1"
-        style={{
-          shadowColor: '#BF5700',
-          shadowOffset: { width: 0, height: 2 },
-          shadowOpacity: 0.08,
-          shadowRadius: 4,
-          elevation: 2,
-        }}
-      >
-        <View className="w-10 h-10 bg-orange-50 rounded-full items-center justify-center mb-3">
-          {icon}
-        </View>
-        <Text className="text-gray-900 font-bold text-base mb-1">{title}</Text>
-        <Text className="text-gray-500 text-sm font-medium">{description}</Text>
-      </Pressable>
-    </Reanimated.View>
-  );
-};
 
 // Category Item Component
 const CategoryItem = ({ item }: { item: Category }) => {
@@ -316,85 +222,34 @@ const TrustSection = () => {
   );
 };
 
-// Listing Item Component
-const ListingItem = ({ item }: { item: Item }) => {
-  const router = useRouter();
-  const { locationEnabled } = useSettings();
-  const scale = useSharedValue(1);
-  const opacity = useSharedValue(1);
+function getTimeAgo(dateString: string) {
+  const now = new Date();
+  const date = new Date(dateString);
+  const diff = now.getTime() - date.getTime();
 
-  const animatedStyle = useAnimatedStyle(() => {
-    return {
-      transform: [{ scale: scale.value }],
-      opacity: opacity.value,
-    };
-  });
+  if (isNaN(date.getTime())) return '';
 
-  const handlePressIn = () => {
-    scale.value = withSpring(0.95, { damping: 15, stiffness: 400 });
-    opacity.value = withSpring(0.8, { damping: 15, stiffness: 400 });
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-  };
+  const seconds = Math.floor(diff / 1000);
+  if (seconds < 600) return 'Just now';
 
-  const handlePressOut = () => {
-    scale.value = withSpring(1, { damping: 15, stiffness: 400 });
-    opacity.value = withSpring(1, { damping: 15, stiffness: 400 });
-  };
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes} minute${minutes !== 1 ? 's' : ''} ago`;
 
-  return (
-    <Reanimated.View style={[animatedStyle, { marginRight: 16, width: 170 }]}>
-      <Pressable
-        onPressIn={handlePressIn}
-        onPressOut={handlePressOut}
-        onPress={() => router.push(`/listing/${item.id}`)}
-        style={{
-          backgroundColor: 'white',
-          borderRadius: 12,
-          overflow: 'hidden',
-          shadowColor: '#BF5700',
-          shadowOffset: { width: 0, height: 2 },
-          shadowOpacity: 0.1,
-          shadowRadius: 8,
-          elevation: 3,
-          borderWidth: 1,
-          borderColor: 'rgba(191, 87, 0, 0.1)',
-        }}
-      >
-        <View style={{ position: 'relative' }}>
-          <Image
-            source={{ uri: item.image }}
-            style={{ width: '100%', height: 120 }}
-            resizeMode="cover"
-          />
-          <View style={{
-            position: 'absolute',
-            top: 8,
-            right: 8,
-            backgroundColor: 'rgba(255,255,255,0.9)',
-            borderRadius: 12,
-            padding: 4,
-          }}>
-            <Heart size={14} color="#ef4444" />
-          </View>
-        </View>
-        <View className="p-4">
-          <Text className="font-bold text-gray-900 text-base mb-2" numberOfLines={2}>
-            {item.title}
-          </Text>
-          <Text style={{ color: COLORS.utOrange, fontWeight: '800', fontSize: 16 }}>
-            ${item.price}
-          </Text>
-          {locationEnabled && (
-            <View className="flex-row items-center mt-2">
-              <MapPin size={12} color="#9ca3af" />
-              <Text className="text-gray-500 text-xs ml-1" numberOfLines={1}>{item.location}</Text>
-            </View>
-          )}
-        </View>
-      </Pressable>
-    </Reanimated.View>
-  );
-};
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours} hour${hours !== 1 ? 's' : ''} ago`;
+
+  const days = Math.floor(hours / 24);
+  if (days < 7) return `${days} day${days !== 1 ? 's' : ''} ago`;
+
+  const weeks = Math.floor(days / 7);
+  if (weeks < 4) return `${weeks} week${weeks !== 1 ? 's' : ''} ago`;
+
+  const months = Math.floor(days / 30);
+  if (months < 12) return `${months} month${months !== 1 ? 's' : ''} ago`;
+
+  const years = Math.floor(days / 365);
+  return `${years} year${years !== 1 ? 's' : ''} ago`;
+}
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -424,7 +279,10 @@ export default function HomeScreen() {
           title: item.title,
           price: item.price,
           image: item.images?.[0] || 'https://picsum.photos/200',
-          location: item.location
+          location: item.location,
+          description: item.description || '',
+          category: item.category || '',
+          created_at: item.created_at
         })));
       }
     } catch (error) {
@@ -435,7 +293,23 @@ export default function HomeScreen() {
   };
 
   const renderListingItem = ({ item }: { item: Item }) => (
-    <ListingItem item={item} />
+    <View style={{ marginRight: 16 }}>
+      <ListingCard
+        id={item.id}
+        title={item.title}
+        price={item.price}
+        location={item.location}
+        category={item.category || 'Uncategorized'}
+        timePosted={getTimeAgo(item.created_at || '')}
+        images={[item.image]}
+        user={{
+          name: '',
+          image: null,
+        }}
+        condition=""
+        onPress={() => router.push(`/listing/${item.id}`)}
+      />
+    </View>
   );
 
   return (
@@ -445,8 +319,11 @@ export default function HomeScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 100 }}
       >
-        {/* Home Content */}
-        <HomeContent />
+        {/* Home Header */}
+        <HomeHeader />
+        
+        {/* Search Section */}
+        <SearchSection recentListings={recentListings} />
 
         {/* Categories */}
         <CategoriesSection />

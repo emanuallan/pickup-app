@@ -82,7 +82,7 @@ function getTimeAgo(dateString: string) {
 }
 
 // Browse Content Component similar to HomeContent
-const BrowseContent = ({ searchQuery, searchInputValue, onSearchInputChange, onSearchSubmit, onFilterPress, selectedCategory, onCategoryPress, listings, loading, hasActiveSearch }: {
+const BrowseContent = ({ searchQuery, searchInputValue, onSearchInputChange, onSearchSubmit, onFilterPress, selectedCategory, onCategoryPress, listings, loading, hasActiveSearch, allListings }: {
   searchQuery: string;
   searchInputValue: string;
   onSearchInputChange: (text: string) => void;
@@ -93,20 +93,21 @@ const BrowseContent = ({ searchQuery, searchInputValue, onSearchInputChange, onS
   listings: Listing[];
   loading: boolean;
   hasActiveSearch: boolean;
+  allListings: Listing[];
 }) => {
   return (
-    <View className="px-6 pb-6 pt-6">
-      {/* Header */}
-      <View className="mb-6">
-        <Text className="text-3xl font-black text-gray-900 mb-1">
-          {hasActiveSearch ? `Search Results` : 'Browse Marketplace'}
-        </Text>
-        <Text className="text-lg text-gray-600 font-medium">
-          {hasActiveSearch 
-            ? `Results for "${searchQuery}"` 
-            : 'Find great deals from fellow Longhorns'}
-        </Text>
-      </View>
+    <View className="px-6 pb-6 pt-4">
+      {/* Search Results Header */}
+      {hasActiveSearch && (
+        <View className="mb-4">
+          <Text className="text-2xl font-black text-gray-900 mb-1">
+            Search Results
+          </Text>
+          <Text className="text-lg text-gray-600 font-medium">
+            Results for "{searchQuery}"
+          </Text>
+        </View>
+      )}
 
       {/* Enhanced Search Bar */}
       <SearchBar
@@ -115,6 +116,7 @@ const BrowseContent = ({ searchQuery, searchInputValue, onSearchInputChange, onS
         onSubmit={onSearchSubmit}
         onFilterPress={onFilterPress}
         placeholder="Search items, brands, categories..."
+        listings={allListings}
       />
 
       {/* Results Summary */}
@@ -158,6 +160,21 @@ export default function BrowseScreen() {
   useEffect(() => {
     applyFiltersAndSearch();
   }, [selectedCategory, filters, searchQuery, allListings]);
+
+  // Watch for URL parameter changes and update search accordingly
+  useEffect(() => {
+    const newQuery = params.q?.toString() || '';
+    const newCategory = params.category?.toString() || 'All';
+    
+    if (newQuery !== searchQuery) {
+      setSearchQuery(newQuery);
+      setSearchInputValue(newQuery);
+    }
+    
+    if (newCategory !== selectedCategory) {
+      setSelectedCategory(newCategory);
+    }
+  }, [params.q, params.category]);
 
   const fetchAllListings = async () => {
     try {
@@ -352,6 +369,7 @@ export default function BrowseScreen() {
           listings={displayListings}
           loading={loading}
           hasActiveSearch={!!searchQuery.trim()}
+          allListings={allListings}
         />
 
         {/* Categories Section */}

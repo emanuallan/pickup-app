@@ -53,10 +53,10 @@ const ProfileContent = () => {
   };
 
   return (
-    <View className="px-6 pb-6 pt-6">
+    <View className="px-6 pb-6 pt-4">
       {/* Greeting */}
       <View className="mb-6">
-        <Text className="text-3xl font-black text-gray-900 mb-1">
+        <Text className="text-2xl font-black text-gray-900 mb-1">
           {getGreeting()}
         </Text>
         <Text className="text-lg text-gray-600 font-medium">
