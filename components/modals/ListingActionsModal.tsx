@@ -3,7 +3,7 @@ import { View, Text, Modal, TouchableOpacity, Dimensions } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { X, Edit3, CheckCircle, Trash2, Eye } from 'lucide-react-native';
 import { COLORS } from '~/theme/colors';
-import { AnimatedButton } from './AnimatedButton';
+import { AnimatedButton } from '~/components/ui/AnimatedButton';
 
 const { height: screenHeight } = Dimensions.get('window');
 

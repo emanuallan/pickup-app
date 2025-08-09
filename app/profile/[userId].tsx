@@ -25,9 +25,9 @@ import {
   FileText,
 } from 'lucide-react-native';
 import { getTimeAgo } from '../../utils/timeago';
-import ModalHeader from '~/components/ModalHeader';
-import { RatingSubmissionModal } from '~/components/RatingSubmissionModal';
-import UserRatingDisplay from '~/components/UserRatingDisplay';
+import ModalHeader from '~/components/layout/ModalHeader';
+import { RatingSubmissionModal } from '~/components/modals/RatingSubmissionModal';
+import UserRatingDisplay from '~/components/ui/UserRatingDisplay';
 
 interface UserSettings {
   email: string;

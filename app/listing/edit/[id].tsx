@@ -6,8 +6,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { supabase } from '~/lib/supabase';
 import { useAuth } from '~/contexts/AuthContext';
 import { COLORS } from '~/theme/colors';
-import Dropdown from '~/components/Dropdown';
-import ModalHeader from '~/components/ModalHeader';
+import Dropdown from '~/components/ui/Dropdown';
+import ModalHeader from '~/components/layout/ModalHeader';
 import * as ImagePicker from 'expo-image-picker';
 
 const categories = [

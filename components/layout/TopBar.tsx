@@ -3,7 +3,7 @@ import { View, Image, TouchableOpacity, Text } from 'react-native';
 import { MessageCircle, Bell, Search, Settings, ChevronLeft, Plus } from 'lucide-react-native';
 import { usePathname, useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
-import Icon from '../assets/ios-light.png';
+import Icon from '~/assets/ios-light.png';
 import { supabase } from '~/lib/supabase';
 import { useAuth } from '~/contexts/AuthContext';
 import { useNotificationSync } from '~/contexts/NotificationSyncContext';

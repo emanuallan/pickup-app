@@ -5,7 +5,7 @@ import { COLORS } from '~/theme/colors';
 import Reanimated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import { useSettings } from '~/contexts/SettingsContext';
-import { SearchSuggestions } from './SearchSuggestions';
+import { SearchSuggestions } from '~/components/search/SearchSuggestions';
 import { useDebounce } from '~/hooks/useDebounce';
 import { getSearchSuggestions } from '~/utils/search';
 

@@ -3,7 +3,7 @@ import { useAuth } from '~/contexts/AuthContext';
 import { useRouter } from 'expo-router';
 import { LogOut, Camera, User, Save, Bell, Shield, HelpCircle, Mail, Star, Moon, Palette, Globe, Info, ChevronRight, Heart, MessageCircle, Trash2 } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import ModalHeader from '~/components/ModalHeader';
+import ModalHeader from '~/components/layout/ModalHeader';
 import * as ImagePicker from 'expo-image-picker';
 import { useState, useEffect } from 'react';
 import { supabase } from '~/lib/supabase';

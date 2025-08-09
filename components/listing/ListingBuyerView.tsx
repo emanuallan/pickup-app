@@ -3,10 +3,10 @@ import { View, Text, ScrollView, Image, TouchableOpacity, Alert, Share, Dimensio
 import { useRouter } from 'expo-router';
 import { COLORS } from '~/theme/colors';
 import { MapPin, Calendar, Tag, Star, MessageCircle, MoreHorizontal, Heart, Share2, Eye, ArrowLeft } from 'lucide-react-native';
-import { AnimatedButton } from './AnimatedButton';
-import { ListingBuyerActionsModal } from './ListingBuyerActionsModal';
-import { RatingSubmissionModal } from './RatingSubmissionModal';
-import UserRatingDisplay from './UserRatingDisplay';
+import { AnimatedButton } from '~/components/ui/AnimatedButton';
+import { ListingBuyerActionsModal } from '~/components/modals/ListingBuyerActionsModal';
+import { RatingSubmissionModal } from '~/components/modals/RatingSubmissionModal';
+import UserRatingDisplay from '~/components/ui/UserRatingDisplay';
 import { useAuth } from '~/contexts/AuthContext';
 import { supabase } from '~/lib/supabase';
 

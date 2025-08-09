@@ -10,9 +10,9 @@ import { COLORS } from '~/theme/colors';
 import * as Haptics from 'expo-haptics';
 import Reanimated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 import { useSettings } from '~/contexts/SettingsContext';
-import { SearchBar } from '~/components/SearchBar';
-import ListingCard from '~/components/ListingCard';
-import HomeHeader from '~/components/HomeHeader';
+import { SearchBar } from '~/components/forms/SearchBar';
+import ListingCard from '~/components/listing/ListingCard';
+import HomeHeader from '~/components/layout/HomeHeader';
 
 const { width } = Dimensions.get('window');
 

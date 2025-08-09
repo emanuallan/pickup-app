@@ -6,7 +6,7 @@ import { COLORS } from '~/theme/colors';
 import { supabase } from '~/lib/supabase';
 import { useAuth } from '~/contexts/AuthContext';
 import { getTimeAgo } from '~/utils/timeago';
-import UserRatingDisplay from '~/components/UserRatingDisplay';
+import UserRatingDisplay from '~/components/ui/UserRatingDisplay';
 
 interface Rating {
   id: string;

@@ -1,7 +1,7 @@
 import { View, Text, TouchableOpacity, Image } from 'react-native';
 import { useRouter } from 'expo-router';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
-import { COLORS } from '../theme/colors';
+import { COLORS } from '~/theme/colors';
 
 interface ChatHeaderProps {
   otherUserName: string;

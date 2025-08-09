@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Stack, useRouter } from 'expo-router';
 import { COLORS } from '~/theme/colors';
 import { MessageCircle, User, Clock, ChevronRight, Bell, BellOff, Heart, Eye, Mail, ChevronLeft, X, Trash2, Check, CheckCheck } from 'lucide-react-native';
-import ModalHeader from '~/components/ModalHeader';
+import ModalHeader from '~/components/layout/ModalHeader';
 import { getTimeAgo } from '~/utils/timeago';
 import { supabase } from '~/lib/supabase';
 import { useAuth } from '~/contexts/AuthContext';

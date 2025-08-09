@@ -6,7 +6,7 @@ import { Heart, Eye, Star, MapPin, Calendar, Trash2, MessageCircle } from 'lucid
 import { getTimeAgo } from '~/utils/timeago';
 import { supabase } from '~/lib/supabase';
 import { useAuth } from '~/contexts/AuthContext';
-import { AnimatedButton } from '~/components/AnimatedButton';
+import { AnimatedButton } from '~/components/ui/AnimatedButton';
 
 interface Listing {
   id: string;

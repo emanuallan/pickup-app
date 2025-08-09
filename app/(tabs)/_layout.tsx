@@ -3,7 +3,7 @@ import { Tabs } from 'expo-router';
 import { Home, Search, MessageCircle, User, Plus } from 'lucide-react-native';
 import { View } from 'react-native';
 import { useEffect, useState } from 'react';
-import TopBar from "~/components/TopBar";
+import TopBar from "~/components/layout/TopBar";
 import { COLORS } from '~/theme/colors';
 import { useAuth } from '~/contexts/AuthContext';
 import { useNotificationSync } from '~/contexts/NotificationSyncContext';

@@ -1,6 +1,6 @@
 import { Stack } from 'expo-router';
 import { View } from 'react-native';
-import ModalHeader from '~/components/ModalHeader';
+import ModalHeader from '~/components/layout/ModalHeader';
 
 export default function AuthLayout() {
   return (

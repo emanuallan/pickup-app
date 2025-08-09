@@ -12,7 +12,7 @@ import {
   Sparkles,
 } from 'lucide-react-native';
 import { COLORS } from '~/theme/colors';
-import { AnimatedButton } from './AnimatedButton';
+import { AnimatedButton } from '~/components/ui/AnimatedButton';
 
 const { height: screenHeight } = Dimensions.get('window');
 

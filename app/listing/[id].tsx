@@ -5,8 +5,8 @@ import { supabase } from '~/lib/supabase';
 import { useAuth } from '~/contexts/AuthContext';
 import { COLORS } from '~/theme/colors';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ListingOwnerView } from '~/components/ListingOwnerView';
-import { ListingBuyerView } from '~/components/ListingBuyerView';
+import { ListingOwnerView } from '~/components/listing/ListingOwnerView';
+import { ListingBuyerView } from '~/components/listing/ListingBuyerView';
 
 const { width: screenWidth } = Dimensions.get('window');
 

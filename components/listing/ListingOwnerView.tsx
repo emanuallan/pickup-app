@@ -2,8 +2,8 @@ import { View, Text, ScrollView, Image, TouchableOpacity, Alert, Dimensions } fr
 import { useRouter } from 'expo-router';
 import { COLORS } from '~/theme/colors';
 import { MapPin, Calendar, Tag, Edit3, Trash2, Eye, CheckCircle, MessageCircle, Heart, FileText, Settings } from 'lucide-react-native';
-import { AnimatedButton } from './AnimatedButton';
-import { ListingActionsModal } from './ListingActionsModal';
+import { AnimatedButton } from '~/components/ui/AnimatedButton';
+import { ListingActionsModal } from '~/components/modals/ListingActionsModal';
 import { supabase } from '~/lib/supabase';
 import { useState, useEffect } from 'react';
 

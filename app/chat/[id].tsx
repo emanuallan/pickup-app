@@ -4,7 +4,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
-import ChatHeader from '../../components/ChatHeader';
+import ChatHeader from '../../components/chat/ChatHeader';
 import ChatSettingsModal from '../../components/modals/ChatSettingsModal';
 import { Message } from '../../types/chat';
 import { formatTime, shouldShowTimestamp, buildMessageQuery, isRelevantMessage } from '../../utils/chat';

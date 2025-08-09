@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
-import Dropdown from '~/components/Dropdown';
+import Dropdown from '~/components/ui/Dropdown';
 
 const categories = [
   'Select a category',

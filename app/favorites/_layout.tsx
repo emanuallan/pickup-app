@@ -1,5 +1,5 @@
 import { Stack } from 'expo-router';
-import ModalHeader from '~/components/ModalHeader';
+import ModalHeader from '~/components/layout/ModalHeader';
 export default function FavoritesLayout() {
   return (
     <Stack
