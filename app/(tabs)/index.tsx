@@ -61,7 +61,7 @@ const SearchSection = ({ recentListings }: { recentListings: Item[] }) => {
   };
 
   return (
-    <View className="px-6 pb-4">
+    <View className="px-6 pb-4 pt-2">
       <SearchBar
         value={searchValue}
         onChangeText={setSearchValue}

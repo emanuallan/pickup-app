@@ -88,7 +88,7 @@ function HomeHeader() {
       <TopBar />
       
       {/* Home Content */}
-      <View className="px-6 pb-6 pt-4">
+      <View className="px-6 pb-4 pt-4">
         {/* Greeting */}
         <View className="mb-6">
           <Text className="text-3xl font-black text-gray-900 mb-1">
