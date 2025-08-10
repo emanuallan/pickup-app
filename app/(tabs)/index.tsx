@@ -169,55 +169,54 @@ const CategoriesSection = () => {
   );
 };
 
-// Enhanced Trust Section
-const TrustSection = () => {
+// Tips & Safety Section
+const TipsSection = () => {
+  const tips = [
+    {
+      icon: <Eye size={18} color="#BF5700" />,
+      title: "Meet in Public",
+      description: "Always meet buyers/sellers in safe public places on campus"
+    },
+    {
+      icon: <MessageCircle size={18} color="#BF5700" />,
+      title: "Stay in App",
+      description: "Keep all communications within the app for your safety"
+    },
+    {
+      icon: <Heart size={18} color="#BF5700" />,
+      title: "Be Honest",
+      description: "Describe items accurately and use real photos"
+    }
+  ];
+
   return (
     <View className="px-6 mb-8">
-      <LinearGradient
-        colors={['#f0fdf4', '#ecfdf5']}
+      <View className="mb-4">
+        <Text className="text-2xl font-black text-gray-900 mb-1">Safety Tips</Text>
+        <Text className="text-gray-500 font-medium">Stay safe while trading</Text>
+      </View>
+      
+      <View className="bg-white rounded-lg border border-gray-200 p-4" 
         style={{
-          borderRadius: 20,
-          padding: 24,
-          borderWidth: 1,
-          borderColor: '#bbf7d0',
+          shadowColor: '#BF5700',
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.08,
+          shadowRadius: 4,
+          elevation: 2,
         }}
       >
-        <View className="items-center mb-6">
-          <View className="w-16 h-16 rounded-full bg-green-100 items-center justify-center mb-4">
-            <ShieldCheck size={32} color="#059669" />
-          </View>
-          <Text className="text-xl font-black text-green-900 text-center mb-2">
-            Safe & Secure Trading
-          </Text>
-          <Text className="text-green-700 text-center font-medium">
-            Every user is a verified UT student
-          </Text>
-        </View>
-        
-        <View className="flex-row justify-between">
-          <View className="items-center flex-1">
-            <View className="w-10 h-10 rounded-full bg-green-50 items-center justify-center mb-2">
-              <Users size={18} color="#059669" />
+        {tips.map((tip, index) => (
+          <View key={index} className={`flex-row items-start gap-3 ${index < tips.length - 1 ? 'mb-4 pb-4 border-b border-gray-100' : ''}`}>
+            <View className="w-10 h-10 bg-orange-50 rounded-full items-center justify-center">
+              {tip.icon}
             </View>
-            <Text className="text-green-900 font-bold text-lg">500+</Text>
-            <Text className="text-green-600 text-xs font-medium">Students</Text>
-          </View>
-          <View className="items-center flex-1">
-            <View className="w-10 h-10 rounded-full bg-green-50 items-center justify-center mb-2">
-              <Star size={18} color="#059669" />
+            <View className="flex-1">
+              <Text className="text-gray-900 font-bold text-base mb-1">{tip.title}</Text>
+              <Text className="text-gray-600 text-sm font-medium">{tip.description}</Text>
             </View>
-            <Text className="text-green-900 font-bold text-lg">4.9★</Text>
-            <Text className="text-green-600 text-xs font-medium">Rating</Text>
           </View>
-          <View className="items-center flex-1">
-            <View className="w-10 h-10 rounded-full bg-green-50 items-center justify-center mb-2">
-              <CheckCircle size={18} color="#059669" />
-            </View>
-            <Text className="text-green-900 font-bold text-lg">100%</Text>
-            <Text className="text-green-600 text-xs font-medium">Verified</Text>
-          </View>
-        </View>
-      </LinearGradient>
+        ))}
+      </View>
     </View>
   );
 };
@@ -250,6 +249,92 @@ function getTimeAgo(dateString: string) {
   const years = Math.floor(days / 365);
   return `${years} year${years !== 1 ? 's' : ''} ago`;
 }
+
+// Quick Action Card Component
+const QuickActionCard = ({ title, description, icon, onPress }: {
+  title: string;
+  description: string;
+  icon: React.ReactNode;
+  onPress: () => void;
+}) => {
+  const { hapticFeedbackEnabled } = useSettings();
+  const scale = useSharedValue(1);
+  const opacity = useSharedValue(1);
+
+  const animatedStyle = useAnimatedStyle(() => {
+    return {
+      transform: [{ scale: scale.value }],
+      opacity: opacity.value,
+    };
+  });
+
+  const handlePressIn = () => {
+    scale.value = withSpring(0.95, { damping: 15, stiffness: 400 });
+    opacity.value = withSpring(0.8, { damping: 15, stiffness: 400 });
+    if (hapticFeedbackEnabled) {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+  };
+
+  const handlePressOut = () => {
+    scale.value = withSpring(1, { damping: 15, stiffness: 400 });
+    opacity.value = withSpring(1, { damping: 15, stiffness: 400 });
+  };
+
+  return (
+    <Reanimated.View style={[{ flex: 1 }, animatedStyle]}>
+      <TouchableOpacity
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+        onPress={onPress}
+        className="bg-white rounded-lg p-4 border border-gray-200 flex-1"
+        activeOpacity={1}
+        style={{
+          shadowColor: '#BF5700',
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.08,
+          shadowRadius: 4,
+          elevation: 2,
+        }}
+      >
+        <View className="w-10 h-10 bg-orange-50 rounded-full items-center justify-center mb-3">
+          {icon}
+        </View>
+        <Text className="text-gray-900 font-bold text-base mb-1">{title}</Text>
+        <Text className="text-gray-500 text-sm font-medium">{description}</Text>
+      </TouchableOpacity>
+    </Reanimated.View>
+  );
+};
+
+// Quick Actions Section Component
+const QuickActionsSection = () => {
+  const router = useRouter();
+
+  return (
+    <View className="px-6 mb-8">
+      <View className="mb-4">
+        <Text className="text-2xl font-black text-gray-900 mb-1">Quick Actions</Text>
+        <Text className="text-gray-500 font-medium">Get started with buying or selling</Text>
+      </View>
+      
+      <View className="flex-row gap-3">
+        <QuickActionCard 
+          title="Sell Item"
+          description="List something"
+          icon={<Plus size={18} color="#BF5700" />}
+          onPress={() => router.push('/create')}
+        />
+        <QuickActionCard 
+          title="Browse All"
+          description="Find deals"
+          icon={<Search size={18} color="#BF5700" />}
+          onPress={() => router.push('/browse')}
+        />
+      </View>
+    </View>
+  );
+};
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -293,7 +378,7 @@ export default function HomeScreen() {
   };
 
   const renderListingItem = ({ item }: { item: Item }) => (
-    <View style={{ marginRight: 16 }}>
+    <View style={{ marginRight: 16, width: 180 }}>
       <ListingCard
         id={item.id}
         title={item.title}
@@ -322,11 +407,14 @@ export default function HomeScreen() {
         {/* Home Header */}
         <HomeHeader />
         
-        {/* Search Section */}
-        <SearchSection recentListings={recentListings} />
+        {/* Quick Actions */}
+        <QuickActionsSection />
 
         {/* Categories */}
         <CategoriesSection />
+
+        {/* Search Section */}
+        <SearchSection recentListings={recentListings} />
 
         {/* Recent Listings */}
         <View className="mb-8">
@@ -347,7 +435,7 @@ export default function HomeScreen() {
               keyExtractor={item => item.id.toString()}
               horizontal
               showsHorizontalScrollIndicator={false}
-              contentContainerStyle={{ paddingLeft: 24, paddingRight: 24 }}
+              contentContainerStyle={{ paddingLeft: 24, paddingRight: 8 }}
             />
           ) : (
             <View className="px-6">
@@ -360,8 +448,8 @@ export default function HomeScreen() {
           )}
         </View>
 
-        {/* Trust Section */}
-        <TrustSection />
+        {/* Tips Section */}
+        <TipsSection />
       </ScrollView>
     </View>
   );

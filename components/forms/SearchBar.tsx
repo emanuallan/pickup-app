@@ -114,9 +114,9 @@ export const SearchBar: React.FC<SearchBarProps> = ({
   };
 
   return (
-    <View className="mb-6" style={{ zIndex: 1000 }}>
+    <View className="mb-6" style={{ zIndex: 10 }}>
       <View className="flex-row items-center gap-3">
-        <Reanimated.View style={[{ flex: 1, position: 'relative', zIndex: 1000 }, animatedStyle]}>
+        <Reanimated.View style={[{ flex: 1, position: 'relative', zIndex: 10 }, animatedStyle]}>
           <Pressable
             onPressIn={handleSearchPressIn}
             onPressOut={handleSearchPressOut}
