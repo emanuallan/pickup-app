@@ -165,6 +165,13 @@ export default function BrowseScreen() {
   useEffect(() => {
     const newQuery = params.q?.toString() || '';
     const newCategory = params.category?.toString() || 'All';
+    const refreshParam = params.refresh?.toString();
+    
+    // If refresh parameter is present, refresh the listings first
+    if (refreshParam) {
+      setLoading(true);
+      fetchAllListings();
+    }
     
     if (newQuery !== searchQuery) {
       setSearchQuery(newQuery);
@@ -174,7 +181,7 @@ export default function BrowseScreen() {
     if (newCategory !== selectedCategory) {
       setSelectedCategory(newCategory);
     }
-  }, [params.q, params.category]);
+  }, [params.q, params.category, params.refresh]);
 
   const fetchAllListings = async () => {
     try {

@@ -1,10 +1,10 @@
-import { View, Text, ScrollView, TouchableOpacity, Image, FlatList, ActivityIndicator, Animated, Dimensions, Pressable } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Image, FlatList, ActivityIndicator, Dimensions, Pressable } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Search, Plus, LogIn, BookOpen, Smartphone, Armchair, Shirt, Home, Wrench, Flame, MessageCircle, Users, Star, CheckCircle, ShieldCheck, Zap, TrendingUp, Eye, Heart, Sparkles, ArrowRight, MapPin, ChevronRight } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { useAuth } from '~/contexts/AuthContext';
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { supabase } from '~/lib/supabase';
 import { COLORS } from '~/theme/colors';
 import * as Haptics from 'expo-haptics';
@@ -35,12 +35,12 @@ interface Item {
 }
 
 const categories: Category[] = [
-  { id: 1, name: 'Textbooks', icon: <BookOpen size={18} color="#BF5700" />, color: COLORS.iconBg },
-  { id: 2, name: 'Electronics', icon: <Smartphone size={18} color="#BF5700" />, color: COLORS.iconBg },
-  { id: 3, name: 'Furniture', icon: <Armchair size={18} color="#BF5700" />, color: COLORS.iconBg },
-  { id: 4, name: 'Clothing', icon: <Shirt size={18} color="#BF5700" />, color: COLORS.iconBg },
-  { id: 5, name: 'Housing', icon: <Home size={18} color="#BF5700" />, color: COLORS.iconBg },
-  { id: 6, name: 'Services', icon: <Wrench size={18} color="#BF5700" />, color: COLORS.iconBg },
+  { id: 1, name: 'Furniture', icon: <Armchair size={18} color="#BF5700" />, color: COLORS.iconBg },
+  { id: 2, name: 'Housing', icon: <Home size={18} color="#BF5700" />, color: COLORS.iconBg },
+  { id: 3, name: 'Tech', icon: <Smartphone size={18} color="#BF5700" />, color: COLORS.iconBg },
+  { id: 4, name: 'Books', icon: <BookOpen size={18} color="#BF5700" />, color: COLORS.iconBg },
+  { id: 5, name: 'Clothing', icon: <Shirt size={18} color="#BF5700" />, color: COLORS.iconBg },
+  { id: 6, name: 'Other', icon: <Wrench size={18} color="#BF5700" />, color: COLORS.iconBg },
 ];
 
 
@@ -50,13 +50,17 @@ const SearchSection = ({ recentListings }: { recentListings: Item[] }) => {
   const [searchValue, setSearchValue] = useState('');
 
   const handleSearchSubmit = (text: string) => {
+    // Force refresh by adding a timestamp to clear any cached state
     if (text.trim()) {
       router.push({
         pathname: '/browse',
-        params: { q: text.trim() }
+        params: { q: text.trim(), refresh: Date.now().toString() }
       });
     } else {
-      router.push('/browse');
+      router.push({
+        pathname: '/browse',
+        params: { refresh: Date.now().toString() }
+      });
     }
   };
 
@@ -115,7 +119,7 @@ const CategoryItem = ({ item }: { item: Category }) => {
         onPressOut={handlePressOut}
         onPress={() => router.push({
           pathname: '/browse',
-          params: { category: item.name }
+          params: { category: item.name, refresh: Date.now().toString() }
         })}
         className="mb-3 flex-row items-center justify-between rounded-lg p-4 border border-gray-200 bg-white mx-6"
         style={{

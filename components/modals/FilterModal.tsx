@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
-import { View, Text, Modal, TouchableOpacity, ScrollView, Pressable } from 'react-native';
+import { View, Text, Modal, TouchableOpacity, ScrollView } from 'react-native';
 import { COLORS } from '~/theme/colors';
-import { X, Check, DollarSign, Clock, TrendingUp, Filter } from 'lucide-react-native';
-import Reanimated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
+import { X, DollarSign, Clock, TrendingUp, Filter, RotateCw, Package2 } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import { useSettings } from '~/contexts/SettingsContext';
 
@@ -23,88 +22,44 @@ interface FilterModalProps {
   };
 }
 
-// Enhanced Filter Option Component
-const FilterOption = ({ title, value, selectedValue, onSelect, icon, description }: {
+// Filter Chip Component (UT Dining style)
+const FilterChip = ({ title, value, selectedValue, onSelect, icon }: {
   title: string;
   value: string;
   selectedValue: string;
   onSelect: (value: any) => void;
   icon?: React.ReactNode;
-  description?: string;
 }) => {
   const { hapticFeedbackEnabled } = useSettings();
-  const scale = useSharedValue(1);
-  const opacity = useSharedValue(1);
-  
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-    opacity: opacity.value,
-  }));
+  const isSelected = selectedValue === value;
 
-  const handlePressIn = () => {
-    scale.value = withSpring(0.98, { damping: 15, stiffness: 400 });
-    opacity.value = withSpring(0.8, { damping: 15, stiffness: 400 });
+  const handlePress = () => {
     if (hapticFeedbackEnabled) {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
+    onSelect(value);
   };
-
-  const handlePressOut = () => {
-    scale.value = withSpring(1, { damping: 15, stiffness: 400 });
-    opacity.value = withSpring(1, { damping: 15, stiffness: 400 });
-  };
-
-  const isSelected = selectedValue === value;
 
   return (
-    <Reanimated.View style={animatedStyle}>
-      <Pressable
-        onPressIn={handlePressIn}
-        onPressOut={handlePressOut}
-        onPress={() => onSelect(value)}
-        className={`mx-4 mb-3 p-4 rounded-lg border ${
-          isSelected ? 'border-orange-500 bg-orange-50' : 'border-gray-200 bg-white'
-        }`}
-        style={{
-          shadowColor: '#BF5700',
-          shadowOffset: { width: 0, height: 1 },
-          shadowOpacity: isSelected ? 0.15 : 0.05,
-          shadowRadius: 3,
-          elevation: isSelected ? 3 : 1,
-        }}
-      >
-        <View className="flex-row items-center justify-between">
-          <View className="flex-row items-center flex-1">
-            {icon && (
-              <View className={`w-8 h-8 rounded-full items-center justify-center mr-3 ${
-                isSelected ? 'bg-orange-100' : 'bg-gray-100'
-              }`}>
-                {icon}
-              </View>
-            )}
-            <View className="flex-1">
-              <Text className={`font-semibold text-base ${
-                isSelected ? 'text-orange-700' : 'text-gray-900'
-              }`}>
-                {title}
-              </Text>
-              {description && (
-                <Text className={`text-sm mt-1 ${
-                  isSelected ? 'text-orange-600' : 'text-gray-500'
-                }`}>
-                  {description}
-                </Text>
-              )}
-            </View>
-          </View>
-          {isSelected && (
-            <View className="w-6 h-6 bg-orange-500 rounded-full items-center justify-center">
-              <Check size={14} color="white" />
-            </View>
-          )}
+    <TouchableOpacity
+      onPress={handlePress}
+      className={`flex-row items-center gap-x-2 rounded-lg border px-3 py-2`}
+      style={{
+        borderColor: isSelected ? COLORS.utOrange : '#D1D5DB',
+        backgroundColor: isSelected ? COLORS.utOrange : 'white',
+      }}
+    >
+      {icon && (
+        <View className="w-4 h-4 items-center justify-center">
+          {icon}
         </View>
-      </Pressable>
-    </Reanimated.View>
+      )}
+      <Text className={`font-medium text-sm ${
+        isSelected ? 'text-white' : 'text-gray-700'
+      }`}>
+        {title}
+      </Text>
+    </TouchableOpacity>
   );
 };
 
@@ -136,24 +91,6 @@ const FilterModal: React.FC<FilterModalProps> = ({
     setCondition('all');
   };
 
-  const renderOption = (
-    title: string,
-    value: string,
-    selectedValue: string,
-    onSelect: (value: any) => void
-  ) => (
-    <TouchableOpacity
-      onPress={() => onSelect(value)}
-      className="flex-row items-center justify-between py-3 px-4 border-b border-gray-100"
-    >
-      <Text className={`text-base ${selectedValue === value ? 'text-[#bf5700] font-medium' : 'text-gray-700'}`}>
-        {title}
-      </Text>
-      {selectedValue === value && (
-        <Check size={20} color={COLORS.utOrange} />
-      )}
-    </TouchableOpacity>
-  );
 
   return (
     <Modal
@@ -164,98 +101,114 @@ const FilterModal: React.FC<FilterModalProps> = ({
     >
       <View className="flex-1 bg-black/50">
         <View className="flex-1 mt-20 bg-white rounded-t-3xl">
-          {/* Header */}
-          <View className="flex-row justify-between items-center p-4 border-b border-gray-200">
-            <Text className="text-xl font-semibold">Filters & Sort</Text>
-            <TouchableOpacity onPress={onClose}>
-              <X size={24} color={COLORS.light.grey} />
-            </TouchableOpacity>
-          </View>
+          <ScrollView showsVerticalScrollIndicator={false}>
+            <View className="p-6">
+              {/* Header with Close Button */}
+              <View className="mb-6 flex-row items-center justify-between">
+                <View className="flex-row items-center gap-x-2">
+                  <Filter color={COLORS.utOrange} size={20} />
+                  <Text className="font-bold text-3xl text-black">Filters</Text>
+                </View>
 
-          <ScrollView className="flex-1 bg-gray-50" showsVerticalScrollIndicator={false}>
-            {/* Sort Options */}
-            <View className="py-6">
-              <Text className="px-6 pb-4 text-lg font-black text-gray-900">Sort By</Text>
-              <FilterOption title="Most Relevant" value="relevance" selectedValue={sortBy} onSelect={setSortBy} 
-                icon={<TrendingUp size={16} color="#BF5700" />} description="Best matches for your search" />
-              <FilterOption title="Newest First" value="newest" selectedValue={sortBy} onSelect={setSortBy} 
-                icon={<Clock size={16} color="#BF5700" />} description="Recently posted items" />
-              <FilterOption title="Oldest First" value="oldest" selectedValue={sortBy} onSelect={setSortBy} 
-                icon={<Clock size={16} color="#BF5700" />} description="Older listings first" />
-              <FilterOption title="Price: Low to High" value="price_low" selectedValue={sortBy} onSelect={setSortBy} 
-                icon={<DollarSign size={16} color="#BF5700" />} description="Cheapest items first" />
-              <FilterOption title="Price: High to Low" value="price_high" selectedValue={sortBy} onSelect={setSortBy} 
-                icon={<DollarSign size={16} color="#BF5700" />} description="Most expensive first" />
-            </View>
+                <TouchableOpacity
+                  onPress={onClose}
+                  className="p-2"
+                >
+                  <X size={24} color="#6B7280" />
+                </TouchableOpacity>
+              </View>
 
-            {/* Price Range */}
-            <View className="py-6">
-              <Text className="px-6 pb-4 text-lg font-black text-gray-900">Price Range</Text>
-              <FilterOption title="All Prices" value="all" selectedValue={priceRange} onSelect={setPriceRange} 
-                icon={<DollarSign size={16} color="#BF5700" />} description="No price limit" />
-              <FilterOption title="Free Items" value="free" selectedValue={priceRange} onSelect={setPriceRange} 
-                icon={<DollarSign size={16} color="#BF5700" />} description="$0 items only" />
-              <FilterOption title="Under $25" value="under_25" selectedValue={priceRange} onSelect={setPriceRange} 
-                icon={<DollarSign size={16} color="#BF5700" />} description="Budget-friendly finds" />
-              <FilterOption title="Under $50" value="under_50" selectedValue={priceRange} onSelect={setPriceRange} 
-                icon={<DollarSign size={16} color="#BF5700" />} description="Affordable options" />
-              <FilterOption title="Under $100" value="under_100" selectedValue={priceRange} onSelect={setPriceRange} 
-                icon={<DollarSign size={16} color="#BF5700" />} description="Mid-range items" />
-              <FilterOption title="Under $500" value="under_500" selectedValue={priceRange} onSelect={setPriceRange} 
-                icon={<DollarSign size={16} color="#BF5700" />} description="Higher-end products" />
-              <FilterOption title="$500 and up" value="500_plus" selectedValue={priceRange} onSelect={setPriceRange} 
-                icon={<DollarSign size={16} color="#BF5700" />} description="Premium items" />
-            </View>
+              {/* Reset Button */}
+              <View className="mb-4 flex-row justify-end">
+                <TouchableOpacity
+                  onPress={() => {
+                    handleReset();
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  }}
+                  className="flex-row items-center gap-x-1 rounded-full border border-gray-300 px-3 py-1"
+                >
+                  <RotateCw size={16} color="#6B7280" />
+                  <Text className="font-medium text-sm text-gray-600">Reset</Text>
+                </TouchableOpacity>
+              </View>
 
-            {/* Time Range */}
-            <View className="py-6">
-              <Text className="px-6 pb-4 text-lg font-black text-gray-900">Posted</Text>
-              <FilterOption title="Any Time" value="all" selectedValue={timeRange} onSelect={setTimeRange} 
-                icon={<Clock size={16} color="#BF5700" />} description="All listings" />
-              <FilterOption title="Today" value="today" selectedValue={timeRange} onSelect={setTimeRange} 
-                icon={<Clock size={16} color="#BF5700" />} description="Posted in the last 24 hours" />
-              <FilterOption title="This Week" value="this_week" selectedValue={timeRange} onSelect={setTimeRange} 
-                icon={<Clock size={16} color="#BF5700" />} description="Posted in the last 7 days" />
-              <FilterOption title="This Month" value="this_month" selectedValue={timeRange} onSelect={setTimeRange} 
-                icon={<Clock size={16} color="#BF5700" />} description="Posted in the last 30 days" />
-              <FilterOption title="This Year" value="this_year" selectedValue={timeRange} onSelect={setTimeRange} 
-                icon={<Clock size={16} color="#BF5700" />} description="Posted in the last 12 months" />
-            </View>
+              {/* Sort By */}
+              <Text className="mb-2 font-semibold text-xl">Sort By</Text>
+              <View className="mb-6 flex-row flex-wrap gap-2">
+                <FilterChip title="Newest" value="newest" selectedValue={sortBy} onSelect={setSortBy} 
+                  icon={<Clock size={14} color={sortBy === 'newest' ? '#fff' : COLORS.utOrange} />} />
+                <FilterChip title="Oldest" value="oldest" selectedValue={sortBy} onSelect={setSortBy} 
+                  icon={<Clock size={14} color={sortBy === 'oldest' ? '#fff' : COLORS.utOrange} />} />
+                <FilterChip title="Price: Low-High" value="price_low" selectedValue={sortBy} onSelect={setSortBy} 
+                  icon={<DollarSign size={14} color={sortBy === 'price_low' ? '#fff' : COLORS.utOrange} />} />
+                <FilterChip title="Price: High-Low" value="price_high" selectedValue={sortBy} onSelect={setSortBy} 
+                  icon={<DollarSign size={14} color={sortBy === 'price_high' ? '#fff' : COLORS.utOrange} />} />
+                <FilterChip title="Most Relevant" value="relevance" selectedValue={sortBy} onSelect={setSortBy} 
+                  icon={<TrendingUp size={14} color={sortBy === 'relevance' ? '#fff' : COLORS.utOrange} />} />
+              </View>
 
-            {/* Condition */}
-            <View className="py-6 pb-20">
-              <Text className="px-6 pb-4 text-lg font-black text-gray-900">Condition</Text>
-              <FilterOption title="Any Condition" value="all" selectedValue={condition} onSelect={setCondition} 
-                icon={<Filter size={16} color="#BF5700" />} description="All item conditions" />
-              <FilterOption title="New" value="new" selectedValue={condition} onSelect={setCondition} 
-                icon={<Filter size={16} color="#BF5700" />} description="Brand new, unused items" />
-              <FilterOption title="Like New" value="like_new" selectedValue={condition} onSelect={setCondition} 
-                icon={<Filter size={16} color="#BF5700" />} description="Barely used, excellent condition" />
-              <FilterOption title="Good" value="good" selectedValue={condition} onSelect={setCondition} 
-                icon={<Filter size={16} color="#BF5700" />} description="Used but in good working order" />
-              <FilterOption title="Fair" value="fair" selectedValue={condition} onSelect={setCondition} 
-                icon={<Filter size={16} color="#BF5700" />} description="Shows wear, still functional" />
-            </View>
-          </ScrollView>
+              {/* Price Range */}
+              <Text className="mb-2 font-semibold text-xl">Price Range</Text>
+              <View className="mb-6 flex-row flex-wrap gap-2">
+                <FilterChip title="All Prices" value="all" selectedValue={priceRange} onSelect={setPriceRange} />
+                <FilterChip title="Free" value="free" selectedValue={priceRange} onSelect={setPriceRange} 
+                  icon={<DollarSign size={14} color={priceRange === 'free' ? '#fff' : COLORS.utOrange} />} />
+                <FilterChip title="Under $25" value="under_25" selectedValue={priceRange} onSelect={setPriceRange} 
+                  icon={<DollarSign size={14} color={priceRange === 'under_25' ? '#fff' : COLORS.utOrange} />} />
+                <FilterChip title="Under $50" value="under_50" selectedValue={priceRange} onSelect={setPriceRange} 
+                  icon={<DollarSign size={14} color={priceRange === 'under_50' ? '#fff' : COLORS.utOrange} />} />
+                <FilterChip title="Under $100" value="under_100" selectedValue={priceRange} onSelect={setPriceRange} 
+                  icon={<DollarSign size={14} color={priceRange === 'under_100' ? '#fff' : COLORS.utOrange} />} />
+                <FilterChip title="Under $500" value="under_500" selectedValue={priceRange} onSelect={setPriceRange} 
+                  icon={<DollarSign size={14} color={priceRange === 'under_500' ? '#fff' : COLORS.utOrange} />} />
+                <FilterChip title="$500+" value="500_plus" selectedValue={priceRange} onSelect={setPriceRange} 
+                  icon={<DollarSign size={14} color={priceRange === '500_plus' ? '#fff' : COLORS.utOrange} />} />
+              </View>
 
-          {/* Action Buttons */}
-          <View className="p-4 border-t border-gray-200 bg-white">
-            <View className="flex-row gap-3">
-              <TouchableOpacity
-                onPress={handleReset}
-                className="flex-1 py-3 rounded-lg items-center border border-gray-300"
-              >
-                <Text className="text-gray-700 font-semibold text-base">Reset</Text>
-              </TouchableOpacity>
+              {/* Time Posted */}
+              <Text className="mb-2 font-semibold text-xl">Posted</Text>
+              <Text className="mb-2 text-sm text-gray-600">Filter by when items were posted</Text>
+              <View className="mb-6 flex-row flex-wrap gap-2">
+                <FilterChip title="Any Time" value="all" selectedValue={timeRange} onSelect={setTimeRange} />
+                <FilterChip title="Today" value="today" selectedValue={timeRange} onSelect={setTimeRange} 
+                  icon={<Clock size={14} color={timeRange === 'today' ? '#fff' : COLORS.utOrange} />} />
+                <FilterChip title="This Week" value="this_week" selectedValue={timeRange} onSelect={setTimeRange} 
+                  icon={<Clock size={14} color={timeRange === 'this_week' ? '#fff' : COLORS.utOrange} />} />
+                <FilterChip title="This Month" value="this_month" selectedValue={timeRange} onSelect={setTimeRange} 
+                  icon={<Clock size={14} color={timeRange === 'this_month' ? '#fff' : COLORS.utOrange} />} />
+                <FilterChip title="This Year" value="this_year" selectedValue={timeRange} onSelect={setTimeRange} 
+                  icon={<Clock size={14} color={timeRange === 'this_year' ? '#fff' : COLORS.utOrange} />} />
+              </View>
+
+              {/* Item Condition */}
+              <Text className="mb-2 font-semibold text-xl">Item Condition</Text>
+              <Text className="mb-2 text-sm text-gray-600">Filter by the condition of items</Text>
+              <View className="mb-6 flex-row flex-wrap gap-2">
+                <FilterChip title="Any Condition" value="all" selectedValue={condition} onSelect={setCondition} />
+                <FilterChip title="New" value="new" selectedValue={condition} onSelect={setCondition} 
+                  icon={<Package2 size={14} color={condition === 'new' ? '#fff' : COLORS.utOrange} />} />
+                <FilterChip title="Like New" value="like_new" selectedValue={condition} onSelect={setCondition} 
+                  icon={<Package2 size={14} color={condition === 'like_new' ? '#fff' : COLORS.utOrange} />} />
+                <FilterChip title="Good" value="good" selectedValue={condition} onSelect={setCondition} 
+                  icon={<Package2 size={14} color={condition === 'good' ? '#fff' : COLORS.utOrange} />} />
+                <FilterChip title="Fair" value="fair" selectedValue={condition} onSelect={setCondition} 
+                  icon={<Package2 size={14} color={condition === 'fair' ? '#fff' : COLORS.utOrange} />} />
+              </View>
+
+              {/* Apply Button */}
               <TouchableOpacity
                 onPress={handleApply}
-                className="flex-2 py-3 rounded-lg items-center"
-                style={{ backgroundColor: COLORS.utOrange, flex: 2 }}
+                className="mb-6 mt-4 py-4 rounded-lg items-center"
+                style={{ backgroundColor: COLORS.utOrange }}
               >
-                <Text className="text-white font-semibold text-base">Apply Filters</Text>
+                <Text className="text-white font-semibold text-lg">Apply Filters</Text>
               </TouchableOpacity>
+
+              <Text className="text-xs text-gray-500 text-center">
+                Filters help you find exactly what you're looking for in the UT Marketplace
+              </Text>
             </View>
-          </View>
+          </ScrollView>
         </View>
       </View>
     </Modal>

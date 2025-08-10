@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, TextInput, TouchableOpacity, Pressable } from 'react-native';
-import { Search, SlidersHorizontal } from 'lucide-react-native';
+import { Search, SlidersHorizontal, X } from 'lucide-react-native';
 import { COLORS } from '~/theme/colors';
 import Reanimated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
@@ -142,6 +142,18 @@ export const SearchBar: React.FC<SearchBarProps> = ({
               returnKeyType="search"
               blurOnSubmit={false}
             />
+            {value.length > 0 && (
+              <TouchableOpacity
+                onPress={() => {
+                  onChangeText('');
+                  onSubmit('');
+                }}
+                className="ml-2 p-1"
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              >
+                <X size={16} color="#9CA3AF" />
+              </TouchableOpacity>
+            )}
           </Pressable>
 
           {/* Search Suggestions Dropdown */}
