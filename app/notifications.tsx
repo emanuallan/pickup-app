@@ -60,7 +60,13 @@ export default function NotificationsScreen() {
     if (notification.type === 'message') {
       router.push({
         pathname: '/chat/[id]',
-        params: { id: notification.listing_id?.toString() || '' }
+        params: { 
+          id: notification.actor_id || '',
+          otherUserId: notification.actor_id || '',
+          otherUserName: notification.data.sender_name || 'User',
+          listingId: notification.listing_id?.toString() || 'general',
+          listingTitle: notification.data.listing_title || ''
+        }
       });
     } else if (notification.listing_id) {
       router.push({

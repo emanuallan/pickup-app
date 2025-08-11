@@ -277,4 +277,48 @@ export class NotificationService {
       }
     });
   }
+
+  /**
+   * Delete a single notification
+   */
+  static async deleteNotification(notificationId: string): Promise<boolean> {
+    try {
+      const { error } = await supabase
+        .from('notifications')
+        .delete()
+        .eq('id', notificationId);
+
+      if (error) {
+        console.error('Error deleting notification:', error);
+        return false;
+      }
+
+      return true;
+    } catch (error) {
+      console.error('Error deleting notification:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Delete all notifications for a user
+   */
+  static async clearAllNotifications(userId: string): Promise<boolean> {
+    try {
+      const { error } = await supabase
+        .from('notifications')
+        .delete()
+        .eq('user_id', userId);
+
+      if (error) {
+        console.error('Error clearing all notifications:', error);
+        return false;
+      }
+
+      return true;
+    } catch (error) {
+      console.error('Error clearing all notifications:', error);
+      return false;
+    }
+  }
 }

@@ -3,7 +3,7 @@ import { Plus, Search } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { useAuth } from '~/contexts/AuthContext';
 import { COLORS } from '~/theme/colors';
-import { AnimatedButton } from './AnimatedButton';
+import { AnimatedButton } from '~/components/ui/AnimatedButton';
 
 export const HeroSection = () => {
   const router = useRouter();

@@ -2,7 +2,7 @@ import { View, Text, TouchableOpacity, Image, FlatList, ActivityIndicator } from
 import { ArrowRight } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { COLORS } from '~/theme/colors';
-import { AnimatedButton } from './AnimatedButton';
+import { AnimatedButton } from '~/components/ui/AnimatedButton';
 
 interface Item {
   id: number;

@@ -1,5 +1,5 @@
 import * as Haptics from 'expo-haptics';
-import { Tabs } from 'expo-router';
+import { Tabs , usePathname } from 'expo-router';
 import { Home, Search, MessageCircle, User, Plus } from 'lucide-react-native';
 import { View } from 'react-native';
 import { useEffect, useState } from 'react';
@@ -8,7 +8,6 @@ import { COLORS } from '~/theme/colors';
 import { useAuth } from '~/contexts/AuthContext';
 import { useNotificationSync } from '~/contexts/NotificationSyncContext';
 import { supabase } from '~/lib/supabase';
-import { usePathname } from 'expo-router';
 
 function ConditionalHeader() {
   const pathname = usePathname();

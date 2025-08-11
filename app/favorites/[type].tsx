@@ -166,7 +166,13 @@ export default function FavoritesScreen() {
     setTimeout(() => {
       router.push({
         pathname: '/chat/[id]',
-        params: { id: isValidUUID(listing.id) ? listing.id : 'general' }
+        params: { 
+          id: listing.user_id,
+          otherUserId: listing.user_id,
+          otherUserName: listing.user_name,
+          listingId: isValidUUID(listing.id.toString()) ? listing.id.toString() : 'general',
+          listingTitle: listing.title
+        }
       });
     }, 100);
   };

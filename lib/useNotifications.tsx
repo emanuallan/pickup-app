@@ -115,32 +115,40 @@ export function useNotifications() {
   // Delete a single notification
   const deleteNotification = useCallback(async (notificationId: string) => {
     try {
-      const { error } = await supabase
-        .from('notifications')
-        .delete()
-        .eq('id', notificationId);
+      // Find the notification to check if it was unread
+      const notificationToDelete = notifications.find(n => n.id === notificationId);
       
-      if (error) throw error;
+      const success = await NotificationService.deleteNotification(notificationId);
+      
+      if (!success) throw new Error('Failed to delete notification');
 
-      // The real-time subscription will handle state updates
+      // Immediately update local state for better UX
+      setNotifications(prev => 
+        prev.filter(n => n.id !== notificationId)
+      );
+      
+      // Update unread count if notification was unread
+      if (notificationToDelete && !notificationToDelete.is_read) {
+        setUnreadCount(prev => Math.max(0, prev - 1));
+      }
+
       return true;
     } catch (error) {
       console.error('Error deleting notification:', error);
+      // Reload notifications on error to ensure consistency
+      loadNotifications();
       return false;
     }
-  }, []);
+  }, [notifications, loadNotifications]);
 
   // Clear all notifications
   const clearAllNotifications = useCallback(async () => {
     if (!user?.email) return false;
 
     try {
-      const { error } = await supabase
-        .from('notifications')
-        .delete()
-        .eq('user_id', user.email);
+      const success = await NotificationService.clearAllNotifications(user.email);
       
-      if (error) throw error;
+      if (!success) throw new Error('Failed to clear all notifications');
 
       // Immediately update local state for better UX
       setNotifications([]);
@@ -149,9 +157,11 @@ export function useNotifications() {
       return true;
     } catch (error) {
       console.error('Error clearing all notifications:', error);
+      // Reload notifications on error to ensure consistency
+      loadNotifications();
       return false;
     }
-  }, [user?.email]);
+  }, [user?.email, loadNotifications]);
 
   // Refresh notifications
   const refresh = useCallback(() => {

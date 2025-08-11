@@ -108,7 +108,7 @@ export const ListingBuyerView: React.FC<ListingBuyerViewProps> = ({
       const { data, error } = await supabase
         .rpc('get_user_listing_status', {
           p_user_id: user.email,
-          p_listing_id: listing.id
+          p_listing_id: listing.id.toString()
         });
 
       if (error) throw error;
@@ -165,13 +165,15 @@ export const ListingBuyerView: React.FC<ListingBuyerViewProps> = ({
   const isValidUUID = (id: string) => typeof id === 'string' && /^[0-9a-fA-F-]{36}$/.test(id);
 
   const navigateToMessage = () => {
+    // Convert listing.id to string and validate if it's a proper UUID
+    const listingIdStr = listing.id.toString();
     router.push({
       pathname: '/chat/[id]',
       params: { 
         id: listing.user_id,
         otherUserId: listing.user_id,
         otherUserName: listing.user_name,
-        listingId: isValidUUID(listing.id) ? listing.id : 'general',
+        listingId: isValidUUID(listingIdStr) ? listingIdStr : 'general',
         listingTitle: listing.title
       }
     });
@@ -188,7 +190,7 @@ export const ListingBuyerView: React.FC<ListingBuyerViewProps> = ({
       const { data, error } = await supabase
         .rpc('toggle_user_favorite', {
           p_user_id: user.email,
-          p_listing_id: listing.id,
+          p_listing_id: listing.id.toString(),
           p_type: 'favorite'
         });
 
@@ -220,7 +222,7 @@ export const ListingBuyerView: React.FC<ListingBuyerViewProps> = ({
       const { data, error } = await supabase
         .rpc('toggle_user_favorite', {
           p_user_id: user.email,
-          p_listing_id: listing.id,
+          p_listing_id: listing.id.toString(),
           p_type: 'watchlist'
         });
 

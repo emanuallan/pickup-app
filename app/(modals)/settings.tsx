@@ -1,4 +1,4 @@
-import { View, Text, TouchableOpacity, ScrollView, Alert, Image, TextInput, ActivityIndicator, Switch, Linking } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, Alert, Image, TextInput, ActivityIndicator, Switch, Linking , useColorScheme } from 'react-native';
 import { useAuth } from '~/contexts/AuthContext';
 import { useRouter } from 'expo-router';
 import { LogOut, Camera, User, Save, Bell, Shield, HelpCircle, Mail, Star, Moon, Palette, Globe, Info, ChevronRight, Heart, MessageCircle, Trash2 } from 'lucide-react-native';
@@ -11,7 +11,6 @@ import { decode } from 'base64-arraybuffer';
 import { COLORS } from '~/theme/colors';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Haptics from 'expo-haptics';
-import { useColorScheme } from 'react-native';
 import { useSettings } from '~/contexts/SettingsContext';
 
 interface UserSettings {

@@ -151,7 +151,10 @@ export default function ChatScreen() {
     }
   };
 
-  const isValidUUID = (id: string) => typeof id === 'string' && /^[0-9a-fA-F-]{36}$/.test(id);
+  const isValidUUID = (id: string | undefined | null) => {
+    if (!id || typeof id !== 'string') return false;
+    return /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/i.test(id);
+  };
 
   const sendMessage = async () => {
     if (!user?.email || !otherUserId || !newMessage.trim()) return;
@@ -163,7 +166,7 @@ export default function ChatScreen() {
         sender_id: user.email,
         receiver_id: otherUserId,
         content: newMessage.trim(),
-        listing_id: (listingId === "general" || !isValidUUID(listingId)) ? null : listingId,
+        listing_id: (listingId === "general" || !isValidUUID(listingId?.toString())) ? null : listingId?.toString(),
         read: false,
       };
 

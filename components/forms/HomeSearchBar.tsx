@@ -1,7 +1,7 @@
 import { View, Text } from 'react-native';
 import { Search } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
-import { AnimatedButton } from './AnimatedButton';
+import { AnimatedButton } from '~/components/ui/AnimatedButton';
 
 export const HomeSearchBar = () => {
   const router = useRouter();

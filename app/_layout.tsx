@@ -7,7 +7,7 @@ import { ActionSheetProvider } from '@expo/react-native-action-sheet';
 
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 
-import { Link, Stack, Tabs, useRouter } from 'expo-router';
+import { Link, Stack, Tabs, useRouter , Slot } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { Pressable, View } from 'react-native';
 
@@ -23,7 +23,6 @@ import { AuthProvider } from '../contexts/AuthContext';
 import { NotificationProvider } from '../contexts/NotificationContext';
 import { NotificationSyncProvider } from '../contexts/NotificationSyncContext';
 import { SettingsProvider } from '../contexts/SettingsContext';
-import { Slot } from 'expo-router';
 import { useEffect } from 'react';
 
 export {

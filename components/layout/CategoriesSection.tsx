@@ -2,7 +2,7 @@ import { View, Text, TouchableOpacity, FlatList } from 'react-native';
 import { Sofa, Home, Laptop, Car, Book, Shirt, Utensils, ShoppingBag, ArrowRight } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { COLORS } from '~/theme/colors';
-import { AnimatedButton } from './AnimatedButton';
+import { AnimatedButton } from '~/components/ui/AnimatedButton';
 
 interface Category {
   id: number;

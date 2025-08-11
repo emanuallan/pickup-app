@@ -240,7 +240,7 @@ export function getFallbackSuggestions(searchQuery: string, searchResults: Searc
   const existingIds = new Set(searchResults.map(result => result.id));
   
   // Find listings that might be related but didn't make the main search
-  const fallbackCandidates: Array<Listing & { fallbackScore: number; reason: string }> = [];
+  const fallbackCandidates: (Listing & { fallbackScore: number; reason: string })[] = [];
 
   allListings.forEach(listing => {
     if (existingIds.has(listing.id)) return; // Skip already included listings
@@ -339,7 +339,7 @@ export function getFallbackSuggestions(searchQuery: string, searchResults: Searc
 }
 
 // Helper function to determine the best fallback section title
-export function getFallbackSectionTitle(searchQuery: string, fallbackListings: Array<Listing & { reason?: string }>): string {
+export function getFallbackSectionTitle(searchQuery: string, fallbackListings: (Listing & { reason?: string })[]): string {
   if (fallbackListings.length === 0) return '';
 
   // Get the most common reason
