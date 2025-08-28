@@ -4,6 +4,7 @@ import { useRouter } from 'expo-router';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
+import { COLORS } from '~/theme/colors';
 
 interface Message {
   id: string;
@@ -184,10 +185,30 @@ export default function MessagesScreen() {
 
   if (!user) {
     return (
-      <View className="flex-1 bg-white px-4 justify-center">
-        <Text className="text-xl text-center text-gray-600">
-          Please sign in to view your messages
-        </Text>
+      <View className="flex-1 bg-gray-50 justify-center">
+        <View className="bg-white mx-4 rounded-3xl p-8 shadow-sm">
+          <View className="items-center mb-8">
+            <MaterialIcons name="forum" size={64} color={COLORS.utOrange} />
+            <Text className="text-2xl font-semibold mt-4">Your Messages</Text>
+            <Text className="text-gray-500 text-center mt-2">
+              Connect with other Longhorns in the marketplace
+            </Text>
+          </View>
+
+          <View className="items-center">
+            <Text className="text-gray-600 text-center mb-4 text-lg">
+              You need to be logged in to view your messages
+            </Text>
+            <TouchableOpacity
+              onPress={() => router.push('/(tabs)/profile')}
+              className="w-full flex-row items-center justify-center py-3.5 rounded-xl"
+              style={{ backgroundColor: COLORS.utOrange }}
+            >
+              <MaterialIcons name="person" size={20} color={COLORS.white} style={{ marginRight: 8 }} />
+              <Text className="text-white font-medium">Go to Profile to Log In</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
       </View>
     );
   }

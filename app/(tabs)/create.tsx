@@ -110,14 +110,30 @@ export default function CreateScreen() {
               </Text>
             </View>
 
-            <TouchableOpacity
-              onPress={() => router.push('/create/photos')}
-              className="w-full flex-row items-center justify-center py-3.5 rounded-xl"
-              style={{ backgroundColor: COLORS.utOrange }}
-            >
-              <MaterialIcons name="add-photo-alternate" size={20} color={COLORS.white} style={{ marginRight: 8 }} />
-              <Text className="text-white font-medium">Start with Photos</Text>
-            </TouchableOpacity>
+            {user ? (
+              <TouchableOpacity
+                onPress={() => router.push('/create/photos')}
+                className="w-full flex-row items-center justify-center py-3.5 rounded-xl"
+                style={{ backgroundColor: COLORS.utOrange }}
+              >
+                <MaterialIcons name="add-photo-alternate" size={20} color={COLORS.white} style={{ marginRight: 8 }} />
+                <Text className="text-white font-medium">Start with Photos</Text>
+              </TouchableOpacity>
+            ) : (
+              <View className="items-center">
+                <Text className="text-gray-600 text-center mb-4 text-lg">
+                  You need to be logged in to create a listing
+                </Text>
+                <TouchableOpacity
+                  onPress={() => router.push('/(tabs)/profile')}
+                  className="w-full flex-row items-center justify-center py-3.5 rounded-xl"
+                  style={{ backgroundColor: COLORS.utOrange }}
+                >
+                  <MaterialIcons name="person" size={20} color={COLORS.white} style={{ marginRight: 8 }} />
+                  <Text className="text-white font-medium">Go to Profile to Log In</Text>
+                </TouchableOpacity>
+              </View>
+            )}
           </View>
 
           {/* My Listings Section */}
