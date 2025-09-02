@@ -59,10 +59,10 @@ export const RatingSubmissionModal: React.FC<RatingSubmissionModalProps> = ({
     try {
       // Check if user has already rated this person
       const { data: existingRating } = await supabase
-        .from('ratings')
+        .from('reviews')
         .select('id')
-        .eq('rater_id', user.email)
-        .eq('rated_id', ratedUserId)
+        .eq('reviewer_id', user.id)
+        .eq('reviewed_id', ratedUserId)
         .single();
 
       if (existingRating) {
@@ -79,13 +79,12 @@ export const RatingSubmissionModal: React.FC<RatingSubmissionModalProps> = ({
 
       // Insert new rating
       const { error } = await supabase
-        .from('ratings')
+        .from('reviews')
         .insert({
-          rater_id: user.email,
-          rated_id: ratedUserId,
+          reviewer_id: user.id,
+          reviewed_id: ratedUserId,
           rating: rating,
-          comment: comment.trim() || null,
-          created_at: new Date().toISOString()
+          comment: comment.trim() || null
         });
 
       if (error) throw error;
@@ -114,14 +113,13 @@ export const RatingSubmissionModal: React.FC<RatingSubmissionModalProps> = ({
   const updateRating = async () => {
     try {
       const { error } = await supabase
-        .from('ratings')
+        .from('reviews')
         .update({
           rating: rating,
-          comment: comment.trim() || null,
-          created_at: new Date().toISOString()
+          comment: comment.trim() || null
         })
-        .eq('rater_id', user.email)
-        .eq('rated_id', ratedUserId);
+        .eq('reviewer_id', user.id)
+        .eq('reviewed_id', ratedUserId);
 
       if (error) throw error;
 

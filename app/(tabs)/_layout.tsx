@@ -2,12 +2,23 @@ import * as Haptics from 'expo-haptics';
 import { Tabs , usePathname } from 'expo-router';
 import { Home, Search, MessageCircle, User, Plus } from 'lucide-react-native';
 import { View } from 'react-native';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, createContext, useContext, useCallback } from 'react';
 import TopBar from "~/components/layout/TopBar";
 import { COLORS } from '~/theme/colors';
 import { useAuth } from '~/contexts/AuthContext';
 import { useNotificationSync } from '~/contexts/NotificationSyncContext';
 import { supabase } from '~/lib/supabase';
+
+// Create context for home refresh
+const HomeRefreshContext = createContext<{
+  triggerRefresh: () => void;
+  refreshKey: number;
+}>({
+  triggerRefresh: () => {},
+  refreshKey: 0,
+});
+
+export const useHomeRefresh = () => useContext(HomeRefreshContext);
 
 function ConditionalHeader() {
   const pathname = usePathname();
@@ -53,35 +64,54 @@ export default function TabsLayout() {
   const { user } = useAuth();
   const { unreadCount } = useNotificationSync();
   const [unreadMessageCount, setUnreadMessageCount] = useState(0);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const pathname = usePathname();
+
+  const fetchUnreadMessages = useCallback(async () => {
+    if (!user?.id) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('messages')
+        .select('id')
+        .eq('receiver_id', user.id)
+        .eq('is_read', false);
+      
+      if (error) throw error;
+      setUnreadMessageCount(data?.length || 0);
+    } catch (error) {
+      console.error('Error fetching unread messages:', error);
+    }
+  }, [user?.id]);
 
   // Fetch unread messages count
   useEffect(() => {
     if (user?.email) {
       fetchUnreadMessages();
     }
-  }, [user?.email]);
+  }, [user?.email, fetchUnreadMessages]);
 
   // Real-time updates for message count
   useEffect(() => {
-    if (!user?.email) return;
+    if (!user?.id) return;
 
     const subscription = supabase
-      .channel(`messages_count:${user.email}`)
+      .channel(`messages_count:${user.id}`)
       .on(
         'postgres_changes',
         {
           event: '*',
           schema: 'public',
           table: 'messages',
-          filter: `receiver_id=eq.${user.email}`,
+          filter: `receiver_id=eq.${user.id}`,
         },
         (payload) => {
           if (payload.eventType === 'INSERT') {
             setUnreadMessageCount(prev => prev + 1);
           } else if (payload.eventType === 'UPDATE') {
-            if (payload.old.read === false && payload.new.read === true) {
+            if (payload.old.is_read === false && payload.new.is_read === true) {
               setUnreadMessageCount(prev => Math.max(0, prev - 1));
-            } else if (payload.old.read === true && payload.new.read === false) {
+            } else if (payload.old.is_read === true && payload.new.is_read === false) {
               setUnreadMessageCount(prev => prev + 1);
             }
           }
@@ -92,33 +122,31 @@ export default function TabsLayout() {
     return () => {
       subscription.unsubscribe();
     };
-  }, [user?.email]);
-
-  const fetchUnreadMessages = async () => {
-    if (!user?.email) return;
-    
-    try {
-      const { data, error } = await supabase
-        .from('messages')
-        .select('id')
-        .eq('receiver_id', user.email)
-        .eq('read', false);
-      
-      if (error) throw error;
-      setUnreadMessageCount(data?.length || 0);
-    } catch (error) {
-      console.error('Error fetching unread messages:', error);
-    }
-  };
+  }, [user?.id]);
 
   const handleTabPress = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
   };
 
+  const handleHomeTabPress = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    // If already on home page, trigger refresh
+    if (pathname === '/') {
+      setRefreshTrigger(prev => prev + 1);
+      // Trigger refresh through context
+      triggerRefresh();
+    }
+  };
+
+  const triggerRefresh = () => {
+    setRefreshTrigger(prev => prev + 1);
+  };
+
   return (
-    <View className="flex-1">
-      <ConditionalHeader />
-      <Tabs
+    <HomeRefreshContext.Provider value={{ triggerRefresh, refreshKey: refreshTrigger }}>
+      <View className="flex-1">
+        <ConditionalHeader />
+        <Tabs
         screenOptions={{
           headerShown: false,
           tabBarStyle: {
@@ -153,7 +181,7 @@ export default function TabsLayout() {
             tabBarActiveBackgroundColor: 'rgba(191, 87, 0, 0.05)',
           }}
           listeners={{
-            tabPress: handleTabPress,
+            tabPress: handleHomeTabPress,
           }}
         />
         <Tabs.Screen
@@ -211,6 +239,7 @@ export default function TabsLayout() {
           }}
         />
       </Tabs>
-    </View>
+      </View>
+    </HomeRefreshContext.Provider>
   );
 } 

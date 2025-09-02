@@ -40,13 +40,13 @@ interface Rating {
 }
 
 // Profile Content Component (similar to HomeContent)
-const ProfileContent = () => {
+const ProfileContent = ({ profile }: { profile: UserSettings | null }) => {
   const router = useRouter();
   const { user } = useAuth();
 
   const getGreeting = () => {
     const hour = new Date().getHours();
-    const name = user?.email?.split('@')[0] || 'there';
+    const name = profile?.display_name || (user?.email ? user.email.split('@')[0] : 'there');
     if (hour < 12) return `Good morning, ${name}`;
     if (hour < 17) return `Good afternoon, ${name}`;
     return `Good evening, ${name}`;
@@ -54,8 +54,19 @@ const ProfileContent = () => {
 
   return (
     <View className="px-6 pb-6 pt-4">
-      {/* Greeting */}
-      <View className="mb-6">
+      {/* Profile Header */}
+      <View className="items-center mb-6">
+        <View className="w-20 h-20 rounded-full bg-gray-100 items-center justify-center mb-4">
+          {profile?.profile_image_url ? (
+            <Image
+              source={{ uri: profile.profile_image_url }}
+              className="w-20 h-20 rounded-full"
+              resizeMode="cover"
+            />
+          ) : (
+            <User size={40} color="#9CA3AF" />
+          )}
+        </View>
         <Text className="text-2xl font-black text-gray-900 mb-1">
           {getGreeting()}
         </Text>
@@ -473,6 +484,12 @@ const ProfileMenuSection = () => {
           onPress={() => router.push('/favorites/favorite')}
         />
         <SettingsItem
+          title="Watchlist"
+          description="Items you're watching"
+          icon={<Eye size={18} color="#BF5700" />}
+          onPress={() => router.push('/favorites/watchlist')}
+        />
+        <SettingsItem
           title="Messages"
           description="Chat with buyers and sellers"
           icon={<MessageCircle size={18} color="#BF5700" />}
@@ -506,14 +523,14 @@ export default function ProfileScreen() {
   const [refreshing, setRefreshing] = useState(false);
 
   const fetchData = async () => {
-    if (!user?.email) return;
+    if (!user?.id) return;
 
     try {
       // 1. Fetch profile
       const { data: userSettings } = await supabase
-        .from('user_settings')
+        .from('users')
         .select('display_name, profile_image_url, bio')
-        .eq('email', user.email)
+        .eq('id', user.id)
         .single();
       setProfile(userSettings);
 
@@ -521,16 +538,16 @@ export default function ProfileScreen() {
       const { data: listingsData } = await supabase
         .from('listings')
         .select('*')
-        .eq('user_id', user.email)
+        .eq('user_id', user.id)
         .eq('is_draft', false)
         .order('created_at', { ascending: false });
       setListings(listingsData || []);
 
       // 3. Fetch ratings
       const { data: ratingsData } = await supabase
-        .from('ratings')
+        .from('reviews')
         .select('*')
-        .eq('rated_id', user.email)
+        .eq('reviewed_id', user.id)
         .order('created_at', { ascending: false });
       
       // Get rater names for each rating
@@ -538,9 +555,9 @@ export default function ProfileScreen() {
       if (ratingsData) {
         for (const rating of ratingsData) {
           const { data: raterData } = await supabase
-            .from('user_settings')
+            .from('users')
             .select('display_name')
-            .eq('email', rating.rater_id)
+            .eq('id', rating.reviewer_id)
             .single();
           
           formattedRatings.push({
@@ -696,7 +713,7 @@ export default function ProfileScreen() {
         }
       >
         {/* Profile Content */}
-        <ProfileContent />
+        <ProfileContent profile={profile} />
 
         {/* Stats Section */}
         <ProfileStatsSection 

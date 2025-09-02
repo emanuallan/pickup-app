@@ -129,14 +129,12 @@ class PushNotificationServiceImpl implements PushNotificationService {
   async storePushToken(userId: string, token: string): Promise<void> {
     try {
       const { error } = await supabase
-        .from('user_settings')
-        .upsert({
-          email: userId,
+        .from('users')
+        .update({
           push_token: token,
           updated_at: new Date().toISOString(),
-        }, {
-          onConflict: 'email'
-        });
+        })
+        .eq('id', userId);
 
       if (error) {
         console.error('Error storing push token:', error);
@@ -184,9 +182,9 @@ export const sendNotificationToUser = async (
   try {
     // Get user's push token from database
     const { data: userSettings, error } = await supabase
-      .from('user_settings')
+      .from('users')
       .select('push_token')
-      .eq('email', userId)
+      .eq('id', userId)
       .single();
 
     if (error || !userSettings?.push_token) {

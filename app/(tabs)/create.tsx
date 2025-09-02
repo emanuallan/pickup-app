@@ -34,7 +34,7 @@ export default function CreateScreen() {
       const { data, error } = await supabase
         .from('listings')
         .select('*')
-        .eq('user_id', user.email)
+        .eq('user_id', user.id)
         .eq('is_draft', false)
         .order('created_at', { ascending: false });
 

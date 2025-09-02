@@ -25,20 +25,20 @@ export const shouldShowTimestamp = (currentMsg: Message, prevMsg: Message | null
   return timeDiffMinutes > 60 || currentMsg.sender_id !== prevMsg.sender_id;
 };
 
-export const buildMessageQuery = (supabase: any, user_email: string, other_user_id: string, listing_id: string) => {
+export const buildMessageQuery = (supabase: any, user_id: string, other_user_id: string, listing_id: string) => {
   let query = supabase
     .from('messages')
     .select('*');
 
   if (listing_id === "general") {
     query = query.or(
-      `and(sender_id.eq.${user_email},receiver_id.eq.${other_user_id}),` +
-      `and(sender_id.eq.${other_user_id},receiver_id.eq.${user_email})`
+      `and(sender_id.eq.${user_id},receiver_id.eq.${other_user_id}),` +
+      `and(sender_id.eq.${other_user_id},receiver_id.eq.${user_id})`
     ).is('listing_id', null);
   } else {
     query = query.or(
-      `and(sender_id.eq.${user_email},receiver_id.eq.${other_user_id},listing_id.eq.${listing_id}),` +
-      `and(sender_id.eq.${other_user_id},receiver_id.eq.${user_email},listing_id.eq.${listing_id})`
+      `and(sender_id.eq.${user_id},receiver_id.eq.${other_user_id},listing_id.eq.${listing_id}),` +
+      `and(sender_id.eq.${other_user_id},receiver_id.eq.${user_id},listing_id.eq.${listing_id})`
     );
   }
 
@@ -47,13 +47,13 @@ export const buildMessageQuery = (supabase: any, user_email: string, other_user_
 
 export const isRelevantMessage = (
   message: Message, 
-  user_email: string, 
+  user_id: string, 
   other_user_id: string, 
   listing_id: string
 ) => {
   return (
-    (message.sender_id === user_email && message.receiver_id === other_user_id) ||
-    (message.sender_id === other_user_id && message.receiver_id === user_email)
+    (message.sender_id === user_id && message.receiver_id === other_user_id) ||
+    (message.sender_id === other_user_id && message.receiver_id === user_id)
   ) && (
     listing_id === "general" ? !message.listing_id : message.listing_id === listing_id
   );

@@ -13,7 +13,7 @@ import { supabase } from '~/lib/supabase';
 const { width: screenWidth } = Dimensions.get('window');
 
 interface Listing {
-  id: number;
+  id: string;
   title: string;
   price: number;
   description: string;
@@ -23,8 +23,8 @@ interface Listing {
   condition: string;
   created_at: string;
   user_id: string;
-  user_name: string;
-  user_image: string | null;
+  user_name?: string;
+  user_image?: string | null;
   is_sold: boolean;
   is_draft: boolean;
 }
@@ -68,7 +68,7 @@ export const ListingBuyerView: React.FC<ListingBuyerViewProps> = ({
   const [sellerRating, setSellerRating] = useState<{ average: number; count: number } | null>(null);
   const [engagementStats, setEngagementStats] = useState({ favorites: 0, watchlist: 0 });
   
-  const isOwnerViewing = user?.email === listing.user_id && onBackToOwnerView;
+  const isOwnerViewing = user?.id === listing.user_id && onBackToOwnerView;
 
   useEffect(() => {
     fetchSellerRating();
@@ -81,9 +81,9 @@ export const ListingBuyerView: React.FC<ListingBuyerViewProps> = ({
   const fetchSellerRating = async () => {
     try {
       const { data: ratingsData } = await supabase
-        .from('ratings')
+        .from('reviews')
         .select('rating')
-        .eq('rated_id', listing.user_id);
+        .eq('reviewed_id', listing.user_id);
 
       if (ratingsData && ratingsData.length > 0) {
         const average = ratingsData.reduce((sum, r) => sum + r.rating, 0) / ratingsData.length;
@@ -101,14 +101,14 @@ export const ListingBuyerView: React.FC<ListingBuyerViewProps> = ({
   };
 
   const fetchUserFavoriteStatus = async () => {
-    if (!user?.email) return;
+    if (!user?.id) return;
 
     try {
       // Use the database function to get user's favorite/watchlist status
       const { data, error } = await supabase
-        .rpc('get_user_listing_status', {
-          p_user_id: user.email,
-          p_listing_id: listing.id.toString()
+        .rpc('get_user_favorite_status', {
+          p_user_id: user.id,
+          p_listing_id: listing.id
         });
 
       if (error) throw error;
@@ -125,11 +125,11 @@ export const ListingBuyerView: React.FC<ListingBuyerViewProps> = ({
 
   const fetchEngagementStats = async () => {
     try {
-      // Use the view to get engagement stats
+      // Use the database function to get engagement stats
       const { data, error } = await supabase
-        .from('listing_favorite_counts')
-        .select('favorite_count, watchlist_count')
-        .eq('listing_id', listing.id);
+        .rpc('get_listing_engagement_stats', {
+          p_listing_id: listing.id
+        });
 
       if (error) throw error;
 
@@ -165,22 +165,21 @@ export const ListingBuyerView: React.FC<ListingBuyerViewProps> = ({
   const isValidUUID = (id: string) => typeof id === 'string' && /^[0-9a-fA-F-]{36}$/.test(id);
 
   const navigateToMessage = () => {
-    // Convert listing.id to string and validate if it's a proper UUID
-    const listingIdStr = listing.id.toString();
+    // Validate if listing.id is a proper UUID
     router.push({
       pathname: '/chat/[id]',
       params: { 
         id: listing.user_id,
         otherUserId: listing.user_id,
-        otherUserName: listing.user_name,
-        listingId: isValidUUID(listingIdStr) ? listingIdStr : 'general',
+        otherUserName: listing.user_name || 'Unknown User',
+        listingId: isValidUUID(listing.id) ? listing.id : 'general',
         listingTitle: listing.title
       }
     });
   };
 
   const handleSaveListing = async () => {
-    if (!user?.email) {
+    if (!user?.id) {
       Alert.alert('Sign In Required', 'Please sign in to save listings.');
       return;
     }
@@ -189,8 +188,8 @@ export const ListingBuyerView: React.FC<ListingBuyerViewProps> = ({
       // Use the database function to toggle favorite status
       const { data, error } = await supabase
         .rpc('toggle_user_favorite', {
-          p_user_id: user.email,
-          p_listing_id: listing.id.toString(),
+          p_user_id: user.id,
+          p_listing_id: listing.id,
           p_type: 'favorite'
         });
 
@@ -212,7 +211,7 @@ export const ListingBuyerView: React.FC<ListingBuyerViewProps> = ({
   };
 
   const handleWatchlistToggle = async () => {
-    if (!user?.email) {
+    if (!user?.id) {
       Alert.alert('Sign In Required', 'Please sign in to add items to watchlist.');
       return;
     }
@@ -221,8 +220,8 @@ export const ListingBuyerView: React.FC<ListingBuyerViewProps> = ({
       // Use the database function to toggle watchlist status
       const { data, error } = await supabase
         .rpc('toggle_user_favorite', {
-          p_user_id: user.email,
-          p_listing_id: listing.id.toString(),
+          p_user_id: user.id,
+          p_listing_id: listing.id,
           p_type: 'watchlist'
         });
 
@@ -280,12 +279,12 @@ export const ListingBuyerView: React.FC<ListingBuyerViewProps> = ({
   };
 
   const handleRateSeller = () => {
-    if (!user?.email) {
+    if (!user?.id) {
       Alert.alert('Sign In Required', 'Please sign in to rate sellers.');
       return;
     }
     
-    if (user.email === listing.user_id) {
+    if (user.id === listing.user_id) {
       Alert.alert('Cannot Rate', 'You cannot rate yourself.');
       return;
     }
@@ -400,20 +399,22 @@ export const ListingBuyerView: React.FC<ListingBuyerViewProps> = ({
           )}
 
           {/* Quick Actions Overlay */}
-          <View className="absolute top-4 right-4 flex-row gap-2">
-            <TouchableOpacity
-              onPress={handleSaveListing}
-              className="bg-white/90 backdrop-blur-sm rounded-full p-3 shadow-sm"
-            >
-              <Heart size={22} color={isSaved ? '#ef4444' : '#6b7280'} fill={isSaved ? '#ef4444' : 'transparent'} />
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={handleShareListing}
-              className="bg-white/90 backdrop-blur-sm rounded-full p-3 shadow-sm"
-            >
-              <Share2 size={22} color="#6b7280" />
-            </TouchableOpacity>
-          </View>
+          {user && (
+            <View className="absolute top-4 right-4 flex-row gap-2">
+              <TouchableOpacity
+                onPress={handleSaveListing}
+                className="bg-white/90 backdrop-blur-sm rounded-full p-3 shadow-sm"
+              >
+                <Heart size={22} color={isSaved ? '#ef4444' : '#6b7280'} fill={isSaved ? '#ef4444' : 'transparent'} />
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={handleShareListing}
+                className="bg-white/90 backdrop-blur-sm rounded-full p-3 shadow-sm"
+              >
+                <Share2 size={22} color="#6b7280" />
+              </TouchableOpacity>
+            </View>
+          )}
         </View>
 
         {/* Listing Details */}
@@ -474,13 +475,13 @@ export const ListingBuyerView: React.FC<ListingBuyerViewProps> = ({
                     />
                   ) : (
                     <Text className="text-gray-600 font-bold text-xl">
-                      {listing.user_name.charAt(0).toUpperCase()}
+                      {listing.user_name?.charAt(0)?.toUpperCase() || '?'}
                     </Text>
                   )}
                 </View>
                 <View className="flex-1 mr-3">
                   <Text className="font-semibold text-gray-900 text-lg" numberOfLines={1}>
-                    {listing.user_name}
+                    {listing.user_name || 'Unknown User'}
                   </Text>
                   <View className="flex-row items-center mt-1 flex-wrap">
                     <UserRatingDisplay 
@@ -509,7 +510,7 @@ export const ListingBuyerView: React.FC<ListingBuyerViewProps> = ({
             </TouchableOpacity>
             
             {/* Rate Seller Button */}
-            {user?.email && user.email !== listing.user_id && (
+            {user?.id && user.id !== listing.user_id && (
               <TouchableOpacity
                 onPress={handleRateSeller}
                 className="flex-row items-center justify-center bg-white rounded-lg py-3 px-4 border border-gray-200"
@@ -549,65 +550,80 @@ export const ListingBuyerView: React.FC<ListingBuyerViewProps> = ({
 
       {/* Fixed Bottom Button */}
       <View className="p-4 border-t border-gray-200 bg-white" style={{ flex: 0, marginBottom: 20 }}>
-        <View className="flex-row gap-3 justify-center">
-          {!listing.is_sold && (
+        {user ? (
+          <View className="flex-row gap-3 justify-center">
+            {!listing.is_sold && (
+              <AnimatedButton
+                onPress={handleMessageSeller}
+                hapticType="medium"
+                scaleValue={0.97}
+                style={{
+                  backgroundColor: COLORS.utOrange,
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  paddingVertical: 18,
+                  paddingHorizontal: 12,
+                  borderRadius: 16,
+                  flex: 2,
+                  minHeight: 56,
+                  shadowColor: '#000',
+                  shadowOffset: { width: 0, height: 2 },
+                  shadowOpacity: 0.1,
+                  shadowRadius: 4,
+                  elevation: 3,
+                }}
+              >
+                <MessageCircle size={22} color="white" />
+                <Text className="text-white font-bold text-base ml-2">Message</Text>
+              </AnimatedButton>
+            )}
+            
             <AnimatedButton
-              onPress={handleMessageSeller}
-              hapticType="medium"
+              onPress={() => setShowActionsModal(true)}
+              hapticType="light"
               scaleValue={0.97}
               style={{
-                backgroundColor: COLORS.utOrange,
+                borderColor: COLORS.utOrange,
+                borderWidth: 2,
                 flexDirection: 'row',
                 alignItems: 'center',
                 justifyContent: 'center',
-                paddingVertical: 18,
+                paddingVertical: 10,
                 paddingHorizontal: 12,
                 borderRadius: 16,
-                flex: 2,
+                backgroundColor: 'white',
+                flex: listing.is_sold ? 2 : 1,
                 minHeight: 56,
-                shadowColor: '#000',
-                shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: 0.1,
-                shadowRadius: 4,
-                elevation: 3,
               }}
             >
-              <MessageCircle size={22} color="white" />
-              <Text className="text-white font-bold text-base ml-2">Message</Text>
+              <MoreHorizontal size={22} color={COLORS.utOrange} />
+              <Text 
+                className="font-bold text-base ml-2" 
+                style={{ 
+                  color: COLORS.utOrange,
+                  minHeight: 20,
+                  lineHeight: 20
+                }}
+              >
+                {listing.is_sold ? 'Actions & Tips' : 'More'}
+              </Text>
             </AnimatedButton>
-          )}
-          
-          <AnimatedButton
-            onPress={() => setShowActionsModal(true)}
-            hapticType="light"
-            scaleValue={0.97}
-            style={{
-              borderColor: COLORS.utOrange,
-              borderWidth: 2,
-              flexDirection: 'row',
-              alignItems: 'center',
-              justifyContent: 'center',
-              paddingVertical: 10,
-              paddingHorizontal: 12,
-              borderRadius: 16,
-              backgroundColor: 'white',
-              flex: listing.is_sold ? 2 : 1,
-              minHeight: 56,
-            }}
-          >
-            <MoreHorizontal size={22} color={COLORS.utOrange} />
-            <Text 
-              className="font-bold text-base ml-2" 
-              style={{ 
-                color: COLORS.utOrange,
-                minHeight: 20,
-                lineHeight: 20
-              }}
-            >
-              {listing.is_sold ? 'Actions & Tips' : 'More'}
+          </View>
+        ) : (
+          <View className="items-center">
+            <Text className="text-gray-600 text-center mb-4 text-base">
+              Log in to message seller and interact with this listing
             </Text>
-          </AnimatedButton>
-        </View>
+            <TouchableOpacity
+              onPress={() => router.push('/(tabs)/profile')}
+              className="w-full flex-row items-center justify-center py-3.5 rounded-xl"
+              style={{ backgroundColor: COLORS.utOrange }}
+            >
+              <Text className="text-white font-medium">Go to Profile to Log In</Text>
+            </TouchableOpacity>
+          </View>
+        )}
       </View>
 
 
@@ -623,6 +639,7 @@ export const ListingBuyerView: React.FC<ListingBuyerViewProps> = ({
         onWatchlist={handleWatchlistToggle}
         isSaved={isSaved}
         isWatchlisted={isWatchlisted}
+        user={user}
       />
 
       {/* Rating Modal */}
@@ -630,7 +647,7 @@ export const ListingBuyerView: React.FC<ListingBuyerViewProps> = ({
         visible={showRatingModal}
         onClose={() => setShowRatingModal(false)}
         ratedUserId={listing.user_id}
-        ratedUserName={listing.user_name}
+        ratedUserName={listing.user_name || 'Unknown User'}
         onRatingSubmitted={handleRatingSubmitted}
       />
     </>

@@ -10,7 +10,7 @@ import { useState, useEffect } from 'react';
 const { width: screenWidth } = Dimensions.get('window');
 
 interface Listing {
-  id: number;
+  id: string;
   title: string;
   price: number;
   description: string;
@@ -61,11 +61,11 @@ export const ListingOwnerView: React.FC<ListingOwnerViewProps> = ({
 
   const fetchFavoriteCounts = async () => {
     try {
-      // Use the view to get favorite counts
+      // Use the database function to get favorite counts
       const { data, error } = await supabase
-        .from('listing_favorite_counts')
-        .select('favorite_count, watchlist_count')
-        .eq('listing_id', listing.id);
+        .rpc('get_listing_engagement_stats', {
+          p_listing_id: listing.id
+        });
 
       if (error) throw error;
 

@@ -6,6 +6,7 @@ import { useRouter } from 'expo-router';
 import { useAuth } from '~/contexts/AuthContext';
 import { useEffect, useState } from 'react';
 import { supabase } from '~/lib/supabase';
+import { useHomeRefresh } from './_layout';
 import { COLORS } from '~/theme/colors';
 import * as Haptics from 'expo-haptics';
 import Reanimated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
@@ -24,7 +25,7 @@ interface Category {
 }
 
 interface Item {
-  id: number;
+  id: string;
   title: string;
   price: number;
   image: string;
@@ -343,6 +344,7 @@ const QuickActionsSection = () => {
 export default function HomeScreen() {
   const router = useRouter();
   const { user } = useAuth();
+  const { refreshKey } = useHomeRefresh();
   const [recentListings, setRecentListings] = useState<Item[]>([]);
   const [recentLoading, setRecentLoading] = useState(true);
 
@@ -350,8 +352,19 @@ export default function HomeScreen() {
     fetchRecentListings();
   }, []);
 
-  const fetchRecentListings = async () => {
+  // Listen for refresh triggers from tab press
+  useEffect(() => {
+    if (refreshKey > 0) {
+      fetchRecentListings(false); // Don't show loading spinner for tab refresh
+    }
+  }, [refreshKey]);
+
+  const fetchRecentListings = async (showLoading = true) => {
     try {
+      if (showLoading) {
+        setRecentLoading(true);
+      }
+      
       const { data, error } = await supabase
         .from('listings')
         .select('*')

@@ -115,8 +115,36 @@ export default function ConfirmScreen() {
     }
   };
 
+  // Helper function to convert UI values to database enum values
+  const convertToDbFormat = (value: string, type: 'category' | 'condition') => {
+    if (type === 'category') {
+      // Convert UI category names to database enum values
+      const categoryMap: Record<string, string> = {
+        'Furniture': 'furniture',
+        'Subleases': 'subleases', 
+        'Tech': 'tech',
+        'Vehicles': 'vehicles',
+        'Textbooks': 'textbooks',
+        'Clothing': 'clothing',
+        'Kitchen': 'kitchen',
+        'Other': 'other'
+      };
+      return categoryMap[value] || value.toLowerCase();
+    } else {
+      // Convert UI condition names to database enum values
+      const conditionMap: Record<string, string> = {
+        'New': 'new',
+        'Like New': 'like_new',
+        'Good': 'good',
+        'Fair': 'fair',
+        'Poor': 'poor'
+      };
+      return conditionMap[value] || value.toLowerCase().replace(' ', '_');
+    }
+  };
+
   const handlePublish = async () => {
-    if (!user?.email) {
+    if (!user?.id) {
       router.push('/(auth)/login');
       return;
     }
@@ -131,13 +159,12 @@ export default function ConfirmScreen() {
 
       const payload = {
         title,
-        category,
+        category: convertToDbFormat(category, 'category'),
         price: parseFloat(price),
         description,
         location,
-        condition,
-        user_id: user.email,
-        user_name: user.email.split('@')[0],
+        condition: convertToDbFormat(condition, 'condition'),
+        user_id: user.id,
         created_at: new Date().toISOString(),
         images: uploadedImageUrls,
         is_sold: false,

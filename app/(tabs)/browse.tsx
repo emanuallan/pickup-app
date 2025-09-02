@@ -14,7 +14,7 @@ import { SearchX, Package, Lightbulb } from 'lucide-react-native';
 import { searchAndRankListings, getFallbackSuggestions, getFallbackSectionTitle } from '~/utils/search';
 
 interface Listing {
-  id: number;
+  id: string;
   title: string;
   price: number;
   description: string;
@@ -104,7 +104,7 @@ const BrowseContent = ({ searchQuery, searchInputValue, onSearchInputChange, onS
             Search Results
           </Text>
           <Text className="text-lg text-gray-600 font-medium">
-            Results for "{searchQuery}"
+            Results for &quot;{searchQuery}&quot;
           </Text>
         </View>
       )}
@@ -197,14 +197,14 @@ export default function BrowseScreen() {
       // Fetch user settings for all unique user_ids
       const userIds = [...new Set((data || []).map(l => l.user_id))];
       const { data: userSettings } = await supabase
-        .from('user_settings')
-        .select('email, display_name, profile_image_url')
-        .in('email', userIds);
+        .from('users')
+        .select('id, email, display_name, profile_image_url')
+        .in('id', userIds);
 
       const userMap: UserMap = {};
       (userSettings || []).forEach((u: UserSettings) => {
-        userMap[u.email] = {
-          name: u.display_name || u.email,
+        userMap[u.id] = {
+          name: u.display_name || (u.email ? u.email.split('@')[0] : 'User'),
           image: u.profile_image_url || null,
         };
       });

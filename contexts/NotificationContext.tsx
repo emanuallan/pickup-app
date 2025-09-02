@@ -63,10 +63,10 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
   }, []);
 
   const initializeNotifications = async () => {
-    if (!user?.email) return;
+    if (!user?.id) return;
 
     try {
-      await initializePushNotifications(user.email);
+      await initializePushNotifications(user.id);
       const token = await pushNotificationService.getPushToken();
       setExpoPushToken(token);
       console.log('Push notifications initialized with token:', token);

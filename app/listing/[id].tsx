@@ -11,7 +11,7 @@ import { ListingBuyerView } from '~/components/listing/ListingBuyerView';
 const { width: screenWidth } = Dimensions.get('window');
 
 interface Listing {
-  id: number;
+  id: string;
   title: string;
   price: number;
   description: string;
@@ -21,8 +21,8 @@ interface Listing {
   condition: string;
   created_at: string;
   user_id: string;
-  user_name: string;
-  user_image: string | null;
+  user_name?: string;
+  user_image?: string | null;
   is_sold: boolean;
   is_draft: boolean;
 }
@@ -57,9 +57,9 @@ export default function ListingScreen() {
       setLoading(true);
       setError(null);
 
-      // Fetch listing data
+      // Fetch listing data with user information
       const { data: listingData, error: listingError } = await supabase
-        .from('listings')
+        .from('listing_details')
         .select('*')
         .eq('id', id)
         .single();
@@ -76,9 +76,9 @@ export default function ListingScreen() {
 
       // Fetch user settings for the listing owner
       const { data: userData } = await supabase
-        .from('user_settings')
+        .from('users')
         .select('*')
-        .eq('email', listingData.user_id)
+        .eq('id', listingData.user_id)
         .single();
 
       setUserSettings(userData);
@@ -161,7 +161,7 @@ export default function ListingScreen() {
     );
   }
 
-  const isOwner = user?.email === listing.user_id;
+  const isOwner = user?.id === listing.user_id;
   const shouldShowBuyerView = !isOwner || viewAsBuyer;
 
   return (

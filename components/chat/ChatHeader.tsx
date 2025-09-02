@@ -6,6 +6,7 @@ import { COLORS } from '~/theme/colors';
 interface ChatHeaderProps {
   otherUserName: string;
   otherUserImage: string | null;
+  otherUserId: string;
   listingId: string;
   listingTitle?: string;
   onSettingsPress: () => void;
@@ -14,6 +15,7 @@ interface ChatHeaderProps {
 export default function ChatHeader({
   otherUserName,
   otherUserImage,
+  otherUserId,
   listingId,
   listingTitle,
   onSettingsPress
@@ -29,7 +31,10 @@ export default function ChatHeader({
       <TouchableOpacity 
         className="flex-1 flex-row items-center"
         onPress={() => {
-          // TODO: Navigate to user profile
+          router.push({
+            pathname: '/profile/[userId]',
+            params: { userId: otherUserId }
+          });
         }}
       >
         <View className="w-10 h-10 rounded-full bg-gray-200 justify-center items-center mr-3">

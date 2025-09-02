@@ -47,7 +47,7 @@ const locations = [
 ] as const;
 
 interface Listing {
-  id: number;
+  id: string;
   title: string;
   price: number;
   description: string;

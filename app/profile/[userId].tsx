@@ -30,6 +30,7 @@ import { RatingSubmissionModal } from '~/components/modals/RatingSubmissionModal
 import UserRatingDisplay from '~/components/ui/UserRatingDisplay';
 
 interface UserSettings {
+  id: string;
   email: string;
   display_name: string | null;
   profile_image_url: string | null;
@@ -74,9 +75,9 @@ export default function UserProfileScreen() {
     try {
       // 1. Fetch profile
       const { data: userSettings } = await supabase
-        .from('user_settings')
-        .select('email, display_name, profile_image_url, bio')
-        .eq('email', userId)
+        .from('users')
+        .select('id, email, display_name, profile_image_url, bio')
+        .eq('id', userId)
         .single();
 
       if (!userSettings) {
@@ -98,9 +99,9 @@ export default function UserProfileScreen() {
 
       // 3. Fetch ratings
       const { data: ratingsData } = await supabase
-        .from('ratings')
+        .from('reviews')
         .select('*')
-        .eq('rated_id', userId)
+        .eq('reviewed_id', userId)
         .order('created_at', { ascending: false });
 
       // Get rater names for each rating
@@ -108,9 +109,9 @@ export default function UserProfileScreen() {
       if (ratingsData) {
         for (const rating of ratingsData) {
           const { data: raterData } = await supabase
-            .from('user_settings')
+            .from('users')
             .select('display_name')
-            .eq('email', rating.rater_id)
+            .eq('id', rating.reviewer_id)
             .single();
 
           formattedRatings.push({
@@ -145,7 +146,7 @@ export default function UserProfileScreen() {
       return;
     }
 
-    if (user.email === profile?.email) {
+    if (user.id === profile?.id) {
       Alert.alert('Cannot Message', 'You cannot message yourself.');
       return;
     }
@@ -154,9 +155,9 @@ export default function UserProfileScreen() {
     router.push({
       pathname: '/chat/[id]',
       params: {
-        id: `${profile?.email}:general`,
-        otherUserName: profile?.display_name || profile?.email || 'User',
-        otherUserId: profile?.email || '',
+        id: `${profile?.id}:general`,
+        otherUserName: profile?.email ? profile.email.split('@')[0] : 'User',
+        otherUserId: profile?.id || '',
         listingId: 'general',
         listingTitle: 'General Chat',
       },
@@ -169,7 +170,7 @@ export default function UserProfileScreen() {
       return;
     }
 
-    if (user.email === profile?.email) {
+    if (user.id === profile?.id) {
       Alert.alert('Cannot Rate', 'You cannot rate yourself.');
       return;
     }
@@ -312,14 +313,14 @@ export default function UserProfileScreen() {
                   className="h-32 w-32 items-center justify-center rounded-full shadow-lg"
                   style={{ backgroundColor: COLORS.utOrange }}>
                   <Text className="text-4xl font-bold text-white">
-                    {(profile.display_name || profile.email)?.charAt(0).toUpperCase()}
+                    {profile?.email ? profile.email.split('@')[0].charAt(0).toUpperCase() : '?'}
                   </Text>
                 </View>
               )}
             </View>
 
             <Text className="mb-2 text-3xl font-bold text-gray-900">
-              {profile.display_name || profile.email}
+              {profile?.email ? profile.email.split('@')[0] : 'User'}
             </Text>
 
             {profile.bio && (
@@ -366,8 +367,8 @@ export default function UserProfileScreen() {
           <RatingSubmissionModal
             visible={showRatingModal}
             onClose={() => setShowRatingModal(false)}
-            ratedUserId={profile?.email || ''}
-            ratedUserName={profile?.display_name || profile?.email || ''}
+            ratedUserId={profile?.id || ''}
+            ratedUserName={profile?.email ? profile.email.split('@')[0] : 'User'}
             onRatingSubmitted={handleRatingSubmitted}
           />
 

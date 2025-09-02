@@ -5,7 +5,7 @@ import { MapPin } from 'lucide-react-native';
 import { useSettings } from '~/contexts/SettingsContext';
 
 interface ListingCardProps {
-  id: number;
+  id: string;
   title: string;
   price: number;
   location: string;

@@ -26,16 +26,16 @@ export default function ReviewsScreen() {
   const [avgRating, setAvgRating] = useState<number | null>(null);
 
   const fetchRatings = async () => {
-    if (!user?.email) return;
+    if (!user?.id) return;
 
     try {
       setLoading(true);
       
       // Fetch ratings
       const { data: ratingsData } = await supabase
-        .from('ratings')
+        .from('reviews')
         .select('*')
-        .eq('rated_id', user.email)
+        .eq('reviewed_id', user.id)
         .order('created_at', { ascending: false });
       
       // Get rater names for each rating
@@ -43,9 +43,9 @@ export default function ReviewsScreen() {
       if (ratingsData) {
         for (const rating of ratingsData) {
           const { data: raterData } = await supabase
-            .from('user_settings')
+            .from('users')
             .select('display_name')
-            .eq('email', rating.rater_id)
+            .eq('id', rating.reviewer_id)
             .single();
           
           formattedRatings.push({

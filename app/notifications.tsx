@@ -64,14 +64,14 @@ export default function NotificationsScreen() {
           id: notification.actor_id || '',
           otherUserId: notification.actor_id || '',
           otherUserName: notification.data.sender_name || 'User',
-          listingId: notification.listing_id?.toString() || 'general',
+          listingId: notification.listing_id || 'general',
           listingTitle: notification.data.listing_title || ''
         }
       });
     } else if (notification.listing_id) {
       router.push({
         pathname: '/listing/[id]',
-        params: { id: notification.listing_id.toString() }
+        params: { id: notification.listing_id }
       });
     }
   };
@@ -244,6 +244,50 @@ export default function NotificationsScreen() {
       </View>
     </View>
   );
+
+  if (!user) {
+    return (
+      <View className="flex-1 bg-gray-50">
+        {/* Header */}
+        <View className="py-4 px-4 border-b border-gray-200 bg-white">
+          <View className="flex-row items-center justify-between mb-3">
+            <TouchableOpacity onPress={() => router.back()}>
+              <ChevronLeft size={24} color={COLORS.utOrange} />
+            </TouchableOpacity>
+            <Text className="text-2xl font-bold text-gray-900">Notifications</Text>
+            <View className="w-6" />
+          </View>
+        </View>
+
+        {/* Login Required Content */}
+        <View className="flex-1 justify-center">
+          <View className="bg-white mx-4 rounded-3xl p-8 shadow-sm">
+            <View className="items-center mb-8">
+              <Bell size={64} color={COLORS.utOrange} />
+              <Text className="text-2xl font-semibold mt-4">Your Notifications</Text>
+              <Text className="text-gray-500 text-center mt-2">
+                Stay updated on marketplace activity
+              </Text>
+            </View>
+
+            <View className="items-center">
+              <Text className="text-gray-600 text-center mb-4 text-lg">
+                You need to be logged in to view your notifications
+              </Text>
+              <TouchableOpacity
+                onPress={() => router.push('/(tabs)/profile')}
+                className="w-full flex-row items-center justify-center py-3.5 rounded-xl"
+                style={{ backgroundColor: COLORS.utOrange }}
+              >
+                <User size={20} color="#ffffff" style={{ marginRight: 8 }} />
+                <Text className="text-white font-medium">Go to Profile to Log In</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </View>
+    );
+  }
 
   return (
     <View className="flex-1 bg-gray-50">

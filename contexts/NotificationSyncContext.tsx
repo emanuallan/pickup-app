@@ -28,7 +28,7 @@ export const NotificationSyncProvider: React.FC<NotificationSyncProviderProps> =
 
   // Refresh count from database
   const refreshCount = useCallback(async () => {
-    if (!user?.email) {
+    if (!user?.id) {
       setUnreadCount(0);
       return;
     }
@@ -37,7 +37,7 @@ export const NotificationSyncProvider: React.FC<NotificationSyncProviderProps> =
       const { count, error } = await supabase
         .from('notifications')
         .select('id', { count: 'exact' })
-        .eq('user_id', user.email)
+        .eq('user_id', user.id)
         .eq('is_read', false);
 
       if (error) throw error;
@@ -45,7 +45,7 @@ export const NotificationSyncProvider: React.FC<NotificationSyncProviderProps> =
     } catch (error) {
       console.error('Error refreshing notification count:', error);
     }
-  }, [user?.email]);
+  }, [user?.id]);
 
   // Sync notification updates across all components
   const syncNotificationUpdate = useCallback((type: 'read' | 'unread' | 'delete' | 'clear_all') => {
@@ -72,17 +72,17 @@ export const NotificationSyncProvider: React.FC<NotificationSyncProviderProps> =
 
   // Subscribe to real-time updates for global sync
   useEffect(() => {
-    if (!user?.email) return;
+    if (!user?.id) return;
 
     const subscription = supabase
-      .channel(`global_notifications:${user.email}`)
+      .channel(`global_notifications:${user.id}`)
       .on(
         'postgres_changes',
         {
           event: '*',
           schema: 'public',
           table: 'notifications',
-          filter: `user_id=eq.${user.email}`,
+          filter: `user_id=eq.${user.id}`,
         },
         (payload) => {
           console.log('Global notification sync:', payload);
@@ -112,7 +112,7 @@ export const NotificationSyncProvider: React.FC<NotificationSyncProviderProps> =
     return () => {
       subscription.unsubscribe();
     };
-  }, [user?.email]);
+  }, [user?.id]);
 
   const value: NotificationSyncContextType = {
     unreadCount,

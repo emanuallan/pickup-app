@@ -5,7 +5,7 @@ import { COLORS } from '~/theme/colors';
 import { AnimatedButton } from '~/components/ui/AnimatedButton';
 
 interface Item {
-  id: number;
+  id: string;
   title: string;
   price: number;
   image: string;

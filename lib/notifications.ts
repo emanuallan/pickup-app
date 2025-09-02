@@ -33,10 +33,10 @@ export class NotificationService {
     try {
       const { data, error } = await supabase.rpc('create_notification', {
         p_user_id: params.user_id,
-        p_actor_id: params.actor_id,
         p_type: params.type,
         p_title: params.title,
         p_message: params.message,
+        p_actor_id: params.actor_id,
         p_data: params.data || {},
         p_listing_id: params.listing_id
       });

@@ -19,7 +19,7 @@ interface Listing {
   condition: string;
   created_at: string;
   user_id: string;
-  user_name: string;
+  user_name?: string; // Optional since we'll fetch it separately
   is_sold: boolean;
   is_draft: boolean;
 }
@@ -78,12 +78,11 @@ export default function FavoritesScreen() {
             condition,
             created_at,
             user_id,
-            user_name,
             is_sold,
             is_draft
           )
         `)
-        .eq('user_id', user.email)
+        .eq('user_id', user.id)
         .eq('type', type)
         .order('created_at', { ascending: false });
 
@@ -91,6 +90,22 @@ export default function FavoritesScreen() {
 
       // Filter out items where listing is null (listing might have been deleted)
       const validItems = (data || []).filter(item => item.listing) as unknown as FavoriteItem[];
+      
+      // Fetch user names for all listings
+      if (validItems.length > 0) {
+        const userIds = [...new Set(validItems.map(item => item.listing.user_id))];
+        const { data: userSettings } = await supabase
+          .from('users')
+          .select('id, email, display_name')
+          .in('id', userIds);
+
+        // Add user names to listings
+        validItems.forEach(item => {
+          const userData = userSettings?.find(u => u.id === item.listing.user_id);
+          item.listing.user_name = userData?.display_name || (userData?.email ? userData.email.split('@')[0] : 'Unknown User');
+        });
+      }
+      
       setItems(validItems);
     } catch (error) {
       console.error('Error fetching favorites:', error);
@@ -157,7 +172,7 @@ export default function FavoritesScreen() {
       return;
     }
     
-    if (user.email === listing.user_id) {
+    if (user.id === listing.user_id) {
       Alert.alert('Cannot Message', 'You cannot message yourself about your own listing.');
       return;
     }
@@ -169,8 +184,8 @@ export default function FavoritesScreen() {
         params: { 
           id: listing.user_id,
           otherUserId: listing.user_id,
-          otherUserName: listing.user_name,
-          listingId: isValidUUID(listing.id.toString()) ? listing.id.toString() : 'general',
+          otherUserName: listing.user_name || 'Unknown User',
+          listingId: isValidUUID(listing.id) ? listing.id : 'general',
           listingTitle: listing.title
         }
       });

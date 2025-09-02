@@ -10,7 +10,7 @@ import { useDebounce } from '~/hooks/useDebounce';
 import { getSearchSuggestions } from '~/utils/search';
 
 interface Listing {
-  id: number;
+  id: string;
   title: string;
   description: string;
   category: string;

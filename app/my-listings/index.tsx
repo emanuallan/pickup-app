@@ -6,7 +6,7 @@ import { useRouter } from 'expo-router';
 import { Plus } from 'lucide-react-native';
 import { COLORS } from '~/theme/colors';
 interface Listing {
-  id: number;
+  id: string;
   title: string;
   price: number;
   description: string;
@@ -30,7 +30,7 @@ export default function MyListingsScreen() {
       const { data, error } = await supabase
         .from('listings')
         .select('*')
-        .eq('user_id', user.email)
+        .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
       if (error) throw error;

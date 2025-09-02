@@ -33,7 +33,7 @@ export function useNotifications() {
 
   // Load notifications from the server
   const loadNotifications = useCallback(async () => {
-    if (!user?.email) {
+    if (!user?.id) {
       setNotifications([]);
       setUnreadCount(0);
       setLoading(false);
@@ -43,8 +43,8 @@ export function useNotifications() {
     try {
       setLoading(true);
       const [notificationsData, unreadCountData] = await Promise.all([
-        NotificationService.getNotifications(user.email),
-        NotificationService.getUnreadCount(user.email)
+        NotificationService.getNotifications(user.id),
+        NotificationService.getUnreadCount(user.id)
       ]);
 
       setNotifications(notificationsData);
@@ -77,7 +77,7 @@ export function useNotifications() {
   const markAllAsRead = useCallback(async () => {
     if (!user?.email) return false;
 
-    const success = await NotificationService.markAllAsRead(user.email);
+    const success = await NotificationService.markAllAsRead(user.id);
     
     if (success) {
       setNotifications(prev => 
@@ -146,7 +146,7 @@ export function useNotifications() {
     if (!user?.email) return false;
 
     try {
-      const success = await NotificationService.clearAllNotifications(user.email);
+      const success = await NotificationService.clearAllNotifications(user.id);
       
       if (!success) throw new Error('Failed to clear all notifications');
 
@@ -178,14 +178,14 @@ export function useNotifications() {
     if (!user?.email) return;
 
     const subscription = supabase
-      .channel(`notifications:${user.email}`)
+      .channel(`notifications:${user.id}`)
       .on(
         'postgres_changes',
         {
           event: '*',
           schema: 'public',
           table: 'notifications',
-          filter: `user_id=eq.${user.email}`,
+          filter: `user_id=eq.${user.id}`,
         },
         (payload) => {
           console.log('Notification real-time update:', payload);
@@ -255,7 +255,7 @@ export function useNotificationCount() {
     }
 
     try {
-      const count = await NotificationService.getUnreadCount(user.email);
+      const count = await NotificationService.getUnreadCount(user.id);
       setUnreadCount(count);
     } catch (error) {
       console.error('Error getting notification count:', error);
@@ -271,14 +271,14 @@ export function useNotificationCount() {
     if (!user?.email) return;
 
     const subscription = supabase
-      .channel(`notifications_count:${user.email}`)
+      .channel(`notifications_count:${user.id}`)
       .on(
         'postgres_changes',
         {
           event: '*',
           schema: 'public',
           table: 'notifications',
-          filter: `user_id=eq.${user.email}`,
+          filter: `user_id=eq.${user.id}`,
         },
         (payload) => {
           console.log('Notification count update:', payload);

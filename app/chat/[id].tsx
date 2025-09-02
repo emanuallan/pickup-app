@@ -45,9 +45,9 @@ export default function ChatScreen() {
 
     try {
       const { data, error } = await supabase
-        .from('user_settings')
+        .from('users')
         .select('profile_image_url')
-        .eq('email', otherUserId.toString())
+        .eq('id', otherUserId.toString())
         .single();
 
       if (error) throw error;
@@ -58,7 +58,7 @@ export default function ChatScreen() {
   };
 
   const subscribeToMessages = () => {
-    if (!user?.email || !otherUserId) return;
+    if (!user?.id || !otherUserId) return;
 
     const subscription = supabase
       .channel('messages_channel')
@@ -74,7 +74,7 @@ export default function ChatScreen() {
           
           if (!isRelevantMessage(
             message, 
-            user?.email || '', 
+            user?.id || '', 
             otherUserId.toString(), 
             listingId?.toString() || "general"
           )) {
@@ -88,7 +88,7 @@ export default function ChatScreen() {
             if (newMessage.sender_id === otherUserId) {
               await supabase
                 .from('messages')
-                .update({ read: true })
+                .update({ is_read: true })
                 .eq('id', newMessage.id);
             }
           } 
@@ -114,14 +114,14 @@ export default function ChatScreen() {
   };
 
   const fetchMessages = async () => {
-    if (!user?.email || !otherUserId) return;
+    if (!user?.id || !otherUserId) return;
 
     try {
       setLoading(true);
       
       const { data: messages, error } = await buildMessageQuery(
         supabase,
-        user.email,
+        user.id,
         otherUserId as string,
         (listingId as string) || "general"
       );
@@ -131,13 +131,13 @@ export default function ChatScreen() {
       setMessages(messages || []);
 
       const unreadMessages = (messages || []).filter(
-        (msg: Message) => !msg.read && msg.sender_id === otherUserId
+        (msg: Message) => !msg.is_read && msg.sender_id === otherUserId
       );
 
       if (unreadMessages.length > 0) {
         await supabase
           .from('messages')
-          .update({ read: true })
+          .update({ is_read: true })
           .in(
             'id',
             unreadMessages.map((msg: Message) => msg.id)
@@ -157,29 +157,61 @@ export default function ChatScreen() {
   };
 
   const sendMessage = async () => {
-    if (!user?.email || !otherUserId || !newMessage.trim()) return;
+    if (!user?.id || !otherUserId || !newMessage.trim()) return;
+
+    const messageContent = newMessage.trim();
+    setNewMessage(''); // Clear input immediately for better UX
+    
+    // Create optimistic message for immediate UI update
+    const optimisticMessage = {
+      id: `temp-${Date.now()}`, // Temporary ID
+      sender_id: user.id,
+      receiver_id: otherUserId,
+      content: messageContent,
+      listing_id: listingId === "general" ? null : (listingId || null),
+      is_read: false,
+      created_at: new Date().toISOString(),
+    };
+
+    // Add message optimistically to UI
+    setMessages(prev => [...prev, optimisticMessage]);
 
     try {
       setSending(true);
       
       const messageData = {
-        sender_id: user.email,
+        sender_id: user.id,
         receiver_id: otherUserId,
-        content: newMessage.trim(),
-        listing_id: (listingId === "general" || !isValidUUID(listingId?.toString())) ? null : listingId?.toString(),
-        read: false,
+        content: messageContent,
+        listing_id: listingId === "general" ? null : (listingId || null),
+        is_read: false,
       };
 
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('messages')
-        .insert([messageData]);
+        .insert([messageData])
+        .select()
+        .single();
 
       if (error) throw error;
 
-      setNewMessage('');
+      // Replace optimistic message with real message from database
+      if (data) {
+        setMessages(prev => 
+          prev.map(msg => 
+            msg.id === optimisticMessage.id ? data : msg
+          )
+        );
+      }
     } catch (error) {
       console.error('Error sending message:', error);
       Alert.alert('Error', 'Failed to send message');
+      
+      // Remove optimistic message on error
+      setMessages(prev => prev.filter(msg => msg.id !== optimisticMessage.id));
+      
+      // Restore message text
+      setNewMessage(messageContent);
     } finally {
       setSending(false);
     }
@@ -206,7 +238,7 @@ export default function ChatScreen() {
                 .from("messages")
                 .delete()
                 .or(
-                  `and(sender_id.eq.${user.email},receiver_id.eq.${otherUserId}),and(sender_id.eq.${otherUserId},receiver_id.eq.${user.email})`
+                  `and(sender_id.eq.${user.id},receiver_id.eq.${otherUserId}),and(sender_id.eq.${otherUserId},receiver_id.eq.${user.id})`
                 )
                 .eq("listing_id", listingId === "general" ? null : listingId);
 
@@ -273,6 +305,7 @@ export default function ChatScreen() {
       <ChatHeader
         otherUserName={otherUserName.toString()}
         otherUserImage={otherUserImage}
+        otherUserId={otherUserId.toString()}
         listingId={listingId?.toString() || "general"}
         listingTitle={listingTitle?.toString() || ""}
         onSettingsPress={() => setShowSettings(true)}
@@ -286,7 +319,7 @@ export default function ChatScreen() {
         className="flex-1 p-4"
         onLayout={() => flatListRef.current?.scrollToEnd({ animated: false })}
         renderItem={({ item, index }) => {
-          const isOwnMessage = item.sender_id === user?.email;
+          const isOwnMessage = item.sender_id === user?.id;
           const prevMessage = index > 0 ? messages[index - 1] : null;
           const showTimestamp = shouldShowTimestamp(item, prevMessage);
           const nextMessage = index < messages.length - 1 ? messages[index + 1] : null;

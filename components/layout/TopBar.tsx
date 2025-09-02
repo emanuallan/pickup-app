@@ -18,26 +18,26 @@ const HomeTopBar = () => {
 
   // Fetch unread message count and set up real-time updates
   useEffect(() => {
-    if (user?.email) {
+    if (user?.id) {
       fetchUnreadMessageCount();
       
       // Set up real-time subscription for messages
       const subscription = supabase
-        .channel(`topbar_messages:${user.email}`)
+        .channel(`topbar_messages:${user.id}`)
         .on('postgres_changes', 
           { 
             event: '*', 
             schema: 'public', 
             table: 'messages',
-            filter: `receiver_id=eq.${user.email}`
+            filter: `receiver_id=eq.${user.id}`
           }, 
           (payload) => {
             if (payload.eventType === 'INSERT') {
               setUnreadMessageCount(prev => prev + 1);
             } else if (payload.eventType === 'UPDATE') {
-              if (payload.old.read === false && payload.new.read === true) {
+              if (payload.old.is_read === false && payload.new.is_read === true) {
                 setUnreadMessageCount(prev => Math.max(0, prev - 1));
-              } else if (payload.old.read === true && payload.new.read === false) {
+              } else if (payload.old.is_read === true && payload.new.is_read === false) {
                 setUnreadMessageCount(prev => prev + 1);
               }
             }
@@ -49,17 +49,17 @@ const HomeTopBar = () => {
         subscription.unsubscribe();
       };
     }
-  }, [user?.email]);
+  }, [user?.id]);
 
   const fetchUnreadMessageCount = async () => {
-    if (!user?.email) return;
+    if (!user?.id) return;
 
     try {
       const { data, error } = await supabase
         .from('messages')
         .select('id')
-        .eq('receiver_id', user.email)
-        .eq('read', false);
+        .eq('receiver_id', user.id)
+        .eq('is_read', false);
       
       if (error) throw error;
       setUnreadMessageCount(data?.length || 0);
@@ -173,19 +173,22 @@ const BrowseTopBar = () => {
 // Profile Top Bar
 const ProfileTopBar = () => {
   const router = useRouter();
+  const { user } = useAuth();
 
   return (
     <View className="flex-row items-center justify-between px-4 py-3">
       <Text className="text-xl font-bold text-gray-900">My Profile</Text>
       
-      <TouchableOpacity 
-        onPress={() => {
-          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-          router.push('/(modals)/settings');
-        }}
-      >
-        <Settings size={24} color="#374151" />
-      </TouchableOpacity>
+      {user && (
+        <TouchableOpacity 
+          onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            router.push('/(modals)/settings');
+          }}
+        >
+          <Settings size={24} color="#374151" />
+        </TouchableOpacity>
+      )}
     </View>
   );
 };

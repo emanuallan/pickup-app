@@ -12,7 +12,7 @@ interface Message {
   receiver_id: string;
   content: string;
   created_at: string;
-  read: boolean;
+  is_read: boolean;
   listing_id?: string;
 }
 
@@ -41,7 +41,7 @@ export default function MessagesScreen() {
   }, [user]);
 
   const subscribeToMessages = () => {
-    if (!user?.email) return;
+    if (!user?.id) return;
 
     const messagesSubscription = supabase
       .channel('messages')
@@ -51,11 +51,11 @@ export default function MessagesScreen() {
           event: 'INSERT',
           schema: 'public',
           table: 'messages',
-          filter: `receiver_id=eq.${user.email}`,
+          filter: `receiver_id=eq.${user.id}`,
         },
         (payload) => {
           const newMessage = payload.new as Message;
-          if (newMessage.sender_id === user.email || newMessage.receiver_id === user.email) {
+          if (newMessage.sender_id === user.id || newMessage.receiver_id === user.id) {
             fetchConversations();
           }
         }
@@ -68,7 +68,7 @@ export default function MessagesScreen() {
   };
 
   const fetchConversations = async () => {
-    if (!user?.email) return;
+    if (!user?.id) return;
     
     try {
       setLoading(true);
@@ -76,20 +76,20 @@ export default function MessagesScreen() {
       const { data: messagesData, error: messagesError } = await supabase
         .from("messages")
         .select("*")
-        .or(`sender_id.eq.${user.email},receiver_id.eq.${user.email}`)
+        .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`)
         .order("created_at", { ascending: false });
 
       if (messagesError) throw messagesError;
 
-      const userEmail = user.email;
+      const userId = user.id;
       const filteredMessages = messagesData?.filter(
-        (msg) => msg.sender_id === userEmail || msg.receiver_id === userEmail
+        (msg) => msg.sender_id === userId || msg.receiver_id === userId
       ) || [];
 
       // Group by user_id and listing_id
       const conversationMap = new Map<string, Conversation>();
       for (const message of filteredMessages) {
-        const partnerId = message.sender_id === user.email ? message.receiver_id : message.sender_id;
+        const partnerId = message.sender_id === user.id ? message.receiver_id : message.sender_id;
         const listingId = message.listing_id || "general";
         const key = `${partnerId}:${listingId}`;
 
@@ -102,11 +102,11 @@ export default function MessagesScreen() {
             listing_title: "",
             last_message: message.content,
             last_message_time: message.created_at,
-            unread_count: message.receiver_id === user.email && !message.read ? 1 : 0,
+            unread_count: message.receiver_id === user.id && !message.is_read ? 1 : 0,
           });
         } else {
           const conv = conversationMap.get(key)!;
-          if (message.receiver_id === user.email && !message.read) {
+          if (message.receiver_id === user.id && !message.is_read) {
             conv.unread_count++;
           }
         }
@@ -119,9 +119,9 @@ export default function MessagesScreen() {
         .filter((id) => id !== "general");
 
       const { data: userSettingsData } = await supabase
-        .from('user_settings')
-        .select('email, display_name, profile_image_url')
-        .in('email', partnerIds);
+        .from('users')
+        .select('id, email, display_name, profile_image_url')
+        .in('id', partnerIds);
 
       // Fetch listing titles
       const { data: listingData } = await supabase
@@ -131,10 +131,12 @@ export default function MessagesScreen() {
 
       // Update conversation map with user info and listing titles
       for (const conv of conversationMap.values()) {
-        const userSettings = userSettingsData?.find((u) => u.email === conv.user_id);
+        const userSettings = userSettingsData?.find((u) => u.id === conv.user_id);
         if (userSettings) {
-          conv.user_name = userSettings.display_name || conv.user_id;
+          conv.user_name = userSettings.display_name || (userSettings.email ? userSettings.email.split('@')[0] : 'User');
           conv.user_image = userSettings.profile_image_url;
+        } else {
+          conv.user_name = 'User';
         }
         const listing = listingData?.find((l) => l.id === conv.listing_id);
         if (listing) {

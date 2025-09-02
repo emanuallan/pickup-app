@@ -27,6 +27,9 @@ export default function Settings() {
   const [bio, setBio] = useState('');
   const [editingBio, setEditingBio] = useState(false);
   const [savingBio, setSavingBio] = useState(false);
+  const [displayName, setDisplayName] = useState('');
+  const [editingDisplayName, setEditingDisplayName] = useState(false);
+  const [savingDisplayName, setSavingDisplayName] = useState(false);
   const colorScheme = useColorScheme();
   const {
     notificationsEnabled,
@@ -48,14 +51,15 @@ export default function Settings() {
 
     try {
       const { data, error } = await supabase
-        .from('user_settings')
+        .from('users')
         .select('*')
-        .eq('email', user.email)
+        .eq('id', user.id)
         .single();
 
       if (error) throw error;
       setSettings(data);
       setBio(data?.bio || '');
+      setDisplayName(data?.display_name || '');
     } catch (error) {
       console.error('Error fetching settings:', error);
     }
@@ -67,9 +71,9 @@ export default function Settings() {
     try {
       setSavingBio(true);
       const { error } = await supabase
-        .from('user_settings')
+        .from('users')
         .update({ bio })
-        .eq('email', user.email);
+        .eq('id', user.id);
 
       if (error) throw error;
       setSettings(prev => prev ? { ...prev, bio } : null);
@@ -79,6 +83,27 @@ export default function Settings() {
       Alert.alert('Error', 'Failed to save bio. Please try again.');
     } finally {
       setSavingBio(false);
+    }
+  };
+
+  const handleSaveDisplayName = async () => {
+    if (!user?.email) return;
+
+    try {
+      setSavingDisplayName(true);
+      const { error } = await supabase
+        .from('users')
+        .update({ display_name: displayName })
+        .eq('id', user.id);
+
+      if (error) throw error;
+      setSettings(prev => prev ? { ...prev, display_name: displayName } : null);
+      setEditingDisplayName(false);
+    } catch (error) {
+      console.error('Error saving display name:', error);
+      Alert.alert('Error', 'Failed to save display name. Please try again.');
+    } finally {
+      setSavingDisplayName(false);
     }
   };
 
@@ -119,9 +144,9 @@ export default function Settings() {
           .getPublicUrl(filePath);
 
         const { error: updateError } = await supabase
-          .from('user_settings')
+          .from('users')
           .update({ profile_image_url: publicUrl })
-          .eq('email', user?.email);
+          .eq('id', user?.id);
 
         if (updateError) {
           throw updateError;
@@ -175,8 +200,55 @@ export default function Settings() {
             <Text className="text-sm text-gray-500 mt-2">
               {loading ? 'Uploading...' : 'Tap to change profile picture'}
             </Text>
-            <Text className="text-xl font-semibold mt-4">{settings?.display_name || user?.email}</Text>
-            <Text className="text-gray-500">{user?.email}</Text>
+            <Text className="text-xl font-semibold mt-4">{settings?.display_name || (user?.email ? user.email.split('@')[0] : 'User')}</Text>
+          </View>
+
+          {/* Display Name Section */}
+          <View className="mt-6">
+            <View className="flex-row justify-between items-center mb-2">
+              <Text className="text-lg font-semibold">Display Name</Text>
+              {!editingDisplayName && (
+                <TouchableOpacity onPress={() => setEditingDisplayName(true)}>
+                  <Text style={{ color: COLORS.utOrange }}>Edit</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+            
+            {editingDisplayName ? (
+              <View className="flex-row items-center gap-2">
+                <TextInput
+                  value={displayName}
+                  onChangeText={setDisplayName}
+                  placeholder="Enter your display name"
+                  className="flex-1 border border-gray-200 rounded-lg px-3 py-2 bg-gray-50"
+                  autoFocus
+                />
+                <TouchableOpacity
+                  onPress={handleSaveDisplayName}
+                  disabled={savingDisplayName}
+                  className="bg-green-500 rounded-lg px-4 py-2"
+                >
+                  {savingDisplayName ? (
+                    <ActivityIndicator size="small" color="white" />
+                  ) : (
+                    <Save size={16} color="white" />
+                  )}
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => {
+                    setEditingDisplayName(false);
+                    setDisplayName(settings?.display_name || '');
+                  }}
+                  className="bg-gray-500 rounded-lg px-4 py-2"
+                >
+                  <Text className="text-white font-medium">Cancel</Text>
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <Text className="text-gray-600 text-base leading-relaxed">
+                {settings?.display_name || 'No display name set'}
+              </Text>
+            )}
           </View>
 
           {/* Bio Section */}
@@ -316,51 +388,8 @@ export default function Settings() {
           </View>
         </View>
 
-        {/* Quick Links */}
-        <View className="bg-white p-4 mb-6">
-          <Text className="text-xl font-bold mb-4">Quick Links</Text>
-          
-          <View className="space-y-2">
-            <TouchableOpacity
-              onPress={() => router.push('/favorites/favorite')}
-              className="flex-row items-center justify-between py-3 border-b border-gray-100"
-            >
-              <View className="flex-row items-center">
-                <View className="w-8 h-8 bg-orange-50 rounded-full items-center justify-center mr-3">
-                  <Heart size={16} color="#BF5700" />
-                </View>
-                <Text className="font-semibold text-gray-900">Favorites</Text>
-              </View>
-              <ChevronRight size={16} color="#9CA3AF" />
-            </TouchableOpacity>
 
-            <TouchableOpacity
-              onPress={() => router.push('/(tabs)/messages')}
-              className="flex-row items-center justify-between py-3 border-b border-gray-100"
-            >
-              <View className="flex-row items-center">
-                <View className="w-8 h-8 bg-orange-50 rounded-full items-center justify-center mr-3">
-                  <MessageCircle size={16} color="#BF5700" />
-                </View>
-                <Text className="font-semibold text-gray-900">Messages</Text>
-              </View>
-              <ChevronRight size={16} color="#9CA3AF" />
-            </TouchableOpacity>
 
-            <TouchableOpacity
-              onPress={() => router.push('/my-listings')}
-              className="flex-row items-center justify-between py-3"
-            >
-              <View className="flex-row items-center">
-                <View className="w-8 h-8 bg-orange-50 rounded-full items-center justify-center mr-3">
-                  <User size={16} color="#BF5700" />
-                </View>
-                <Text className="font-semibold text-gray-900">My Listings</Text>
-              </View>
-              <ChevronRight size={16} color="#9CA3AF" />
-            </TouchableOpacity>
-          </View>
-        </View>
 
         {/* Support & Feedback */}
         <View className="bg-white p-4 mb-6">
