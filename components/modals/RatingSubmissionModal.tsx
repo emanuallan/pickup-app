@@ -13,6 +13,7 @@ import { Star, X, Send } from 'lucide-react-native';
 import { COLORS } from '~/theme/colors';
 import { supabase } from '~/lib/supabase';
 import { useAuth } from '~/contexts/AuthContext';
+import { UserNotificationService } from '~/lib/userNotifications';
 
 interface RatingSubmissionModalProps {
   visible: boolean;
@@ -33,6 +34,48 @@ export const RatingSubmissionModal: React.FC<RatingSubmissionModalProps> = ({
   const [rating, setRating] = useState<number>(0);
   const [comment, setComment] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Helper function to get reviewer's display name
+  const getReviewerName = async () => {
+    if (!user?.id) return 'Someone';
+    
+    try {
+      const { data, error } = await supabase
+        .from('users')
+        .select('display_name, email')
+        .eq('id', user.id)
+        .single();
+
+      if (error) throw error;
+      
+      return data?.display_name || (data?.email ? data.email.split('@')[0] : 'Someone');
+    } catch (error) {
+      console.error('Error fetching reviewer name:', error);
+      return 'Someone';
+    }
+  };
+
+  // Helper function to send review notification
+  const sendReviewNotification = async (reviewId: string, isUpdate: boolean = false) => {
+    if (!ratedUserId || !user?.id) return;
+
+    try {
+      const reviewerName = await getReviewerName();
+
+      await UserNotificationService.notifyNewReview({
+        ratedUserId: ratedUserId,
+        reviewerId: user.id,
+        reviewerName: reviewerName,
+        rating: rating,
+        comment: comment.trim() || undefined,
+        reviewId: reviewId,
+        isUpdate: isUpdate
+      });
+    } catch (error) {
+      console.error('Error sending review notification:', error);
+      // Don't throw error - review was submitted successfully, just notification failed
+    }
+  };
 
   const handleStarPress = (starNumber: number) => {
     setRating(starNumber);
@@ -78,16 +121,23 @@ export const RatingSubmissionModal: React.FC<RatingSubmissionModalProps> = ({
       }
 
       // Insert new rating
-      const { error } = await supabase
+      const { data: reviewData, error } = await supabase
         .from('reviews')
         .insert({
           reviewer_id: user.id,
           reviewed_id: ratedUserId,
           rating: rating,
           comment: comment.trim() || null
-        });
+        })
+        .select()
+        .single();
 
       if (error) throw error;
+
+      // Send notification for new review
+      if (reviewData?.id) {
+        await sendReviewNotification(reviewData.id, false);
+      }
 
       Alert.alert(
         'Rating Submitted',
@@ -112,16 +162,23 @@ export const RatingSubmissionModal: React.FC<RatingSubmissionModalProps> = ({
 
   const updateRating = async () => {
     try {
-      const { error } = await supabase
+      const { data: updatedReview, error } = await supabase
         .from('reviews')
         .update({
           rating: rating,
           comment: comment.trim() || null
         })
         .eq('reviewer_id', user.id)
-        .eq('reviewed_id', ratedUserId);
+        .eq('reviewed_id', ratedUserId)
+        .select()
+        .single();
 
       if (error) throw error;
+
+      // Send notification for updated review
+      if (updatedReview?.id) {
+        await sendReviewNotification(updatedReview.id, true);
+      }
 
       Alert.alert(
         'Rating Updated',

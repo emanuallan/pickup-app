@@ -1,10 +1,11 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, FlatList, TouchableOpacity, Image, ActivityIndicator } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import { COLORS } from '~/theme/colors';
+import { useNotificationSync } from '~/contexts/NotificationSyncContext';
 
 interface Message {
   id: string;
@@ -30,6 +31,7 @@ interface Conversation {
 export default function MessagesScreen() {
   const router = useRouter();
   const { user } = useAuth();
+  const { refreshCount } = useNotificationSync();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -40,6 +42,15 @@ export default function MessagesScreen() {
     }
   }, [user]);
 
+  // Refresh notification counts when screen comes into focus
+  useFocusEffect(
+    React.useCallback(() => {
+      if (user) {
+        refreshCount();
+      }
+    }, [user, refreshCount])
+  );
+
   const subscribeToMessages = () => {
     if (!user?.id) return;
 
@@ -48,14 +59,41 @@ export default function MessagesScreen() {
       .on(
         'postgres_changes',
         {
-          event: 'INSERT',
+          event: '*',
           schema: 'public',
           table: 'messages',
           filter: `receiver_id=eq.${user.id}`,
         },
         (payload) => {
-          const newMessage = payload.new as Message;
-          if (newMessage.sender_id === user.id || newMessage.receiver_id === user.id) {
+          if (payload.eventType === 'INSERT') {
+            const newMessage = payload.new as Message;
+            if (newMessage.sender_id === user.id || newMessage.receiver_id === user.id) {
+              fetchConversations();
+            }
+          } else if (payload.eventType === 'UPDATE') {
+            // Refresh conversations when messages are marked as read
+            const updatedMessage = payload.new as Message;
+            if (updatedMessage.sender_id === user.id || updatedMessage.receiver_id === user.id) {
+              fetchConversations();
+            }
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'messages',
+          filter: `sender_id=eq.${user.id}`,
+        },
+        (payload) => {
+          if (payload.eventType === 'INSERT') {
+            const newMessage = payload.new as Message;
+            fetchConversations();
+          } else if (payload.eventType === 'UPDATE') {
+            // Refresh conversations when messages are marked as read
+            const updatedMessage = payload.new as Message;
             fetchConversations();
           }
         }
@@ -172,7 +210,66 @@ export default function MessagesScreen() {
 
   const isValidUUID = (id: string) => typeof id === 'string' && /^[0-9a-fA-F-]{36}$/.test(id);
 
-  const navigateToChat = (conversation: Conversation) => {
+  const navigateToChat = async (conversation: Conversation) => {
+    // Mark all unread messages in this conversation as read
+    if (conversation.unread_count > 0 && user?.id) {
+      try {
+        const listingId = isValidUUID(conversation.listing_id) ? conversation.listing_id : null;
+        
+        // First, get all unread messages in this conversation
+        let selectQuery = supabase
+          .from('messages')
+          .select('id')
+          .eq('receiver_id', user.id)
+          .eq('sender_id', conversation.user_id)
+          .eq('is_read', false);
+
+        // Add listing_id filter if it's not a general conversation
+        if (listingId) {
+          selectQuery = selectQuery.eq('listing_id', listingId);
+        } else {
+          selectQuery = selectQuery.is('listing_id', null);
+        }
+
+        const { data: unreadMessages, error: selectError } = await selectQuery;
+        
+        if (selectError) throw selectError;
+        
+        if (unreadMessages && unreadMessages.length > 0) {
+          // Update each message individually to trigger real-time subscriptions
+          const updatePromises = unreadMessages.map(message => 
+            supabase
+              .from('messages')
+              .update({ is_read: true })
+              .eq('id', message.id)
+          );
+          
+          await Promise.all(updatePromises);
+        }
+        
+        // Update local state to reflect the change
+        setConversations(prev => 
+          prev.map(conv => 
+            conv.user_id === conversation.user_id && conv.listing_id === conversation.listing_id
+              ? { ...conv, unread_count: 0 }
+              : conv
+          )
+        );
+
+        // Refresh notification counts in other components
+        refreshCount();
+
+        // Trigger a small delay to ensure the database update is processed
+        // This helps ensure real-time subscriptions pick up the changes
+        setTimeout(() => {
+          refreshCount();
+        }, 100);
+      } catch (error) {
+        console.error('Error marking messages as read:', error);
+        // Continue with navigation even if marking as read fails
+      }
+    }
+
     router.push({
       pathname: '/chat/[id]',
       params: { 

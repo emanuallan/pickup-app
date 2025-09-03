@@ -7,15 +7,18 @@ import TopBar from "~/components/layout/TopBar";
 import { COLORS } from '~/theme/colors';
 import { useAuth } from '~/contexts/AuthContext';
 import { useNotificationSync } from '~/contexts/NotificationSyncContext';
+import { useUserNotifications } from '~/contexts/UserNotificationContext';
 import { supabase } from '~/lib/supabase';
 
 // Create context for home refresh
 const HomeRefreshContext = createContext<{
   triggerRefresh: () => void;
   refreshKey: number;
+  refreshMessages: () => Promise<void>;
 }>({
   triggerRefresh: () => {},
   refreshKey: 0,
+  refreshMessages: async () => {},
 });
 
 export const useHomeRefresh = () => useContext(HomeRefreshContext);
@@ -63,6 +66,7 @@ function ConditionalHeader() {
 export default function TabsLayout() {
   const { user } = useAuth();
   const { unreadCount } = useNotificationSync();
+  const { unreadCount: userNotificationCount } = useUserNotifications();
   const [unreadMessageCount, setUnreadMessageCount] = useState(0);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const pathname = usePathname();
@@ -143,7 +147,7 @@ export default function TabsLayout() {
   };
 
   return (
-    <HomeRefreshContext.Provider value={{ triggerRefresh, refreshKey: refreshTrigger }}>
+    <HomeRefreshContext.Provider value={{ triggerRefresh, refreshKey: refreshTrigger, refreshMessages: fetchUnreadMessages }}>
       <View className="flex-1">
         <ConditionalHeader />
         <Tabs
@@ -228,11 +232,6 @@ export default function TabsLayout() {
             title: 'Profile',
             tabBarIcon: ({ color, size }) => <User size={size} color={color} strokeWidth={1.2} />,
             tabBarActiveBackgroundColor: 'rgba(191, 87, 0, 0.05)',
-            tabBarBadge: unreadCount > 0 ? unreadCount : undefined,
-            tabBarBadgeStyle: {
-              backgroundColor: COLORS.utOrange,
-              color: 'white',
-            },
           }}
           listeners={{
             tabPress: handleTabPress,

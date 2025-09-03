@@ -1,4 +1,4 @@
-import { View, Text, ScrollView, TouchableOpacity, Image, FlatList, ActivityIndicator, Dimensions, Pressable } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Image, FlatList, ActivityIndicator, Dimensions, Pressable, RefreshControl } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Search, Plus, LogIn, BookOpen, Smartphone, Armchair, Shirt, Home, Wrench, Flame, MessageCircle, Users, Star, CheckCircle, ShieldCheck, Zap, TrendingUp, Eye, Heart, Sparkles, ArrowRight, MapPin, ChevronRight } from 'lucide-react-native';
@@ -7,6 +7,7 @@ import { useAuth } from '~/contexts/AuthContext';
 import { useEffect, useState } from 'react';
 import { supabase } from '~/lib/supabase';
 import { useHomeRefresh } from './_layout';
+import { useNotificationSync } from '~/contexts/NotificationSyncContext';
 import { COLORS } from '~/theme/colors';
 import * as Haptics from 'expo-haptics';
 import Reanimated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
@@ -344,9 +345,11 @@ const QuickActionsSection = () => {
 export default function HomeScreen() {
   const router = useRouter();
   const { user } = useAuth();
-  const { refreshKey } = useHomeRefresh();
+  const { refreshKey, refreshMessages } = useHomeRefresh();
+  const { refreshCount } = useNotificationSync();
   const [recentListings, setRecentListings] = useState<Item[]>([]);
   const [recentLoading, setRecentLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
     fetchRecentListings();
@@ -394,6 +397,23 @@ export default function HomeScreen() {
     }
   };
 
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    
+    try {
+      // Refresh all data concurrently
+      await Promise.all([
+        fetchRecentListings(false), // Don't show loading spinner for pull-to-refresh
+        refreshCount(), // Refresh notification count
+        refreshMessages(), // Refresh message count
+      ]);
+    } catch (error) {
+      console.error('Error refreshing home screen:', error);
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
   const renderListingItem = ({ item }: { item: Item }) => (
     <View style={{ marginRight: 16, width: 180 }}>
       <ListingCard
@@ -420,6 +440,13 @@ export default function HomeScreen() {
         className="flex-1"
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 100 }}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            tintColor={COLORS.utOrange}
+          />
+        }
       >
         {/* Home Header */}
         <HomeHeader />

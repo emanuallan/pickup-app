@@ -1,11 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
-import { NotificationService } from './notifications';
+import { UserNotificationService } from './userNotifications';
 import { useAuth } from '~/contexts/AuthContext';
 import { supabase } from './supabase';
 
 interface Notification {
   id: string;
-  type: 'favorite' | 'watchlist' | 'message' | 'rating' | 'listing_sold' | 'listing_inquiry';
+  type: 'message' | 'review' | 'listing' | 'system';
   title: string;
   message: string;
   data: {
@@ -21,8 +21,13 @@ interface Notification {
   };
   is_read: boolean;
   created_at: string;
-  listing_id?: number;
+  listing_id?: string;
   actor_id?: string;
+  actor_name?: string;
+  message_id?: string;
+  review_id?: string;
+  push_sent?: boolean;
+  read_at?: string;
 }
 
 export function useNotifications() {
@@ -43,8 +48,8 @@ export function useNotifications() {
     try {
       setLoading(true);
       const [notificationsData, unreadCountData] = await Promise.all([
-        NotificationService.getNotifications(user.id),
-        NotificationService.getUnreadCount(user.id)
+        UserNotificationService.getNotifications(user.id),
+        UserNotificationService.getUnreadCount(user.id)
       ]);
 
       setNotifications(notificationsData);
@@ -58,7 +63,7 @@ export function useNotifications() {
 
   // Mark a single notification as read
   const markAsRead = useCallback(async (notificationId: string) => {
-    const success = await NotificationService.markAsRead(notificationId);
+    const success = await UserNotificationService.markAsRead(notificationId);
     
     if (success) {
       setNotifications(prev => 
@@ -77,7 +82,7 @@ export function useNotifications() {
   const markAllAsRead = useCallback(async () => {
     if (!user?.email) return false;
 
-    const success = await NotificationService.markAllAsRead(user.id);
+    const success = await UserNotificationService.markAllAsRead(user.id);
     
     if (success) {
       setNotifications(prev => 
@@ -98,8 +103,11 @@ export function useNotifications() {
       const newReadStatus = !notification.is_read;
       
       const { error } = await supabase
-        .from('notifications')
-        .update({ is_read: newReadStatus })
+        .from('user_notifications')
+        .update({ 
+          is_read: newReadStatus,
+          read_at: newReadStatus ? new Date().toISOString() : null
+        })
         .eq('id', notificationId);
       
       if (error) throw error;
@@ -118,7 +126,7 @@ export function useNotifications() {
       // Find the notification to check if it was unread
       const notificationToDelete = notifications.find(n => n.id === notificationId);
       
-      const success = await NotificationService.deleteNotification(notificationId);
+      const success = await UserNotificationService.deleteNotification(notificationId);
       
       if (!success) throw new Error('Failed to delete notification');
 
@@ -146,7 +154,7 @@ export function useNotifications() {
     if (!user?.email) return false;
 
     try {
-      const success = await NotificationService.clearAllNotifications(user.id);
+      const success = await UserNotificationService.clearAllNotifications(user.id);
       
       if (!success) throw new Error('Failed to clear all notifications');
 
@@ -184,7 +192,7 @@ export function useNotifications() {
         {
           event: '*',
           schema: 'public',
-          table: 'notifications',
+          table: 'user_notifications',
           filter: `user_id=eq.${user.id}`,
         },
         (payload) => {
@@ -255,7 +263,7 @@ export function useNotificationCount() {
     }
 
     try {
-      const count = await NotificationService.getUnreadCount(user.id);
+      const count = await UserNotificationService.getUnreadCount(user.id);
       setUnreadCount(count);
     } catch (error) {
       console.error('Error getting notification count:', error);
@@ -277,7 +285,7 @@ export function useNotificationCount() {
         {
           event: '*',
           schema: 'public',
-          table: 'notifications',
+          table: 'user_notifications',
           filter: `user_id=eq.${user.id}`,
         },
         (payload) => {

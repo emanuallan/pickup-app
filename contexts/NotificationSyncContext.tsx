@@ -35,7 +35,7 @@ export const NotificationSyncProvider: React.FC<NotificationSyncProviderProps> =
 
     try {
       const { count, error } = await supabase
-        .from('notifications')
+        .from('user_notifications')
         .select('id', { count: 'exact' })
         .eq('user_id', user.id)
         .eq('is_read', false);
@@ -81,7 +81,7 @@ export const NotificationSyncProvider: React.FC<NotificationSyncProviderProps> =
         {
           event: '*',
           schema: 'public',
-          table: 'notifications',
+          table: 'user_notifications',
           filter: `user_id=eq.${user.id}`,
         },
         (payload) => {

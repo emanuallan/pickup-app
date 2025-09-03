@@ -9,7 +9,7 @@ import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 
 import { Link, Stack, Tabs, useRouter , Slot } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { Pressable, View } from 'react-native';
+import { Pressable, View, ActivityIndicator, Text } from 'react-native';
 
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
@@ -19,9 +19,10 @@ import { NAV_THEME } from '~/theme';
 import Header from "~/components/Header";
 import TabBar from "~/components/TabBar";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { AuthProvider } from '../contexts/AuthContext';
+import { AuthProvider, useAuth } from '../contexts/AuthContext';
 import { NotificationProvider } from '../contexts/NotificationContext';
 import { NotificationSyncProvider } from '../contexts/NotificationSyncContext';
+import { UserNotificationProvider } from '../contexts/UserNotificationContext';
 import { SettingsProvider } from '../contexts/SettingsContext';
 import { useEffect } from 'react';
 
@@ -51,37 +52,67 @@ function InitialLayout() {
   );
 }
 
+function AuthNavigator() {
+  const { user, loading } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!loading) {
+      if (user) {
+        router.replace('/(tabs)');
+      } else {
+        router.replace('/(auth)/login');
+      }
+    }
+  }, [user, loading, router]);
+
+  if (loading) {
+    return (
+      <View className="flex-1 justify-center items-center bg-white">
+        <ActivityIndicator size="large" color="#C1501F" />
+        <Text className="mt-4 text-gray-600">Loading...</Text>
+      </View>
+    );
+  }
+
+  return (
+    <Stack 
+      screenOptions={{ 
+        headerShown: false,
+      }}
+    >
+      <Stack.Screen name="(auth)" />
+      <Stack.Screen 
+        name="(tabs)" 
+        options={{
+          headerShown: false,
+        }}
+      />
+      <Stack.Screen 
+        name="(modals)" 
+        options={{ 
+          headerShown: false,
+          presentation: 'modal',
+        }} 
+      />
+    </Stack>
+  );
+}
+
 export default function RootLayout() {
   return (
     <AuthProvider>
       <NotificationSyncProvider>
         <NotificationProvider>
-          <SettingsProvider>
-            <View className="flex-1">
-              <SafeAreaView className="flex-1" edges={['top']}>
-                <Stack 
-                  screenOptions={{ 
-                    headerShown: false,
-                  }}
-                >
-                  <Stack.Screen name="(auth)" />
-                  <Stack.Screen 
-                    name="(tabs)" 
-                    options={{
-                      headerShown: false,
-                    }}
-                  />
-                  <Stack.Screen 
-                    name="(modals)" 
-                    options={{ 
-                      headerShown: false,
-                      presentation: 'modal',
-                    }} 
-                  />
-                </Stack>
-              </SafeAreaView>
-            </View>
-          </SettingsProvider>
+          <UserNotificationProvider>
+            <SettingsProvider>
+              <View className="flex-1">
+                <SafeAreaView className="flex-1" edges={['top']}>
+                  <AuthNavigator />
+                </SafeAreaView>
+              </View>
+            </SettingsProvider>
+          </UserNotificationProvider>
         </NotificationProvider>
       </NotificationSyncProvider>
     </AuthProvider>

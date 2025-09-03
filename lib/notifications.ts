@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import { sendNotificationToUser } from './pushNotifications';
 
 export interface NotificationData {
   listing_title?: string;
@@ -15,11 +16,11 @@ export interface NotificationData {
 export interface CreateNotificationParams {
   user_id: string;
   actor_id?: string;
-  type: 'favorite' | 'watchlist' | 'message' | 'rating' | 'listing_sold' | 'listing_inquiry';
+  type: 'message' | 'review' | 'listing' | 'system';
   title: string;
   message: string;
   data?: NotificationData;
-  listing_id?: number;
+  listing_id?: string;
 }
 
 /**
@@ -31,22 +32,18 @@ export class NotificationService {
    */
   static async create(params: CreateNotificationParams): Promise<string | null> {
     try {
-      const { data, error } = await supabase.rpc('create_notification', {
-        p_user_id: params.user_id,
-        p_type: params.type,
-        p_title: params.title,
-        p_message: params.message,
-        p_actor_id: params.actor_id,
-        p_data: params.data || {},
-        p_listing_id: params.listing_id
+      // Import UserNotificationService to use its create method
+      const { UserNotificationService } = await import('./userNotifications');
+      
+      return await UserNotificationService.create({
+        userId: params.user_id,
+        type: params.type,
+        title: params.title,
+        message: params.message,
+        data: params.data,
+        actorId: params.actor_id,
+        listingId: params.listing_id
       });
-
-      if (error) {
-        console.error('Error creating notification:', error);
-        return null;
-      }
-
-      return data;
     } catch (error) {
       console.error('Error creating notification:', error);
       return null;
@@ -79,7 +76,7 @@ export class NotificationService {
    */
   static async markAllAsRead(userId: string): Promise<boolean> {
     try {
-      const { error } = await supabase.rpc('mark_all_notifications_read', {
+      const { error } = await supabase.rpc('mark_all_user_notifications_read', {
         p_user_id: userId
       });
 
@@ -101,8 +98,8 @@ export class NotificationService {
   static async markAsRead(notificationId: string): Promise<boolean> {
     try {
       const { error } = await supabase
-        .from('notifications')
-        .update({ is_read: true })
+        .from('user_notifications')
+        .update({ is_read: true, read_at: new Date().toISOString() })
         .eq('id', notificationId);
 
       if (error) {
@@ -123,7 +120,7 @@ export class NotificationService {
   static async getNotifications(userId: string, limit = 50) {
     try {
       const { data, error } = await supabase
-        .from('notifications')
+        .from('user_notifications')
         .select('*')
         .eq('user_id', userId)
         .order('created_at', { ascending: false })
@@ -152,7 +149,7 @@ export class NotificationService {
         {
           event: 'INSERT',
           schema: 'public',
-          table: 'notifications',
+          table: 'user_notifications',
           filter: `user_id=eq.${userId}`,
         },
         callback
@@ -164,11 +161,29 @@ export class NotificationService {
    * Helper functions for specific notification types
    */
   
+  /**
+   * Create notification with automatic push notification
+   */
+  static async createAndNotify(params: CreateNotificationParams): Promise<string | null> {
+    return this.create(params);
+  }
+  
+  /**
+   * Send immediate push notification without storing in database
+   */
+  static async sendImmediatePush(userId: string, title: string, message: string, data?: any): Promise<void> {
+    try {
+      await sendNotificationToUser(userId, title, message, data);
+    } catch (error) {
+      console.error('Error sending immediate push notification:', error);
+    }
+  }
+  
   static async notifyFavoriteAdded(params: {
     listingOwnerId: string;
     actorId: string;
     actorName: string;
-    listingId: number;
+    listingId: string;
     listingTitle: string;
     listingPrice: number;
     listingImage?: string;
@@ -176,7 +191,7 @@ export class NotificationService {
     return this.create({
       user_id: params.listingOwnerId,
       actor_id: params.actorId,
-      type: 'favorite',
+      type: 'listing',
       title: '❤️ Someone liked your listing!',
       message: `${params.actorName} added "${params.listingTitle}" to their favorites`,
       data: {
@@ -193,7 +208,7 @@ export class NotificationService {
     listingOwnerId: string;
     actorId: string;
     actorName: string;
-    listingId: number;
+    listingId: string;
     listingTitle: string;
     listingPrice: number;
     listingImage?: string;
@@ -201,7 +216,7 @@ export class NotificationService {
     return this.create({
       user_id: params.listingOwnerId,
       actor_id: params.actorId,
-      type: 'watchlist',
+      type: 'listing',
       title: '👀 Someone is watching your listing!',
       message: `${params.actorName} added "${params.listingTitle}" to their watchlist`,
       data: {
@@ -219,7 +234,7 @@ export class NotificationService {
     senderId: string;
     senderName: string;
     messagePreview: string;
-    listingId?: number;
+    listingId?: string;
     listingTitle?: string;
     listingPrice?: number;
     listingImage?: string;
@@ -266,7 +281,7 @@ export class NotificationService {
     return this.create({
       user_id: params.ratedUserId,
       actor_id: params.raterId,
-      type: 'rating',
+      type: 'review',
       title: '⭐ New rating received!',
       message,
       data: {
@@ -284,7 +299,7 @@ export class NotificationService {
   static async deleteNotification(notificationId: string): Promise<boolean> {
     try {
       const { error } = await supabase
-        .from('notifications')
+        .from('user_notifications')
         .delete()
         .eq('id', notificationId);
 
@@ -306,7 +321,7 @@ export class NotificationService {
   static async clearAllNotifications(userId: string): Promise<boolean> {
     try {
       const { error } = await supabase
-        .from('notifications')
+        .from('user_notifications')
         .delete()
         .eq('user_id', userId);
 

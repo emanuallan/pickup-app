@@ -502,6 +502,12 @@ const ProfileMenuSection = () => {
           onPress={() => router.push('/reviews')}
         />
         <SettingsItem
+          title="Notifications"
+          description="View your notification history"
+          icon={<Bell size={18} color="#BF5700" />}
+          onPress={() => router.push('/user-notifications')}
+        />
+        <SettingsItem
           title="Settings"
           description="Account and app preferences"
           icon={<Settings2 size={18} color="#BF5700" />}

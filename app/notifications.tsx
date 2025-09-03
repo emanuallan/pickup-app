@@ -3,17 +3,18 @@ import { View, Text, ScrollView, TouchableOpacity, Image, RefreshControl, Activi
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Stack, useRouter } from 'expo-router';
 import { COLORS } from '~/theme/colors';
-import { MessageCircle, User, Clock, ChevronRight, Bell, BellOff, Heart, Eye, Mail, ChevronLeft, X, Trash2, Check, CheckCheck } from 'lucide-react-native';
+import { MessageCircle, User, Clock, ChevronRight, Bell, BellOff, Heart, Eye, Mail, ChevronLeft, X, Trash2, Check, CheckCheck, Settings } from 'lucide-react-native';
 import ModalHeader from '~/components/layout/ModalHeader';
 import { getTimeAgo } from '~/utils/timeago';
 import { supabase } from '~/lib/supabase';
 import { useAuth } from '~/contexts/AuthContext';
 import { useNotifications } from '~/lib/useNotifications';
 import { useNotificationSync } from '~/contexts/NotificationSyncContext';
+import NotificationDebugPanel from '~/components/debug/NotificationDebugPanel';
 
 interface Notification {
   id: string;
-  type: 'favorite' | 'watchlist' | 'message' | 'listing_sold' | 'listing_inquiry';
+  type: 'message' | 'review' | 'listing' | 'system';
   title: string;
   message: string;
   data: {
@@ -23,17 +24,26 @@ interface Notification {
     actor_name?: string;
     sender_name?: string;
     message_preview?: string;
+    rating?: number;
+    review?: string;
+    star_emoji?: string;
   };
   is_read: boolean;
   created_at: string;
-  listing_id?: number;
+  listing_id?: string;
   actor_id?: string;
+  actor_name?: string;
+  message_id?: string;
+  review_id?: string;
+  push_sent?: boolean;
+  read_at?: string;
 }
 
 export default function NotificationsScreen() {
   const router = useRouter();
   const { user } = useAuth();
   const { refreshCount } = useNotificationSync();
+  const [showDebugPanel, setShowDebugPanel] = useState(__DEV__);
   const {
     notifications,
     unreadCount,
@@ -128,12 +138,14 @@ export default function NotificationsScreen() {
   
   const getNotificationIcon = (type: string) => {
     switch (type) {
-      case 'favorite':
-        return <Heart size={16} color="#ef4444" fill="#ef4444" />;
-      case 'watchlist':
-        return <Eye size={16} color="#3b82f6" />;
       case 'message':
         return <MessageCircle size={16} color={COLORS.utOrange} />;
+      case 'review':
+        return <Text style={{ fontSize: 16 }}>⭐</Text>;
+      case 'listing':
+        return <Text style={{ fontSize: 16 }}>📋</Text>;
+      case 'system':
+        return <Bell size={16} color="#6b7280" />;
       default:
         return <Bell size={16} color="#6b7280" />;
     }
@@ -177,6 +189,30 @@ export default function NotificationsScreen() {
               <Text className="text-gray-700 mb-3" numberOfLines={2}>
                 {notification.message}
               </Text>
+
+              {/* Rating Display for review notifications */}
+              {notification.type === 'review' && notification.data.rating && (
+                <View className="flex-row items-center mb-2">
+                  <Text className="text-lg mr-2">{notification.data.star_emoji || '⭐'.repeat(notification.data.rating)}</Text>
+                  <Text className="text-sm font-medium text-gray-700">
+                    {notification.data.rating}/5 stars
+                  </Text>
+                  {notification.data.review && (
+                    <Text className="text-xs text-gray-500 ml-2" numberOfLines={1}>
+                      • "{notification.data.review}"
+                    </Text>
+                  )}
+                </View>
+              )}
+
+              {/* Message Preview for message notifications */}
+              {notification.type === 'message' && notification.data.message_preview && (
+                <View className="bg-blue-50 p-2 rounded-lg mb-2">
+                  <Text className="text-sm text-blue-800 italic" numberOfLines={2}>
+                    "{notification.data.message_preview}"
+                  </Text>
+                </View>
+              )}
 
               {/* Listing Preview */}
               {notification.data.listing_title && (
@@ -306,7 +342,12 @@ export default function NotificationsScreen() {
               <ChevronLeft size={24} color={COLORS.utOrange} />
             </TouchableOpacity>
             <Text className="text-2xl font-bold text-gray-900">Notifications</Text>
-            <View className="w-6" />
+            {__DEV__ && (
+              <TouchableOpacity onPress={() => setShowDebugPanel(!showDebugPanel)}>
+                <Settings size={24} color={COLORS.utOrange} />
+              </TouchableOpacity>
+            )}
+            {!__DEV__ && <View className="w-6" />}
           </View>
           
           <View className="flex-row items-center justify-between">
@@ -347,6 +388,14 @@ export default function NotificationsScreen() {
           </View>
         </View>
 
+        {/* Debug Panel (Development Only) */}
+        {__DEV__ && (
+          <NotificationDebugPanel 
+            visible={showDebugPanel} 
+            onToggle={() => setShowDebugPanel(!showDebugPanel)}
+          />
+        )}
+
         {/* Notifications List */}
         {loading ? (
           <View className="flex-1 items-center justify-center py-20 px-4">
@@ -364,7 +413,7 @@ export default function NotificationsScreen() {
             </View>
             <Text className="text-xl font-semibold text-gray-900 mb-2">No notifications yet</Text>
             <Text className="text-gray-600 text-center px-8">
-              When someone favorites your listings, adds them to their watchlist, or messages you, you&apos;ll see notifications here.
+              When someone favorites your listings, adds them to their watchlist, messages you, or rates you, you&apos;ll see notifications here.
             </Text>
           </View>
         )}

@@ -102,7 +102,7 @@ const HomeTopBar = () => {
         </TouchableOpacity>
         
         <TouchableOpacity 
-          onPress={() => handlePress(() => router.push('/notifications'))} 
+          onPress={() => handlePress(() => router.push('/user-notifications'))} 
           className="p-1 relative"
         >
           <Bell size={24} color="#374151" />

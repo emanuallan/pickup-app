@@ -8,6 +8,7 @@ import ChatHeader from '../../components/chat/ChatHeader';
 import ChatSettingsModal from '../../components/modals/ChatSettingsModal';
 import { Message } from '../../types/chat';
 import { formatTime, shouldShowTimestamp, buildMessageQuery, isRelevantMessage } from '../../utils/chat';
+import { UserNotificationService } from '../../lib/userNotifications';
 
 export default function ChatScreen() {
   const params = useLocalSearchParams();
@@ -22,6 +23,8 @@ export default function ChatScreen() {
   const [otherUserImage, setOtherUserImage] = useState<string | null>(null);
   const flatListRef = useRef<FlatList>(null);
   const [pressedMessageId, setPressedMessageId] = useState<string | null>(null);
+  const [senderName, setSenderName] = useState<string>('');
+  const [listingDetails, setListingDetails] = useState<{ title?: string; price?: number; image?: string } | null>(null);
 
   useEffect(() => {
     if (!otherUserId || !otherUserName) {
@@ -32,6 +35,8 @@ export default function ChatScreen() {
     if (user) {
       fetchMessages();
       fetchOtherUserProfile();
+      fetchSenderProfile();
+      fetchListingDetails();
       const subscription = subscribeToMessages();
       
       return () => {
@@ -54,6 +59,52 @@ export default function ChatScreen() {
       setOtherUserImage(data?.profile_image_url);
     } catch (error) {
       console.error('Error fetching user profile:', error);
+    }
+  };
+
+  const fetchSenderProfile = async () => {
+    if (!user?.id) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('users')
+        .select('display_name, email')
+        .eq('id', user.id)
+        .single();
+
+      if (error) throw error;
+      
+      const displayName = data?.display_name || (data?.email ? data.email.split('@')[0] : 'User');
+      setSenderName(displayName);
+    } catch (error) {
+      console.error('Error fetching sender profile:', error);
+      setSenderName('User');
+    }
+  };
+
+  const fetchListingDetails = async () => {
+    if (!listingId || listingId === 'general') {
+      setListingDetails(null);
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('listings')
+        .select('title, price, images')
+        .eq('id', listingId.toString())
+        .single();
+
+      if (error) throw error;
+      
+      setListingDetails({
+        title: data?.title,
+        price: data?.price,
+        image: data?.images?.[0]
+      });
+    } catch (error) {
+      console.error('Error fetching listing details:', error);
+      setListingDetails(null);
     }
   };
 
@@ -90,6 +141,13 @@ export default function ChatScreen() {
                 .from('messages')
                 .update({ is_read: true })
                 .eq('id', newMessage.id);
+              
+              // Update local state immediately
+              setMessages(prev => 
+                prev.map(msg => 
+                  msg.id === newMessage.id ? { ...msg, is_read: true } : msg
+                )
+              );
             }
           } 
           else if (payload.eventType === 'UPDATE') {
@@ -142,6 +200,15 @@ export default function ChatScreen() {
             'id',
             unreadMessages.map((msg: Message) => msg.id)
           );
+        
+        // Update local state immediately to reflect read status
+        setMessages(prev => 
+          prev.map(msg => 
+            unreadMessages.some(unreadMsg => unreadMsg.id === msg.id)
+              ? { ...msg, is_read: true }
+              : msg
+          )
+        );
       }
     } catch (error) {
       console.error('Error fetching messages:', error);
@@ -202,6 +269,24 @@ export default function ChatScreen() {
             msg.id === optimisticMessage.id ? data : msg
           )
         );
+
+        // Send notification to the receiver
+        if (senderName && otherUserId) {
+          try {
+            await UserNotificationService.notifyNewMessage({
+              receiverId: otherUserId.toString(),
+              senderId: user.id,
+              senderName: senderName,
+              messageContent: messageContent,
+              messageId: data.id,
+              listingId: listingId && listingId !== 'general' ? listingId.toString() : undefined,
+              listingTitle: listingDetails?.title
+            });
+          } catch (error) {
+            console.error('Error sending notification:', error);
+            // Don't throw error - message was sent successfully, just notification failed
+          }
+        }
       }
     } catch (error) {
       console.error('Error sending message:', error);
