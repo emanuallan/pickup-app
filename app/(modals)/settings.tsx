@@ -456,36 +456,6 @@ export default function Settings() {
           </View>
         </View>
 
-        {/* Account Actions */}
-        <View className="bg-white p-4 mb-6">
-          <Text className="text-xl font-bold mb-4">Account</Text>
-          
-          <View className="space-y-2">
-            <TouchableOpacity
-              onPress={() => Alert.alert(
-                'Delete Account',
-                'Are you sure you want to delete your account? This action cannot be undone.',
-                [
-                  { text: 'Cancel', style: 'cancel' },
-                  { 
-                    text: 'Delete', 
-                    style: 'destructive',
-                    onPress: () => Alert.alert('Feature coming soon', 'Please contact support to delete your account.')
-                  }
-                ]
-              )}
-              className="flex-row items-center justify-between py-3"
-            >
-              <View className="flex-row items-center">
-                <View className="w-8 h-8 bg-red-50 rounded-full items-center justify-center mr-3">
-                  <Trash2 size={16} color="#EF4444" />
-                </View>
-                <Text className="font-semibold text-red-600">Delete Account</Text>
-              </View>
-              <ChevronRight size={16} color="#9CA3AF" />
-            </TouchableOpacity>
-          </View>
-        </View>
 
         {/* App Info */}
         <View className="bg-white p-4 mb-6">

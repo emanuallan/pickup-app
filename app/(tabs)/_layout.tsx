@@ -2,13 +2,10 @@ import * as Haptics from 'expo-haptics';
 import { Tabs , usePathname } from 'expo-router';
 import { Home, Search, MessageCircle, User, Plus } from 'lucide-react-native';
 import { View } from 'react-native';
-import { useEffect, useState, createContext, useContext, useCallback } from 'react';
+import { useState, createContext, useContext } from 'react';
 import TopBar from "~/components/layout/TopBar";
 import { COLORS } from '~/theme/colors';
-import { useAuth } from '~/contexts/AuthContext';
-import { useNotificationSync } from '~/contexts/NotificationSyncContext';
-import { useUserNotifications } from '~/contexts/UserNotificationContext';
-import { supabase } from '~/lib/supabase';
+import { useMessageCount } from '~/contexts/MessageCountContext';
 
 // Create context for home refresh
 const HomeRefreshContext = createContext<{
@@ -64,69 +61,9 @@ function ConditionalHeader() {
 }
 
 export default function TabsLayout() {
-  const { user } = useAuth();
-  const { unreadCount } = useNotificationSync();
-  const { unreadCount: userNotificationCount } = useUserNotifications();
-  const [unreadMessageCount, setUnreadMessageCount] = useState(0);
+  const { unreadMessageCount, refreshMessageCount } = useMessageCount();
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const pathname = usePathname();
-
-  const fetchUnreadMessages = useCallback(async () => {
-    if (!user?.id) return;
-    
-    try {
-      const { data, error } = await supabase
-        .from('messages')
-        .select('id')
-        .eq('receiver_id', user.id)
-        .eq('is_read', false);
-      
-      if (error) throw error;
-      setUnreadMessageCount(data?.length || 0);
-    } catch (error) {
-      console.error('Error fetching unread messages:', error);
-    }
-  }, [user?.id]);
-
-  // Fetch unread messages count
-  useEffect(() => {
-    if (user?.email) {
-      fetchUnreadMessages();
-    }
-  }, [user?.email, fetchUnreadMessages]);
-
-  // Real-time updates for message count
-  useEffect(() => {
-    if (!user?.id) return;
-
-    const subscription = supabase
-      .channel(`messages_count:${user.id}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'messages',
-          filter: `receiver_id=eq.${user.id}`,
-        },
-        (payload) => {
-          if (payload.eventType === 'INSERT') {
-            setUnreadMessageCount(prev => prev + 1);
-          } else if (payload.eventType === 'UPDATE') {
-            if (payload.old.is_read === false && payload.new.is_read === true) {
-              setUnreadMessageCount(prev => Math.max(0, prev - 1));
-            } else if (payload.old.is_read === true && payload.new.is_read === false) {
-              setUnreadMessageCount(prev => prev + 1);
-            }
-          }
-        }
-      )
-      .subscribe();
-
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, [user?.id]);
 
   const handleTabPress = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -147,7 +84,7 @@ export default function TabsLayout() {
   };
 
   return (
-    <HomeRefreshContext.Provider value={{ triggerRefresh, refreshKey: refreshTrigger, refreshMessages: fetchUnreadMessages }}>
+    <HomeRefreshContext.Provider value={{ triggerRefresh, refreshKey: refreshTrigger, refreshMessages: refreshMessageCount }}>
       <View className="flex-1">
         <ConditionalHeader />
         <Tabs

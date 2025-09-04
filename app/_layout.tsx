@@ -24,7 +24,9 @@ import { NotificationProvider } from '../contexts/NotificationContext';
 import { NotificationSyncProvider } from '../contexts/NotificationSyncContext';
 import { UserNotificationProvider } from '../contexts/UserNotificationContext';
 import { SettingsProvider } from '../contexts/SettingsContext';
+import { MessageCountProvider } from '../contexts/MessageCountContext';
 import { useEffect } from 'react';
+import WelcomeSlideshow from '../components/WelcomeSlideshow';
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -61,7 +63,7 @@ function AuthNavigator() {
       if (user) {
         router.replace('/(tabs)');
       } else {
-        router.replace('/(auth)/login');
+        router.replace('/welcome');
       }
     }
   }, [user, loading, router]);
@@ -81,6 +83,7 @@ function AuthNavigator() {
         headerShown: false,
       }}
     >
+      <Stack.Screen name="welcome" />
       <Stack.Screen name="(auth)" />
       <Stack.Screen 
         name="(tabs)" 
@@ -101,21 +104,25 @@ function AuthNavigator() {
 
 export default function RootLayout() {
   return (
-    <AuthProvider>
-      <NotificationSyncProvider>
-        <NotificationProvider>
-          <UserNotificationProvider>
-            <SettingsProvider>
-              <View className="flex-1">
-                <SafeAreaView className="flex-1" edges={['top']}>
-                  <AuthNavigator />
-                </SafeAreaView>
-              </View>
-            </SettingsProvider>
-          </UserNotificationProvider>
-        </NotificationProvider>
-      </NotificationSyncProvider>
-    </AuthProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <AuthProvider>
+        <MessageCountProvider>
+          <NotificationSyncProvider>
+            <NotificationProvider>
+              <UserNotificationProvider>
+                <SettingsProvider>
+                  <View className="flex-1">
+                    <SafeAreaView className="flex-1" edges={['top']}>
+                      <AuthNavigator />
+                    </SafeAreaView>
+                  </View>
+                </SettingsProvider>
+              </UserNotificationProvider>
+            </NotificationProvider>
+          </NotificationSyncProvider>
+        </MessageCountProvider>
+      </AuthProvider>
+    </GestureHandlerRootView>
   );
 }
 

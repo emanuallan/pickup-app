@@ -1,12 +1,12 @@
-import { memo, useState, useEffect } from 'react';
+import { memo } from 'react';
 import { View, Image, TouchableOpacity, Text } from 'react-native';
 import { MessageCircle, Bell, Search, Settings, ChevronLeft, Plus } from 'lucide-react-native';
 import { usePathname, useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import Icon from '~/assets/ios-light.png';
-import { supabase } from '~/lib/supabase';
 import { useAuth } from '~/contexts/AuthContext';
 import { useNotificationSync } from '~/contexts/NotificationSyncContext';
+import { useMessageCount } from '~/contexts/MessageCountContext';
 import { COLORS } from '~/theme/colors';
 
 // Home Top Bar (logo and notifications)
@@ -14,59 +14,7 @@ const HomeTopBar = () => {
   const router = useRouter();
   const { user } = useAuth();
   const { unreadCount } = useNotificationSync();
-  const [unreadMessageCount, setUnreadMessageCount] = useState(0);
-
-  // Fetch unread message count and set up real-time updates
-  useEffect(() => {
-    if (user?.id) {
-      fetchUnreadMessageCount();
-      
-      // Set up real-time subscription for messages
-      const subscription = supabase
-        .channel(`topbar_messages:${user.id}`)
-        .on('postgres_changes', 
-          { 
-            event: '*', 
-            schema: 'public', 
-            table: 'messages',
-            filter: `receiver_id=eq.${user.id}`
-          }, 
-          (payload) => {
-            if (payload.eventType === 'INSERT') {
-              setUnreadMessageCount(prev => prev + 1);
-            } else if (payload.eventType === 'UPDATE') {
-              if (payload.old.is_read === false && payload.new.is_read === true) {
-                setUnreadMessageCount(prev => Math.max(0, prev - 1));
-              } else if (payload.old.is_read === true && payload.new.is_read === false) {
-                setUnreadMessageCount(prev => prev + 1);
-              }
-            }
-          }
-        )
-        .subscribe();
-
-      return () => {
-        subscription.unsubscribe();
-      };
-    }
-  }, [user?.id]);
-
-  const fetchUnreadMessageCount = async () => {
-    if (!user?.id) return;
-
-    try {
-      const { data, error } = await supabase
-        .from('messages')
-        .select('id')
-        .eq('receiver_id', user.id)
-        .eq('is_read', false);
-      
-      if (error) throw error;
-      setUnreadMessageCount(data?.length || 0);
-    } catch (error) {
-      console.error('Error fetching unread message count:', error);
-    }
-  };
+  const { unreadMessageCount } = useMessageCount();
 
   const handlePress = (action: () => void) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
