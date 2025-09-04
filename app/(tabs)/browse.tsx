@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { View, FlatList, ActivityIndicator, RefreshControl, Dimensions, Text, ScrollView } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { supabase } from '~/lib/supabase';
@@ -6,10 +6,10 @@ import { SearchBar } from '~/components/forms/SearchBar';
 import CategoryButtons from '~/components/layout/CategoryButtons';
 import ListingCard from '~/components/listing/ListingCard';
 import FilterModal from '~/components/modals/FilterModal';
+import SuccessMessage from '~/components/ui/SuccessMessage';
 import { COLORS } from '~/theme/colors';
 import { useSettings } from '~/contexts/SettingsContext';
 import * as Haptics from 'expo-haptics';
-import Reanimated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 import { SearchX, Package, Lightbulb } from 'lucide-react-native';
 import { searchAndRankListings, getFallbackSuggestions, getFallbackSectionTitle } from '~/utils/search';
 
@@ -137,6 +137,7 @@ export default function BrowseScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
   const { hapticFeedbackEnabled } = useSettings();
+  const scrollViewRef = useRef<ScrollView>(null);
   const [searchQuery, setSearchQuery] = useState(params.q?.toString() || ''); // Actual search query used for filtering
   const [searchInputValue, setSearchInputValue] = useState(params.q?.toString() || ''); // What user types in search bar
   const [selectedCategory, setSelectedCategory] = useState(params.category?.toString() || 'All');
@@ -152,6 +153,7 @@ export default function BrowseScreen() {
   const [fallbackSuggestions, setFallbackSuggestions] = useState<Listing[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [showSuccessMessage, setShowSuccessMessage] = useState(false);
 
   useEffect(() => {
     fetchAllListings();
@@ -219,10 +221,39 @@ export default function BrowseScreen() {
     } catch (error) {
       console.error('Error fetching listings:', error);
     } finally {
+      // Check if this was a refresh before clearing state
+      const wasRefreshing = refreshing;
+      console.log('fetchAllListings finally block - wasRefreshing:', wasRefreshing); // Debug
+      
+      // Always clear loading states
       setLoading(false);
       setRefreshing(false);
+      
+      // Scroll to top after refresh completes
+      setTimeout(() => {
+        scrollViewRef.current?.scrollTo({ y: 0, animated: true });
+      }, 100);
+      
+      // Show success feedback every time there's a refresh
+      if (wasRefreshing) {
+        console.log('About to call showRefreshSuccess'); // Debug
+        setTimeout(() => {
+          showRefreshSuccess();
+        }, 200); // Delay to ensure animations don't conflict
+      }
     }
   };
+
+  const showRefreshSuccess = () => {
+    console.log('showRefreshSuccess called'); // Debug
+    
+    if (hapticFeedbackEnabled) {
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    }
+    
+    setShowSuccessMessage(true);
+  };
+
 
   const applyFiltersAndSearch = () => {
     let filteredListings = [...allListings];
@@ -327,7 +358,26 @@ export default function BrowseScreen() {
   };
 
   const handleRefresh = () => {
+    console.log('handleRefresh called'); // Debug
     setRefreshing(true);
+    // Reset to "All" category and clear search
+    setSelectedCategory('All');
+    setSearchQuery('');
+    setSearchInputValue('');
+    // Reset filters to default
+    setFilters({
+      sortBy: 'newest',
+      priceRange: 'all',
+      timeRange: 'all',
+      condition: 'all',
+    });
+    
+    // Immediately show success and trigger haptic
+    setTimeout(() => {
+      console.log('Triggering success from handleRefresh'); // Debug
+      showRefreshSuccess();
+    }, 300);
+    
     fetchAllListings();
   };
 
@@ -353,6 +403,7 @@ export default function BrowseScreen() {
   return (
     <View style={{ flex: 1, backgroundColor: '#f9fafb' }}>
       <ScrollView
+        ref={scrollViewRef}
         className="flex-1"
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 100 }}
@@ -364,6 +415,7 @@ export default function BrowseScreen() {
           />
         }
       >
+
         {/* Browse Content Header */}
         <BrowseContent
           searchQuery={searchQuery}
@@ -494,6 +546,14 @@ export default function BrowseScreen() {
         onApply={handleApplyFilters}
         currentFilters={filters}
       />
+
+      {/* Success Message */}
+      <SuccessMessage
+        visible={showSuccessMessage}
+        message="Up to date!"
+        onHide={() => setShowSuccessMessage(false)}
+      />
+
     </View>
   );
 } 

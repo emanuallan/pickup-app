@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, TouchableOpacity, Image, ActivityIndicator } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, Image, ActivityIndicator, RefreshControl } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
 import { COLORS } from '~/theme/colors';
 import { useNotificationSync } from '~/contexts/NotificationSyncContext';
+import { useSettings } from '~/contexts/SettingsContext';
+import * as Haptics from 'expo-haptics';
+import SuccessMessage from '~/components/ui/SuccessMessage';
 
 interface Message {
   id: string;
@@ -32,8 +35,11 @@ export default function MessagesScreen() {
   const router = useRouter();
   const { user } = useAuth();
   const { refreshCount } = useNotificationSync();
+  const { hapticFeedbackEnabled } = useSettings();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [showSuccessMessage, setShowSuccessMessage] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -105,11 +111,15 @@ export default function MessagesScreen() {
     };
   };
 
-  const fetchConversations = async () => {
+  const fetchConversations = async (isRefresh: boolean = false) => {
     if (!user?.id) return;
     
     try {
-      setLoading(true);
+      if (isRefresh) {
+        setRefreshing(true);
+      } else {
+        setLoading(true);
+      }
       // Fetch all messages for the current user
       const { data: messagesData, error: messagesError } = await supabase
         .from("messages")
@@ -187,7 +197,19 @@ export default function MessagesScreen() {
       console.error('Error fetching conversations:', error);
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
+  };
+
+  const handleRefresh = () => {
+    fetchConversations(true);
+    // Show success feedback
+    setTimeout(() => {
+      if (hapticFeedbackEnabled) {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      }
+      setShowSuccessMessage(true);
+    }, 300);
   };
 
   const formatTimestamp = (timestamp: string) => {
@@ -347,6 +369,13 @@ export default function MessagesScreen() {
       <FlatList
         data={conversations}
         keyExtractor={(item) => `${item.user_id}:${item.listing_id}`}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            tintColor={COLORS.utOrange}
+          />
+        }
         renderItem={({ item }) => (
           <TouchableOpacity
             onPress={() => navigateToChat(item)}
@@ -400,6 +429,13 @@ export default function MessagesScreen() {
             </View>
           </TouchableOpacity>
         )}
+      />
+      
+      {/* Success Message */}
+      <SuccessMessage
+        visible={showSuccessMessage}
+        message="Messages refreshed!"
+        onHide={() => setShowSuccessMessage(false)}
       />
     </View>
   );
