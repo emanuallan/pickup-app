@@ -8,7 +8,6 @@ export default function CreateLayout() {
         headerShown: true,
         header: ({ options }) => (
           <ModalHeader
-            title={options.title || 'Loading...'}
           />
         ),
         animation: 'slide_from_right',

@@ -1,14 +1,23 @@
 import { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform, Alert, ActivityIndicator, Image } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import { MaterialIcons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { supabase } from '~/lib/supabase';
 import { useAuth } from '~/contexts/AuthContext';
 import { COLORS } from '~/theme/colors';
 import Dropdown from '~/components/ui/Dropdown';
-import ModalHeader from '~/components/layout/ModalHeader';
 import * as ImagePicker from 'expo-image-picker';
+import { 
+  FileText, 
+  Tag, 
+  DollarSign, 
+  Star, 
+  MapPin, 
+  Camera, 
+  X, 
+  Plus,
+  Save
+} from 'lucide-react-native';
 
 const categories = [
   'Select a category',
@@ -93,7 +102,7 @@ export default function EditListingScreen() {
       if (!data) throw new Error('Listing not found');
 
       // Check if user owns this listing
-      if (user?.email !== data.user_id) {
+      if (user?.id !== data.user_id) {
         Alert.alert('Error', 'You can only edit your own listings');
         router.back();
         return;
@@ -101,11 +110,38 @@ export default function EditListingScreen() {
 
       setListing(data);
       setTitle(data.title);
-      setCategory(data.category as typeof categories[number]);
+      
+      // Convert database values back to UI format
+      const convertFromDbFormat = (value: string, type: 'category' | 'condition') => {
+        if (type === 'category') {
+          const categoryMap: Record<string, string> = {
+            'furniture': 'Furniture',
+            'subleases': 'Subleases', 
+            'tech': 'Tech',
+            'vehicles': 'Vehicles',
+            'textbooks': 'Textbooks',
+            'clothing': 'Clothing',
+            'kitchen': 'Kitchen',
+            'other': 'Other'
+          };
+          return categoryMap[value] || value.charAt(0).toUpperCase() + value.slice(1);
+        } else if (type === 'condition') {
+          const conditionMap: Record<string, string> = {
+            'like_new': 'Like New',
+            'good': 'Good',
+            'fair': 'Fair',
+            'poor': 'Poor'
+          };
+          return conditionMap[value] || value.charAt(0).toUpperCase() + value.slice(1);
+        }
+        return value.charAt(0).toUpperCase() + value.slice(1);
+      };
+      
+      setCategory(convertFromDbFormat(data.category, 'category') as typeof categories[number]);
       setPrice(data.price.toString());
       setDescription(data.description);
       setLocation(data.location as typeof locations[number]);
-      setCondition(data.condition as typeof conditions[number]);
+      setCondition(convertFromDbFormat(data.condition, 'condition') as typeof conditions[number]);
       setImages(data.images || []);
       
     } catch (error) {
@@ -141,6 +177,34 @@ export default function EditListingScreen() {
     location !== 'Select a location' && 
     condition !== 'Select condition';
 
+  // Helper function to convert UI values to database enum values
+  const convertToDbFormat = (value: string, type: 'category' | 'condition') => {
+    if (type === 'category') {
+      // Convert UI category names to database enum values
+      const categoryMap: Record<string, string> = {
+        'Furniture': 'furniture',
+        'Subleases': 'subleases', 
+        'Tech': 'tech',
+        'Vehicles': 'vehicles',
+        'Textbooks': 'textbooks',
+        'Clothing': 'clothing',
+        'Kitchen': 'kitchen',
+        'Other': 'other'
+      };
+      return categoryMap[value] || value.toLowerCase();
+    } else if (type === 'condition') {
+      // Convert UI condition names to database enum values
+      const conditionMap: Record<string, string> = {
+        'Like New': 'like_new',
+        'Good': 'good',
+        'Fair': 'fair',
+        'Poor': 'poor'
+      };
+      return conditionMap[value] || value.toLowerCase();
+    }
+    return value.toLowerCase();
+  };
+
   const handleSave = async () => {
     if (!isValid || !listing) return;
 
@@ -151,11 +215,11 @@ export default function EditListingScreen() {
         .from('listings')
         .update({
           title,
-          category,
+          category: convertToDbFormat(category, 'category'),
           price: parseFloat(price),
           description,
           location,
-          condition,
+          condition: convertToDbFormat(condition, 'condition'),
           images,
         })
         .eq('id', listing.id);
@@ -191,112 +255,174 @@ export default function EditListingScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         className="flex-1"
       >
-        <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
-          <View className="p-4 space-y-5">
-            {/* Images Section */}
-            <View>
-              <Text className="text-sm font-medium text-gray-600 mb-2">Photos</Text>
-              <Text className="text-xs text-gray-500 mb-3">Add up to 5 photos</Text>
-              
-              <View className="flex-row flex-wrap gap-2">
-                {images.map((uri, index) => (
-                  <View key={index} className="w-[30%] aspect-square rounded-xl overflow-hidden bg-gray-100 relative">
-                    <Image source={{ uri }} className="w-full h-full" resizeMode="cover" />
-                    <TouchableOpacity
-                      onPress={() => removeImage(index)}
-                      className="absolute top-1 right-1 bg-black/50 rounded-full p-1"
-                    >
-                      <MaterialIcons name="close" size={16} color="white" />
-                    </TouchableOpacity>
+        <ScrollView className="flex-1" showsVerticalScrollIndicator={false} style={{ backgroundColor: 'white' }}>
+          <View className="p-6">
+            {/* Header Section */}
+            <View className="items-center mb-8">
+              <View className="w-16 h-16 bg-orange-50 rounded-full items-center justify-center mb-4">
+                <FileText size={28} color={COLORS.utOrange} />
+              </View>
+              <Text className="text-2xl font-bold text-gray-900 mb-2">Edit Your Listing</Text>
+              <Text className="text-gray-600 text-center text-base leading-6">
+                Update your listing details and photos
+              </Text>
+            </View>
+              {/* Images Section */}
+              <View className="mb-6">
+                <View className="flex-row items-center mb-3">
+                  <View className="w-8 h-8 bg-blue-50 rounded-full items-center justify-center mr-3">
+                    <Camera size={16} color="#3B82F6" />
                   </View>
-                ))}
-                {images.length < 5 && (
-                  <TouchableOpacity
-                    onPress={pickImage}
-                    className="w-[30%] aspect-square bg-gray-50 rounded-xl items-center justify-center border border-gray-200"
-                  >
-                    <MaterialIcons name="add-photo-alternate" size={28} color="#666" />
-                    <Text className="text-xs text-gray-500 mt-1">Add Photo</Text>
-                  </TouchableOpacity>
+                  <Text className="text-sm font-semibold text-gray-700">Photos</Text>
+                </View>
+                <Text className="text-xs text-gray-500 mb-3">Add up to 5 photos</Text>
+                
+                <View className="flex-row flex-wrap" style={{ gap: 12 }}>
+                  {images.map((uri, index) => (
+                    <View key={index} className="relative" style={{ width: '30%', aspectRatio: 1 }}>
+                      <View className="w-full h-full rounded-2xl overflow-hidden bg-gray-100 shadow-sm">
+                        <Image source={{ uri }} className="w-full h-full" resizeMode="cover" />
+                        <TouchableOpacity
+                          onPress={() => removeImage(index)}
+                          className="absolute -top-2 -right-2 w-7 h-7 bg-red-500 rounded-full items-center justify-center shadow-lg"
+                        >
+                          <X size={14} color="white" />
+                        </TouchableOpacity>
+                      </View>
+                      <View className="absolute bottom-2 left-2 bg-black/60 rounded-full w-6 h-6 items-center justify-center">
+                        <Text className="text-white text-xs font-bold">{index + 1}</Text>
+                      </View>
+                    </View>
+                  ))}
+                  {images.length < 5 && (
+                    <View style={{ width: '30%', aspectRatio: 1 }}>
+                      <TouchableOpacity
+                        onPress={pickImage}
+                        className="w-full h-full rounded-2xl items-center justify-center border-2 border-dashed"
+                        style={{ borderColor: '#C1501F', backgroundColor: '#FFF7ED' }}
+                      >
+                        <View className="w-10 h-10 bg-orange-100 rounded-full items-center justify-center mb-2">
+                          <Plus size={20} color={COLORS.utOrange} />
+                        </View>
+                        <Text className="text-xs font-semibold" style={{ color: '#C1501F' }}>
+                          Add Photo
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
+                  )}
+                </View>
+
+                {images.length > 0 && (
+                  <View className="mt-4 pt-4 border-t border-gray-100">
+                    <Text className="text-sm font-medium text-gray-700">
+                      Photos added: {images.length}/5
+                    </Text>
+                  </View>
                 )}
               </View>
 
-              {images.length > 0 && (
-                <Text className="text-xs text-gray-500 mt-2">
-                  {images.length}/5 photos
-                </Text>
-              )}
-            </View>
-
-            <View>
-              <Text className="text-sm font-medium text-gray-600 mb-2">Title</Text>
-              <TextInput
-                className="text-base bg-gray-50 rounded-xl px-4 py-3"
-                placeholder="What are you selling?"
-                value={title}
-                onChangeText={setTitle}
-                placeholderTextColor="#9CA3AF"
-              />
-            </View>
-
-            <View>
-              <Text className="text-sm font-medium text-gray-600 mb-2">Category</Text>
-              <Dropdown
-                value={category}
-                options={categories}
-                onSelect={(value) => setCategory(value as typeof categories[number])}
-                placeholder="Select a category"
-              />
-            </View>
-
-            <View>
-              <Text className="text-sm font-medium text-gray-600 mb-2">Price</Text>
-              <View className="flex-row items-center bg-gray-50 rounded-xl px-4 py-3">
-                <Text className="text-gray-500 mr-2">$</Text>
+              <View className="mb-5">
+                <View className="flex-row items-center mb-2">
+                  <View className="w-8 h-8 bg-blue-50 rounded-full items-center justify-center mr-3">
+                    <FileText size={16} color="#3B82F6" />
+                  </View>
+                  <Text className="text-sm font-semibold text-gray-700">Title</Text>
+                </View>
                 <TextInput
-                  className="flex-1 text-base p-0"
-                  placeholder="0.00"
-                  value={price}
-                  onChangeText={setPrice}
-                  keyboardType="decimal-pad"
+                  className="text-base bg-gray-50 rounded-xl px-4 py-3 border border-transparent focus:border-blue-200"
+                  placeholder="What are you selling?"
+                  value={title}
+                  onChangeText={setTitle}
                   placeholderTextColor="#9CA3AF"
+                  style={{ fontSize: 16 }}
                 />
               </View>
-            </View>
 
-            <View>
-              <Text className="text-sm font-medium text-gray-600 mb-2">Condition</Text>
-              <Dropdown
-                value={condition}
-                options={conditions}
-                onSelect={(value) => setCondition(value as typeof conditions[number])}
-                placeholder="Select condition"
-              />
-            </View>
+              <View className="mb-5">
+                <View className="flex-row items-center mb-2">
+                  <View className="w-8 h-8 bg-purple-50 rounded-full items-center justify-center mr-3">
+                    <Tag size={16} color="#8B5CF6" />
+                  </View>
+                  <Text className="text-sm font-semibold text-gray-700">Category</Text>
+                </View>
+                <Dropdown
+                  value={category}
+                  options={categories}
+                  onSelect={(value) => setCategory(value as typeof categories[number])}
+                  placeholder="Select a category"
+                />
+              </View>
 
-            <View>
-              <Text className="text-sm font-medium text-gray-600 mb-2">Location</Text>
-              <Dropdown
-                value={location}
-                options={locations}
-                onSelect={(value) => setLocation(value as typeof locations[number])}
-                placeholder="Select a location"
-              />
-            </View>
+              <View className="mb-5">
+                <View className="flex-row items-center mb-2">
+                  <View className="w-8 h-8 bg-green-50 rounded-full items-center justify-center mr-3">
+                    <DollarSign size={16} color="#10B981" />
+                  </View>
+                  <Text className="text-sm font-semibold text-gray-700">Price</Text>
+                </View>
+                <View className="flex-row items-center bg-gray-50 rounded-xl px-4 py-3 border border-transparent focus-within:border-green-200">
+                  <Text className="text-gray-500 mr-2 text-base font-medium">$</Text>
+                  <TextInput
+                    className="flex-1 text-base p-0"
+                    placeholder="0.00"
+                    value={price}
+                    onChangeText={setPrice}
+                    keyboardType="decimal-pad"
+                    placeholderTextColor="#9CA3AF"
+                    style={{ fontSize: 16 }}
+                  />
+                </View>
+              </View>
 
-            <View>
-              <Text className="text-sm font-medium text-gray-600 mb-2">Description</Text>
-              <TextInput
-                className="text-base bg-gray-50 rounded-xl px-4 py-3"
-                placeholder="Describe your item..."
-                value={description}
-                onChangeText={setDescription}
-                multiline
-                numberOfLines={4}
-                textAlignVertical="top"
-                placeholderTextColor="#9CA3AF"
-              />
-            </View>
+              <View className="mb-5">
+                <View className="flex-row items-center mb-2">
+                  <View className="w-8 h-8 bg-yellow-50 rounded-full items-center justify-center mr-3">
+                    <Star size={16} color="#F59E0B" />
+                  </View>
+                  <Text className="text-sm font-semibold text-gray-700">Condition</Text>
+                </View>
+                <Dropdown
+                  value={condition}
+                  options={conditions}
+                  onSelect={(value) => setCondition(value as typeof conditions[number])}
+                  placeholder="Select condition"
+                />
+              </View>
+
+              <View className="mb-5">
+                <View className="flex-row items-center mb-2">
+                  <View className="w-8 h-8 bg-red-50 rounded-full items-center justify-center mr-3">
+                    <MapPin size={16} color="#EF4444" />
+                  </View>
+                  <Text className="text-sm font-semibold text-gray-700">Location</Text>
+                </View>
+                <Dropdown
+                  value={location}
+                  options={locations}
+                  onSelect={(value) => setLocation(value as typeof locations[number])}
+                  placeholder="Select a location"
+                />
+              </View>
+
+              <View>
+                <View className="flex-row items-center mb-2">
+                  <View className="w-8 h-8 bg-indigo-50 rounded-full items-center justify-center mr-3">
+                    <FileText size={16} color="#6366F1" />
+                  </View>
+                  <Text className="text-sm font-semibold text-gray-700">Description</Text>
+                </View>
+                <TextInput
+                  className="text-base bg-gray-50 rounded-xl px-4 py-3 border border-transparent focus:border-indigo-200"
+                  placeholder="Describe your item in detail..."
+                  value={description}
+                  onChangeText={setDescription}
+                  multiline
+                  numberOfLines={4}
+                  textAlignVertical="top"
+                  placeholderTextColor="#9CA3AF"
+                  style={{ fontSize: 16, minHeight: 100 }}
+                />
+              </View>
           </View>
         </ScrollView>
 
@@ -326,8 +452,7 @@ export default function EditListingScreen() {
                 <Text className={`font-medium mr-2 ${isValid && !saving ? 'text-white' : 'text-gray-400'}`}>
                   Save Changes
                 </Text>
-                <MaterialIcons 
-                  name="save" 
+                <Save 
                   size={20} 
                   color={isValid && !saving ? 'white' : '#9CA3AF'} 
                 />
