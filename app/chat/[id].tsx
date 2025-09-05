@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
-import { View, Text, TextInput, TouchableOpacity, FlatList, KeyboardAvoidingView, Platform, ActivityIndicator, Image, Alert, Pressable } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { View, Text, TextInput, TouchableOpacity, FlatList, KeyboardAvoidingView, Platform, ActivityIndicator, Image, Alert, Pressable, BackHandler } from 'react-native';
+import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
@@ -9,12 +9,17 @@ import ChatSettingsModal from '../../components/modals/ChatSettingsModal';
 import { Message } from '../../types/chat';
 import { formatTime, shouldShowTimestamp, buildMessageQuery, isRelevantMessage } from '../../utils/chat';
 import { UserNotificationService } from '../../lib/userNotifications';
+import { useMessageCount } from '../../contexts/MessageCountContext';
+import { useNotificationSync } from '../../contexts/NotificationSyncContext';
+import React from 'react';
 
 export default function ChatScreen() {
   const params = useLocalSearchParams();
   const { otherUserName, otherUserId, listingId, listingTitle } = params;
   const { user } = useAuth();
   const router = useRouter();
+  const { refreshMessageCount } = useMessageCount();
+  const { refreshCount } = useNotificationSync();
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(true);
@@ -44,6 +49,30 @@ export default function ChatScreen() {
       };
     }
   }, [user, otherUserId, otherUserName]);
+
+  // Handle back navigation to refresh messages screen
+  useFocusEffect(
+    React.useCallback(() => {
+      const onBackPress = () => {
+        // Refresh message counts when navigating back
+        refreshMessageCount();
+        refreshCount();
+        return false; // Let the default back behavior continue
+      };
+
+      const subscription = BackHandler.addEventListener('hardwareBackPress', onBackPress);
+
+      // Also refresh when screen loses focus (user navigates away)
+      return () => {
+        subscription.remove();
+        // Refresh counts when leaving the chat screen
+        setTimeout(() => {
+          refreshMessageCount();
+          refreshCount();
+        }, 100);
+      };
+    }, [refreshMessageCount, refreshCount])
+  );
 
   const fetchOtherUserProfile = async () => {
     if (!otherUserId) return;
@@ -142,6 +171,9 @@ export default function ChatScreen() {
                 .update({ is_read: true })
                 .eq('id', newMessage.id);
               
+              // Mark corresponding notification as read
+              await UserNotificationService.markMessageNotificationAsRead(newMessage.id);
+              
               // Update local state immediately
               setMessages(prev => 
                 prev.map(msg => 
@@ -200,6 +232,11 @@ export default function ChatScreen() {
             'id',
             unreadMessages.map((msg: Message) => msg.id)
           );
+        
+        // Mark corresponding notifications as read for each message
+        for (const message of unreadMessages) {
+          await UserNotificationService.markMessageNotificationAsRead(message.id);
+        }
         
         // Update local state immediately to reflect read status
         setMessages(prev => 

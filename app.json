@@ -36,7 +36,10 @@
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.austin616.utmarketplaceapp"
+      "bundleIdentifier": "com.utmarketplace.app",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {

@@ -9,10 +9,10 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   owner: 'austin616',
   projectId: 'b88c6cfb-b498-4c87-94da-1be910d7b883',
   orientation: 'portrait',
-  icon: './assets/icon.png',
-  userInterfaceStyle: 'light',
+  icon: './assets/icons/ios-light.png',
+  userInterfaceStyle: 'automatic',
   splash: {
-    image: './assets/splash.png',
+    image: './assets/icons/ios-light.png',
     resizeMode: 'contain',
     backgroundColor: '#ffffff'
   },
@@ -21,7 +21,11 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   ],
   ios: {
     supportsTablet: true,
-    bundleIdentifier: 'com.utmarketplace.app'
+    bundleIdentifier: 'com.utmarketplace.app',
+    ITSAppUsesNonExemptEncryption: false,
+    infoPlist: {
+      ITSAppUsesNonExemptEncryption: false
+    }
   },
   android: {
     adaptiveIcon: {
@@ -31,7 +35,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     package: 'com.utmarketplace.app'
   },
   web: {
-    favicon: './assets/favicon.png'
+    favicon: './assets/icons/ios-light.png'
   },
   plugins: [
     'expo-router',

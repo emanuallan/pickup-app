@@ -9,6 +9,7 @@ import { useNotificationSync } from '~/contexts/NotificationSyncContext';
 import { useSettings } from '~/contexts/SettingsContext';
 import * as Haptics from 'expo-haptics';
 import SuccessMessage from '~/components/ui/SuccessMessage';
+import { UserNotificationService } from '~/lib/userNotifications';
 
 interface Message {
   id: string;
@@ -53,6 +54,8 @@ export default function MessagesScreen() {
     React.useCallback(() => {
       if (user) {
         refreshCount();
+        // Silently refresh conversations when returning to messages screen
+        fetchConversations(false, true); // isRefresh=false, silent=true
       }
     }, [user, refreshCount])
   );
@@ -111,13 +114,13 @@ export default function MessagesScreen() {
     };
   };
 
-  const fetchConversations = async (isRefresh: boolean = false) => {
+  const fetchConversations = async (isRefresh: boolean = false, silent: boolean = false) => {
     if (!user?.id) return;
     
     try {
-      if (isRefresh) {
+      if (isRefresh && !silent) {
         setRefreshing(true);
-      } else {
+      } else if (!silent) {
         setLoading(true);
       }
       // Fetch all messages for the current user
@@ -196,8 +199,10 @@ export default function MessagesScreen() {
     } catch (error) {
       console.error('Error fetching conversations:', error);
     } finally {
-      setLoading(false);
-      setRefreshing(false);
+      if (!silent) {
+        setLoading(false);
+        setRefreshing(false);
+      }
     }
   };
 
@@ -276,6 +281,14 @@ export default function MessagesScreen() {
               ? { ...conv, unread_count: 0 }
               : conv
           )
+        );
+
+        // Mark corresponding notifications as read
+        const listingIdForNotifications = isValidUUID(conversation.listing_id) ? conversation.listing_id : null;
+        await UserNotificationService.markConversationNotificationsAsRead(
+          user.id,
+          conversation.user_id,
+          listingIdForNotifications
         );
 
         // Refresh notification counts in other components

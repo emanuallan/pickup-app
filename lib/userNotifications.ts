@@ -176,6 +176,69 @@ export class UserNotificationService {
   }
 
   /**
+   * Mark message-related notifications as read when a message is read
+   */
+  static async markMessageNotificationAsRead(messageId: string): Promise<boolean> {
+    try {
+      const { error } = await supabase
+        .from('user_notifications')
+        .update({ 
+          is_read: true, 
+          read_at: new Date().toISOString() 
+        })
+        .eq('message_id', messageId)
+        .eq('type', 'message')
+        .eq('is_read', false);
+
+      if (error) {
+        console.error('Error marking message notification as read:', error);
+        return false;
+      }
+
+      return true;
+    } catch (error) {
+      console.error('Error marking message notification as read:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Mark all message notifications as read for a specific conversation
+   */
+  static async markConversationNotificationsAsRead(userId: string, senderId: string, listingId?: string): Promise<boolean> {
+    try {
+      let query = supabase
+        .from('user_notifications')
+        .update({ 
+          is_read: true, 
+          read_at: new Date().toISOString() 
+        })
+        .eq('user_id', userId)
+        .eq('actor_id', senderId)
+        .eq('type', 'message')
+        .eq('is_read', false);
+
+      if (listingId && listingId !== 'general') {
+        query = query.eq('listing_id', listingId);
+      } else {
+        query = query.is('listing_id', null);
+      }
+
+      const { error } = await query;
+
+      if (error) {
+        console.error('Error marking conversation notifications as read:', error);
+        return false;
+      }
+
+      return true;
+    } catch (error) {
+      console.error('Error marking conversation notifications as read:', error);
+      return false;
+    }
+  }
+
+  /**
    * Mark all notifications as read for a user
    */
   static async markAllAsRead(userId: string): Promise<boolean> {
