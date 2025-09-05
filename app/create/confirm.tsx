@@ -1,18 +1,45 @@
-import { useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, Image, Alert } from 'react-native';
+import { useState, useRef, useEffect } from 'react';
+import { View, Text, TouchableOpacity, ScrollView, Image, Alert, Animated, Dimensions } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
+import { CheckCircle2, Tag, DollarSign, MapPin, FileText, Zap } from 'lucide-react-native';
 import { useAuth } from '~/contexts/AuthContext';
+import { useSettings } from '~/contexts/SettingsContext';
+import * as Haptics from 'expo-haptics';
 import { supabase } from '~/lib/supabase';
 import { decode } from 'base64-arraybuffer';
 import * as FileSystem from 'expo-file-system';
 import * as ImageManipulator from 'expo-image-manipulator';
 
+const { width: screenWidth } = Dimensions.get('window');
+
 export default function ConfirmScreen() {
   const router = useRouter();
   const { user } = useAuth();
+  const { hapticFeedbackEnabled } = useSettings();
   const [saving, setSaving] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  
+  // Animation values
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(50)).current;
+
+  useEffect(() => {
+    // Start animations
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 600,
+        useNativeDriver: true,
+      }),
+      Animated.spring(slideAnim, {
+        toValue: 0,
+        tension: 80,
+        friction: 10,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, []);
   
   const params = useLocalSearchParams();
   const images = JSON.parse(params.images as string) as string[];
@@ -149,6 +176,10 @@ export default function ConfirmScreen() {
       return;
     }
 
+    if (hapticFeedbackEnabled) {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    }
+
     try {
       setSaving(true);
       setUploadProgress(0);
@@ -179,6 +210,11 @@ export default function ConfirmScreen() {
       }
       
       console.log('Listing created successfully');
+      
+      if (hapticFeedbackEnabled) {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      }
+      
       router.push({
         pathname: '/(tabs)/browse',
         params: { filter: 'my-listings' }
@@ -195,71 +231,128 @@ export default function ConfirmScreen() {
   return (
     <View className="flex-1 bg-white">
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
-        <View className="p-4">
-          {/* Preview Header */}
-          <Text className="text-sm text-gray-500 mb-4">Preview how your listing will appear</Text>
+        {/* Preview Banner */}
+        <View className="bg-green-50 border-b border-green-200 px-4 py-4">
+          <View className="flex-row items-center">
+            <View className="bg-green-100 rounded-full p-2 mr-3">
+              <CheckCircle2 size={16} color="#10B981" />
+            </View>
+            <Text className="font-semibold text-base" style={{ color: '#10B981' }}>
+              Preview Your Listing
+            </Text>
+          </View>
+        </View>
 
-          {/* Listing Preview */}
-          {/* Images */}
-          {images.length > 0 && (
-            <ScrollView 
-              horizontal 
-              showsHorizontalScrollIndicator={false}
-              className="mb-4"
-            >
-              {images.map((uri, index) => (
-                <Image
-                  key={index}
-                  source={{ uri }}
-                  className="w-60 h-60 rounded-xl mr-2"
-                  resizeMode="cover"
-                />
-              ))}
-            </ScrollView>
+        {/* Images - Full width like buying view */}
+        <View className="relative">
+          {images.length > 0 ? (
+            <>
+              <ScrollView
+                horizontal
+                pagingEnabled
+                showsHorizontalScrollIndicator={false}
+                className="bg-black"
+              >
+                {images.map((uri, index) => (
+                  <Image
+                    key={index}
+                    source={{ uri }}
+                    style={{ width: screenWidth, height: 300 }}
+                    resizeMode="cover"
+                  />
+                ))}
+              </ScrollView>
+              
+              {images.length > 1 && (
+                <View className="absolute bottom-4 left-1/2 flex-row" style={{ transform: [{ translateX: -((images.length * 12) / 2) }] }}>
+                  {images.map((_, index) => (
+                    <View
+                      key={index}
+                      className="w-2 h-2 rounded-full mx-1 bg-white"
+                    />
+                  ))}
+                </View>
+              )}
+            </>
+          ) : (
+            <View className="w-full h-80 bg-gray-100 items-center justify-center">
+              <Text className="text-gray-400 text-lg">No Image</Text>
+            </View>
           )}
+        </View>
 
-          {/* Details */}
-          <View className="space-y-4">
-            <View>
-              <Text className="text-2xl font-semibold">${price}</Text>
-              <Text className="text-xl mt-1">{title}</Text>
-            </View>
+        {/* Listing Details - Same format as buying view */}
+        <View className="p-6">
+          {/* Title and Price */}
+          <View className="mb-6">
+            <Text className="text-2xl font-bold text-gray-900 mb-2">{title}</Text>
+            <Text className="text-3xl font-bold" style={{ color: '#C1501F' }}>
+              ${price}
+            </Text>
+          </View>
 
-            <View className="flex-row flex-wrap gap-2">
-              <View className="bg-gray-100 px-3 py-1 rounded-full">
-                <Text className="text-sm text-gray-600">{category}</Text>
-              </View>
-              <View className="bg-gray-100 px-3 py-1 rounded-full">
-                <Text className="text-sm text-gray-600">{condition}</Text>
-              </View>
-              <View className="bg-gray-100 px-3 py-1 rounded-full">
-                <Text className="text-sm text-gray-600">{location}</Text>
-              </View>
+          {/* Meta Information */}
+          <View className="flex-row flex-wrap gap-4 mb-6">
+            <View className="flex-row items-center">
+              <MapPin size={16} color="#C1501F" />
+              <Text className="text-gray-600 ml-2">{location}</Text>
             </View>
+            <View className="flex-row items-center">
+              <Tag size={16} color="#C1501F" />
+              <Text className="text-gray-600 ml-2">{category}</Text>
+            </View>
+          </View>
 
-            <View>
-              <Text className="text-sm font-medium text-gray-600 mb-1">Description</Text>
-              <Text className="text-gray-600">{description}</Text>
+          {/* Condition */}
+          <View className="mb-6">
+            <View className="self-start px-3 py-1 rounded-full" style={{ backgroundColor: '#fef3c7' }}>
+              <Text style={{ color: '#92400e', fontWeight: '600' }}>
+                Condition: {condition}
+              </Text>
             </View>
+          </View>
+
+          {/* Description */}
+          <View className="mb-6">
+            <Text className="text-lg font-semibold text-gray-800 mb-2">Description</Text>
+            <Text className="text-gray-700 leading-relaxed">{description}</Text>
           </View>
         </View>
       </ScrollView>
 
       {/* Bottom Action */}
-      <View className="px-4 py-3 border-t border-gray-100">
+      <View className="px-6 pb-8 pt-4 bg-white border-t border-gray-100">
         {uploadProgress > 0 && uploadProgress < 100 && (
-          <Text className="text-center text-gray-600 mb-2">
-            Uploading images: {Math.round(uploadProgress)}%
-          </Text>
+          <View className="mb-4">
+            <Text className="text-center text-gray-600 mb-2">
+              Uploading images: {Math.round(uploadProgress)}%
+            </Text>
+            <View className="bg-gray-200 rounded-full h-2 overflow-hidden">
+              <View 
+                className="h-full bg-green-500 rounded-full"
+                style={{ width: `${uploadProgress}%` }}
+              />
+            </View>
+          </View>
         )}
         <TouchableOpacity
           onPress={handlePublish}
           disabled={saving}
-          className="w-full flex-row items-center justify-center py-3.5 bg-[#C1501F] rounded-xl"
+          className={`w-full flex-row items-center justify-center py-4 rounded-2xl ${
+            saving ? 'opacity-60' : 'opacity-100'
+          }`}
+          style={{
+            backgroundColor: saving ? '#9CA3AF' : '#C1501F',
+            shadowColor: saving ? '#000' : '#C1501F',
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: saving ? 0.1 : 0.3,
+            shadowRadius: 8,
+            elevation: 8,
+          }}
         >
-          <MaterialIcons name="publish" size={20} color="white" style={{ marginRight: 8 }} />
-          <Text className="text-white font-medium">
-            {saving ? 'Publishing...' : 'Publish Listing'}
+          <Zap size={20} color="white" strokeWidth={2} style={{ marginRight: 8 }} />
+          <Text className="text-white font-semibold text-base">
+            {saving ? 'Publishing Your Listing...' : 'Publish Listing'}
           </Text>
         </TouchableOpacity>
       </View>
