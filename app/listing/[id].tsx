@@ -7,6 +7,7 @@ import { COLORS } from '~/theme/colors';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ListingOwnerView } from '~/components/listing/ListingOwnerView';
 import { ListingBuyerView } from '~/components/listing/ListingBuyerView';
+import { MoreHorizontal } from 'lucide-react-native';
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -46,11 +47,21 @@ export default function ListingScreen() {
   const [userSettings, setUserSettings] = useState<UserSettings | null>(null);
   const [userListingCount, setUserListingCount] = useState(0);
   const [viewAsBuyer, setViewAsBuyer] = useState(false);
+  const [showActionsModal, setShowActionsModal] = useState(false);
   const scrollViewRef = useRef<ScrollView>(null);
 
   useEffect(() => {
     fetchListing();
   }, []);
+
+  // Update navigation title when listing changes
+  useEffect(() => {
+    if (listing) {
+      navigation.setOptions({
+        title: listing.title,
+      });
+    }
+  }, [listing, navigation]);
 
   const fetchListing = async () => {
     try {
@@ -69,10 +80,6 @@ export default function ListingScreen() {
 
       setListing(listingData);
 
-      // Set navigation title to listing title
-      navigation.setOptions({
-        title: listingData.title
-      });
 
       // Fetch user settings for the listing owner
       const { data: userData } = await supabase
@@ -177,6 +184,8 @@ export default function ListingScreen() {
           formatTimeAgo={formatTimeAgo}
           handleImageScroll={handleImageScroll}
           onBackToOwnerView={isOwner ? () => setViewAsBuyer(false) : undefined}
+          showActionsModal={showActionsModal}
+          setShowActionsModal={setShowActionsModal}
         />
       ) : (
         <ListingOwnerView

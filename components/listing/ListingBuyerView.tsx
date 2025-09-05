@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, Image, TouchableOpacity, Alert, Share, Dimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import { COLORS } from '~/theme/colors';
-import { MapPin, Calendar, Tag, Star, MessageCircle, MoreHorizontal, Heart, Share2, Eye, ArrowLeft } from 'lucide-react-native';
+import { MapPin, Calendar, Tag, Star, MessageCircle, MoreHorizontal, Heart, Share2, Eye, ArrowLeft, Sparkles } from 'lucide-react-native';
 import { AnimatedButton } from '~/components/ui/AnimatedButton';
 import { ListingBuyerActionsModal } from '~/components/modals/ListingBuyerActionsModal';
 import { RatingSubmissionModal } from '~/components/modals/RatingSubmissionModal';
@@ -46,6 +46,8 @@ interface ListingBuyerViewProps {
   formatTimeAgo: (dateString: string) => string;
   handleImageScroll: (direction: 'left' | 'right') => void;
   onBackToOwnerView?: () => void;
+  showActionsModal?: boolean;
+  setShowActionsModal?: (show: boolean) => void;
 }
 
 export const ListingBuyerView: React.FC<ListingBuyerViewProps> = ({
@@ -57,14 +59,20 @@ export const ListingBuyerView: React.FC<ListingBuyerViewProps> = ({
   scrollViewRef,
   formatTimeAgo,
   handleImageScroll,
-  onBackToOwnerView
+  onBackToOwnerView,
+  showActionsModal: externalShowActionsModal,
+  setShowActionsModal: externalSetShowActionsModal
 }) => {
   const router = useRouter();
   const { user } = useAuth();
   const [isSaved, setIsSaved] = useState(false);
   const [isWatchlisted, setIsWatchlisted] = useState(false);
-  const [showActionsModal, setShowActionsModal] = useState(false);
   const [showRatingModal, setShowRatingModal] = useState(false);
+  
+  // Use external modal state if provided, otherwise use internal state
+  const [internalShowActionsModal, setInternalShowActionsModal] = useState(false);
+  const showActionsModal = externalShowActionsModal ?? internalShowActionsModal;
+  const setShowActionsModal = externalSetShowActionsModal ?? setInternalShowActionsModal;
   const [sellerRating, setSellerRating] = useState<{ average: number; count: number } | null>(null);
   const [engagementStats, setEngagementStats] = useState({ favorites: 0, watchlist: 0 });
   
@@ -300,6 +308,7 @@ export const ListingBuyerView: React.FC<ListingBuyerViewProps> = ({
   return (
     <>
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
+
         {/* Owner Viewing Banner */}
         {isOwnerViewing && (
           <View className="bg-blue-50 border-b border-blue-200 px-4 py-4">
@@ -398,30 +407,39 @@ export const ListingBuyerView: React.FC<ListingBuyerViewProps> = ({
             </View>
           )}
 
-          {/* Quick Actions Overlay */}
-          {user && (
-            <View className="absolute top-4 right-4 flex-row gap-2">
-              <TouchableOpacity
-                onPress={handleSaveListing}
-                className="bg-white/90 backdrop-blur-sm rounded-full p-3 shadow-sm"
-              >
-                <Heart size={22} color={isSaved ? '#ef4444' : '#6b7280'} fill={isSaved ? '#ef4444' : 'transparent'} />
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={handleShareListing}
-                className="bg-white/90 backdrop-blur-sm rounded-full p-3 shadow-sm"
-              >
-                <Share2 size={22} color="#6b7280" />
-              </TouchableOpacity>
-            </View>
-          )}
         </View>
 
         {/* Listing Details */}
         <View className="p-6">
           {/* Title and Price */}
           <View className="mb-6">
-            <Text className="text-2xl font-bold text-gray-900 mb-2">{listing.title}</Text>
+            <View className="flex-row items-start justify-between mb-2">
+              <Text className="text-2xl font-bold text-gray-900 flex-1 mr-3">{listing.title}</Text>
+              {user && user.id !== listing.user_id && (
+                <View className="flex-row gap-2">
+                  <TouchableOpacity
+                    onPress={handleSaveListing}
+                    className="bg-gray-100 rounded-full p-2 mt-1"
+                  >
+                    <Heart size={20} color={isSaved ? '#ef4444' : '#6b7280'} fill={isSaved ? '#ef4444' : 'transparent'} />
+                  </TouchableOpacity>
+                  {handleWatchlistToggle && (
+                    <TouchableOpacity
+                      onPress={handleWatchlistToggle}
+                      className="bg-gray-100 rounded-full p-2 mt-1"
+                    >
+                      <Eye size={20} color={isWatchlisted ? '#3b82f6' : '#6b7280'} />
+                    </TouchableOpacity>
+                  )}
+                  <TouchableOpacity
+                    onPress={() => setShowActionsModal(true)}
+                    className="bg-gray-100 rounded-full p-2 mt-1"
+                  >
+                    <MoreHorizontal size={20} color="#6b7280" />
+                  </TouchableOpacity>
+                </View>
+              )}
+            </View>
             <Text className="text-3xl font-bold" style={{ color: COLORS.utOrange }}>
               ${listing.price}
             </Text>
@@ -509,15 +527,16 @@ export const ListingBuyerView: React.FC<ListingBuyerViewProps> = ({
               </View>
             </TouchableOpacity>
             
-            {/* Rate Seller Button */}
-            {user?.id && user.id !== listing.user_id && (
+            {/* Message Seller Button */}
+            {user?.id && user.id !== listing.user_id && !listing.is_sold && (
               <TouchableOpacity
-                onPress={handleRateSeller}
+                onPress={handleMessageSeller}
                 className="flex-row items-center justify-center bg-white rounded-lg py-3 px-4 border border-gray-200"
+                style={{ borderColor: COLORS.utOrange }}
               >
-                <Star size={18} color={COLORS.utOrange} />
+                <MessageCircle size={18} color={COLORS.utOrange} />
                 <Text className="font-semibold ml-2" style={{ color: COLORS.utOrange }}>
-                  Rate This Seller
+                  Message Seller
                 </Text>
               </TouchableOpacity>
             )}
@@ -548,83 +567,6 @@ export const ListingBuyerView: React.FC<ListingBuyerViewProps> = ({
         
       </ScrollView>
 
-      {/* Fixed Bottom Button */}
-      <View className="p-4 border-t border-gray-200 bg-white" style={{ flex: 0, marginBottom: 20 }}>
-        {user ? (
-          <View className="flex-row gap-3 justify-center">
-            {!listing.is_sold && (
-              <AnimatedButton
-                onPress={handleMessageSeller}
-                hapticType="medium"
-                scaleValue={0.97}
-                style={{
-                  backgroundColor: COLORS.utOrange,
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  paddingVertical: 18,
-                  paddingHorizontal: 12,
-                  borderRadius: 16,
-                  flex: 2,
-                  minHeight: 56,
-                  shadowColor: '#000',
-                  shadowOffset: { width: 0, height: 2 },
-                  shadowOpacity: 0.1,
-                  shadowRadius: 4,
-                  elevation: 3,
-                }}
-              >
-                <MessageCircle size={22} color="white" />
-                <Text className="text-white font-bold text-base ml-2">Message</Text>
-              </AnimatedButton>
-            )}
-            
-            <AnimatedButton
-              onPress={() => setShowActionsModal(true)}
-              hapticType="light"
-              scaleValue={0.97}
-              style={{
-                borderColor: COLORS.utOrange,
-                borderWidth: 2,
-                flexDirection: 'row',
-                alignItems: 'center',
-                justifyContent: 'center',
-                paddingVertical: 10,
-                paddingHorizontal: 12,
-                borderRadius: 16,
-                backgroundColor: 'white',
-                flex: listing.is_sold ? 2 : 1,
-                minHeight: 56,
-              }}
-            >
-              <MoreHorizontal size={22} color={COLORS.utOrange} />
-              <Text 
-                className="font-bold text-base ml-2" 
-                style={{ 
-                  color: COLORS.utOrange,
-                  minHeight: 20,
-                  lineHeight: 20
-                }}
-              >
-                {listing.is_sold ? 'Actions & Tips' : 'More'}
-              </Text>
-            </AnimatedButton>
-          </View>
-        ) : (
-          <View className="items-center">
-            <Text className="text-gray-600 text-center mb-4 text-base">
-              Log in to message seller and interact with this listing
-            </Text>
-            <TouchableOpacity
-              onPress={() => router.push('/(tabs)/profile')}
-              className="w-full flex-row items-center justify-center py-3.5 rounded-xl"
-              style={{ backgroundColor: COLORS.utOrange }}
-            >
-              <Text className="text-white font-medium">Go to Profile to Log In</Text>
-            </TouchableOpacity>
-          </View>
-        )}
-      </View>
 
 
       {/* Actions Modal */}
@@ -637,6 +579,7 @@ export const ListingBuyerView: React.FC<ListingBuyerViewProps> = ({
         onShare={handleShareListing}
         onReport={handleReportListing}
         onWatchlist={handleWatchlistToggle}
+        onRate={handleRateSeller}
         isSaved={isSaved}
         isWatchlisted={isWatchlisted}
         user={user}

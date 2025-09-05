@@ -10,6 +10,7 @@ import {
   Eye,
   Flag,
   Sparkles,
+  Star,
 } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { COLORS } from '~/theme/colors';
@@ -24,12 +25,14 @@ interface ListingBuyerActionsModalProps {
     title: string;
     user_name: string;
     is_sold: boolean;
+    user_id: string;
   };
   onMessage: () => void;
   onSave: () => void;
   onShare: () => void;
   onReport: () => void;
   onWatchlist?: () => void;
+  onRate?: () => void;
   isSaved: boolean;
   isWatchlisted?: boolean;
   user?: any;
@@ -44,6 +47,7 @@ export const ListingBuyerActionsModal: React.FC<ListingBuyerActionsModalProps> =
   onShare,
   onReport,
   onWatchlist,
+  onRate,
   isSaved,
   isWatchlisted = false,
   user,
@@ -172,11 +176,11 @@ export const ListingBuyerActionsModal: React.FC<ListingBuyerActionsModalProps> =
               </View>
             ) : (
               <>
-                {/* Primary Message Button */}
-                {!listing.is_sold && (
+                {/* Primary Rate Button */}
+                {onRate && user?.id && user.id !== listing.user_id && (
                   <AnimatedButton
                     onPress={() => {
-                      onMessage();
+                      onRate();
                       onClose();
                     }}
                     hapticType="medium"
@@ -196,9 +200,9 @@ export const ListingBuyerActionsModal: React.FC<ListingBuyerActionsModalProps> =
                       shadowRadius: 12,
                       elevation: 8,
                     }}>
-                    <MessageCircle size={24} color="white" />
+                    <Star size={24} color="white" />
                     <Text style={{ color: 'white', fontSize: 18, fontWeight: '700', marginLeft: 12 }}>
-                      Message Seller
+                      Rate This Seller
                     </Text>
                   </AnimatedButton>
                 )}
