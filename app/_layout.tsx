@@ -55,18 +55,23 @@ function InitialLayout() {
 }
 
 function AuthNavigator() {
-  const { user, loading } = useAuth();
+  const { user, userProfile, loading } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
     if (!loading) {
       if (user) {
-        router.replace('/(tabs)');
+        // User is logged in, check if they completed onboarding
+        if (userProfile?.onboard_complete) {
+          router.replace('/(tabs)');
+        } else {
+          router.replace('/onboarding');
+        }
       } else {
         router.replace('/welcome');
       }
     }
-  }, [user, loading, router]);
+  }, [user, userProfile, loading, router]);
 
   if (loading) {
     return (
@@ -85,6 +90,7 @@ function AuthNavigator() {
     >
       <Stack.Screen name="welcome" />
       <Stack.Screen name="(auth)" />
+      <Stack.Screen name="onboarding" />
       <Stack.Screen 
         name="(tabs)" 
         options={{
