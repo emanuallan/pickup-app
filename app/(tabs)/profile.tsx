@@ -1,14 +1,13 @@
-import { View, Text, Image, FlatList, TouchableOpacity, ActivityIndicator, RefreshControl, ScrollView, Alert, Pressable } from 'react-native';
+import { View, Text, Image, TouchableOpacity, ActivityIndicator, RefreshControl, ScrollView, Pressable } from 'react-native';
 import { useAuth } from '~/contexts/AuthContext';
 import { useEffect, useState } from 'react';
 import { supabase } from '~/lib/supabase';
 import { COLORS } from '~/theme/colors';
 import { useRouter } from 'expo-router';
-import { Star, CheckCircle2, Settings2, User, Calendar, MapPin, Plus, Edit3, Eye, BarChart3, MessageCircle, Heart, FileText, Bell, ChevronRight } from 'lucide-react-native';
+import { Star, CheckCircle2, Settings2, User, Calendar, MapPin, Plus, Edit3, Eye, MessageCircle, Heart, FileText, Bell, ChevronRight } from 'lucide-react-native';
 import { getTimeAgo } from '../../utils/timeago';
 import UserRatingDisplay from '~/components/ui/UserRatingDisplay';
-import { useNotificationSync } from '~/contexts/NotificationSyncContext';
-import { ViewAllCard } from '~/components/ui/ViewAllCard';
+
 import Reanimated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import { useSettings } from '~/contexts/SettingsContext';
@@ -327,16 +326,6 @@ const QuickListingsPreview = ({ activeListings, pendingListings, soldListings }:
               resizeMode="cover"
               blurRadius={isSold ? 2 : 0}
             />
-            <View style={{
-              position: 'absolute',
-              top: 8,
-              right: 8,
-              backgroundColor: 'rgba(255,255,255,0.9)',
-              borderRadius: 12,
-              padding: 4,
-            }}>
-              <Heart size={14} color="#ef4444" />
-            </View>
             {isSold && (
               <View className="absolute inset-0 items-center justify-center">
                 <View className="bg-red-500 px-3 py-2 rounded-lg">

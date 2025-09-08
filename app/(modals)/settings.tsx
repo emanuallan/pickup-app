@@ -1,16 +1,13 @@
 import { View, Text, TouchableOpacity, ScrollView, Alert, Image, TextInput, ActivityIndicator, Switch, Linking , useColorScheme } from 'react-native';
 import { useAuth } from '~/contexts/AuthContext';
 import { useRouter } from 'expo-router';
-import { LogOut, Camera, User, Save, Bell, Shield, HelpCircle, Mail, Star, Moon, Palette, Globe, Info, ChevronRight, Heart, MessageCircle, Trash2, Code, ExternalLink } from 'lucide-react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { LogOut, Camera, User, Save, Bell, Shield, HelpCircle, Mail, Star, Moon, Palette, Globe, Info, Heart, MessageCircle, Code, ExternalLink } from 'lucide-react-native';
 import ModalHeader from '~/components/layout/ModalHeader';
 import * as ImagePicker from 'expo-image-picker';
 import { useState, useEffect } from 'react';
 import { supabase } from '~/lib/supabase';
 import { decode } from 'base64-arraybuffer';
 import { COLORS } from '~/theme/colors';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as Haptics from 'expo-haptics';
 import { useSettings } from '~/contexts/SettingsContext';
 
 interface UserSettings {
@@ -223,7 +220,7 @@ export default function Settings() {
               UT Marketplace is currently in beta! Your feedback is incredibly valuable to help us build the best marketplace for Longhorns. Share your thoughts, report bugs, or suggest features.
             </Text>
             <TouchableOpacity
-              onPress={() => Linking.openURL('https://docs.google.com/forms/d/e/1FAIpQLSf6Kw2J3QhVbC8xN2L4M9P7R5T1Y6Z8A3B4C5D6E7F8G9H0I/viewform')}
+              onPress={() => Linking.openURL('https://docs.google.com/document/d/1S4U-EeyNrYOpqSUcmpoOWEBNOIpMwCOReZ2PyIxBwSI/edit?usp=sharing')}
               className="flex-row items-center justify-center rounded-2xl py-4 px-6 shadow-sm"
               style={{ 
                 backgroundColor: COLORS.utOrange,
