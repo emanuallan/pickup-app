@@ -200,6 +200,7 @@ export default function ConfirmScreen() {
         images: uploadedImageUrls,
         is_sold: false,
         is_draft: false,
+        status: 'pending',
       };
 
       const { error } = await supabase.from('listings').insert([payload]);
@@ -215,10 +216,16 @@ export default function ConfirmScreen() {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       }
       
-      router.push({
-        pathname: '/(tabs)/browse',
-        params: { filter: 'my-listings' }
-      });
+      Alert.alert(
+        'Listing Submitted!',
+        'Your listing has been submitted for review and will be visible once approved by our team.',
+        [{ text: 'OK', onPress: () => {
+          router.push({
+            pathname: '/(tabs)/browse',
+            params: { filter: 'my-listings' }
+          });
+        }}]
+      );
     } catch (error) {
       console.error('Error creating listing:', error);
       Alert.alert('Error', 'Failed to create listing. Please try again.');

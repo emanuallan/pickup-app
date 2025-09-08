@@ -37,18 +37,24 @@ export default function ChatScreen() {
       return;
     }
 
-    if (user) {
+    if (user?.id) {
+      console.log('🔌 Setting up chat for:', { user: user.id, otherUser: otherUserId, listingId });
+      
       fetchMessages();
       fetchOtherUserProfile();
       fetchSenderProfile();
       fetchListingDetails();
+      
       const subscription = subscribeToMessages();
       
       return () => {
-        subscription?.unsubscribe();
+        console.log('🔌 Cleaning up chat subscription');
+        if (subscription) {
+          subscription.unsubscribe();
+        }
       };
     }
-  }, [user, otherUserId, otherUserName]);
+  }, [user?.id, otherUserId, otherUserName, listingId]);
 
   // Handle back navigation to refresh messages screen
   useFocusEffect(
@@ -140,20 +146,27 @@ export default function ChatScreen() {
   const subscribeToMessages = () => {
     if (!user?.id || !otherUserId) return;
 
+    // Create unique channel name for this conversation
+    const channelName = `chat:${user.id}:${otherUserId}:${listingId || 'general'}`;
+    
+    console.log('🔌 Creating subscription for channel:', channelName);
+    
     const subscription = supabase
-      .channel('messages_channel')
+      .channel(channelName)
       .on(
         'postgres_changes',
         {
-          event: '*',
+          event: 'INSERT',
           schema: 'public',
-          table: 'messages'
+          table: 'messages',
+          filter: `sender_id=eq.${otherUserId},receiver_id=eq.${user.id}`
         },
         async (payload) => {
-          const message = (payload.new || payload.old) as Message;
+          const newMessage = payload.new as Message;
           
+          // Verify this message belongs to our conversation
           if (!isRelevantMessage(
-            message, 
+            newMessage, 
             user?.id || '', 
             otherUserId.toString(), 
             listingId?.toString() || "general"
@@ -161,44 +174,115 @@ export default function ChatScreen() {
             return;
           }
           
-          if (payload.eventType === 'INSERT') {
-            const newMessage = payload.new as Message;
-            setMessages(prev => [...prev, newMessage]);
-            
-            if (newMessage.sender_id === otherUserId) {
-              await supabase
-                .from('messages')
-                .update({ is_read: true })
-                .eq('id', newMessage.id);
-              
-              // Mark corresponding notification as read
-              await UserNotificationService.markMessageNotificationAsRead(newMessage.id);
-              
-              // Update local state immediately
-              setMessages(prev => 
-                prev.map(msg => 
-                  msg.id === newMessage.id ? { ...msg, is_read: true } : msg
-                )
-              );
+          console.log('📨 Real-time message received:', newMessage);
+          
+          // Check if message already exists (to prevent duplicates)
+          setMessages(prev => {
+            if (prev.some(msg => msg.id === newMessage.id)) {
+              console.log('⚠️ Message already exists, skipping duplicate');
+              return prev;
             }
-          } 
-          else if (payload.eventType === 'UPDATE') {
-            const updatedMessage = payload.new as Message;
+            return [...prev, newMessage];
+          });
+          
+          // Auto-mark received messages as read and mark notification as read
+          try {
+            await supabase
+              .from('messages')
+              .update({ is_read: true })
+              .eq('id', newMessage.id);
+            
+            await UserNotificationService.markMessageNotificationAsRead(newMessage.id);
+            
+            // Update local state
             setMessages(prev => 
               prev.map(msg => 
-                msg.id === updatedMessage.id ? updatedMessage : msg
+                msg.id === newMessage.id ? { ...msg, is_read: true } : msg
               )
             );
-          }
-          else if (payload.eventType === 'DELETE') {
-            const deletedMessage = payload.old as Message;
-            setMessages(prev => 
-              prev.filter(msg => msg.id !== deletedMessage.id)
-            );
+          } catch (error) {
+            console.error('Error marking message as read:', error);
           }
         }
       )
-      .subscribe();
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'messages',
+          filter: `sender_id=eq.${user.id},receiver_id=eq.${otherUserId}`
+        },
+        async (payload) => {
+          const newMessage = payload.new as Message;
+          
+          // Verify this message belongs to our conversation
+          if (!isRelevantMessage(
+            newMessage, 
+            user?.id || '', 
+            otherUserId.toString(), 
+            listingId?.toString() || "general"
+          )) {
+            return;
+          }
+          
+          console.log('📤 Own message confirmed in database:', newMessage);
+          
+          // Replace optimistic message with real one from database
+          setMessages(prev => 
+            prev.map(msg => {
+              // Replace temporary message with real one
+              if (msg.id.startsWith('temp-') && msg.content === newMessage.content && msg.sender_id === newMessage.sender_id) {
+                return newMessage;
+              }
+              // Or if it's already the real message, don't duplicate
+              if (msg.id === newMessage.id) {
+                return msg;
+              }
+              return msg;
+            })
+          );
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'messages',
+          filter: `or(and(sender_id.eq.${user.id},receiver_id.eq.${otherUserId}),and(sender_id.eq.${otherUserId},receiver_id.eq.${user.id}))`
+        },
+        async (payload) => {
+          const updatedMessage = payload.new as Message;
+          
+          if (!isRelevantMessage(
+            updatedMessage, 
+            user?.id || '', 
+            otherUserId.toString(), 
+            listingId?.toString() || "general"
+          )) {
+            return;
+          }
+          
+          console.log('🔄 Message updated:', updatedMessage);
+          
+          setMessages(prev => 
+            prev.map(msg => 
+              msg.id === updatedMessage.id ? updatedMessage : msg
+            )
+          );
+        }
+      )
+      .subscribe((status) => {
+        console.log('📡 Subscription status:', status);
+        if (status === 'SUBSCRIBED') {
+          console.log('✅ Successfully subscribed to real-time messages');
+        } else if (status === 'CHANNEL_ERROR') {
+          console.error('❌ Real-time subscription error');
+        } else if (status === 'TIMED_OUT') {
+          console.error('⏰ Real-time subscription timed out');
+        }
+      });
 
     return subscription;
   };
@@ -268,9 +352,9 @@ export default function ChatScreen() {
     
     // Create optimistic message for immediate UI update
     const optimisticMessage = {
-      id: `temp-${Date.now()}`, // Temporary ID
+      id: `temp-${Date.now()}-${Math.random()}`, // Unique temporary ID
       sender_id: user.id,
-      receiver_id: otherUserId,
+      receiver_id: otherUserId.toString(),
       content: messageContent,
       listing_id: listingId === "general" ? null : (listingId || null),
       is_read: false,
@@ -279,6 +363,11 @@ export default function ChatScreen() {
 
     // Add message optimistically to UI
     setMessages(prev => [...prev, optimisticMessage]);
+
+    // Auto-scroll to bottom when sending
+    setTimeout(() => {
+      flatListRef.current?.scrollToEnd({ animated: true });
+    }, 100);
 
     try {
       setSending(true);
@@ -291,6 +380,8 @@ export default function ChatScreen() {
         is_read: false,
       };
 
+      console.log('📤 Sending message to database:', messageData);
+
       const { data, error } = await supabase
         .from('messages')
         .insert([messageData])
@@ -299,34 +390,31 @@ export default function ChatScreen() {
 
       if (error) throw error;
 
-      // Replace optimistic message with real message from database
-      if (data) {
-        setMessages(prev => 
-          prev.map(msg => 
-            msg.id === optimisticMessage.id ? data : msg
-          )
-        );
+      console.log('✅ Message sent successfully:', data);
 
-        // Send notification to the receiver
-        if (senderName && otherUserId) {
-          try {
-            await UserNotificationService.notifyNewMessage({
-              receiverId: otherUserId.toString(),
-              senderId: user.id,
-              senderName: senderName,
-              messageContent: messageContent,
-              messageId: data.id,
-              listingId: listingId && listingId !== 'general' ? listingId.toString() : undefined,
-              listingTitle: listingDetails?.title
-            });
-          } catch (error) {
-            console.error('Error sending notification:', error);
-            // Don't throw error - message was sent successfully, just notification failed
-          }
+      // The real-time subscription will handle replacing the optimistic message
+      // So we don't need to manually replace it here to avoid race conditions
+      
+      // Send notification to the receiver
+      if (senderName && otherUserId && data) {
+        try {
+          await UserNotificationService.notifyNewMessage({
+            receiverId: otherUserId.toString(),
+            senderId: user.id,
+            senderName: senderName,
+            messageContent: messageContent,
+            messageId: data.id,
+            listingId: listingId && listingId !== 'general' ? listingId.toString() : undefined,
+            listingTitle: listingDetails?.title
+          });
+          console.log('📱 Notification sent successfully');
+        } catch (error) {
+          console.error('Error sending notification:', error);
+          // Don't throw error - message was sent successfully, just notification failed
         }
       }
     } catch (error) {
-      console.error('Error sending message:', error);
+      console.error('❌ Error sending message:', error);
       Alert.alert('Error', 'Failed to send message');
       
       // Remove optimistic message on error
@@ -439,7 +527,6 @@ export default function ChatScreen() {
         data={messages}
         keyExtractor={(item) => item.id}
         className="flex-1 p-4"
-        onLayout={() => flatListRef.current?.scrollToEnd({ animated: false })}
         renderItem={({ item, index }) => {
           const isOwnMessage = item.sender_id === user?.id;
           const prevMessage = index > 0 ? messages[index - 1] : null;
@@ -506,7 +593,16 @@ export default function ChatScreen() {
           );
         }}
         onContentSizeChange={() => {
-          flatListRef.current?.scrollToEnd({ animated: true });
+          // Auto-scroll to bottom when new messages arrive
+          setTimeout(() => {
+            flatListRef.current?.scrollToEnd({ animated: true });
+          }, 100);
+        }}
+        onLayout={() => {
+          // Scroll to end when component mounts
+          setTimeout(() => {
+            flatListRef.current?.scrollToEnd({ animated: false });
+          }, 100);
         }}
       />
 

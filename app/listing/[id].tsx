@@ -26,6 +26,8 @@ interface Listing {
   user_image?: string | null;
   is_sold: boolean;
   is_draft: boolean;
+  status: 'pending' | 'approved' | 'denied';
+  denial_reason?: string;
 }
 
 interface UserSettings {

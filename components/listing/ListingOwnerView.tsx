@@ -1,11 +1,12 @@
 import { View, Text, ScrollView, Image, TouchableOpacity, Alert, Dimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import { COLORS } from '~/theme/colors';
-import { MapPin, Calendar, Tag, Edit3, Trash2, Eye, CheckCircle, MessageCircle, Heart, FileText, Settings } from 'lucide-react-native';
+import { MapPin, Calendar, Tag, Edit3, Trash2, Eye, CheckCircle, MessageCircle, Heart, FileText, Settings, Clock, XCircle } from 'lucide-react-native';
 import { AnimatedButton } from '~/components/ui/AnimatedButton';
 import { ListingActionsModal } from '~/components/modals/ListingActionsModal';
 import { supabase } from '~/lib/supabase';
 import { useState, useEffect } from 'react';
+import StatusBadge, { StatusDescription } from '~/components/StatusBadge';
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -24,6 +25,8 @@ interface Listing {
   user_image: string | null;
   is_sold: boolean;
   is_draft: boolean;
+  status: 'pending' | 'approved' | 'denied';
+  denial_reason?: string;
 }
 
 interface ListingOwnerViewProps {
@@ -245,12 +248,19 @@ export const ListingOwnerView: React.FC<ListingOwnerViewProps> = ({
 
           {/* Status Indicators */}
           <View className="flex-row flex-wrap gap-2 mb-4">
-            <View className={`px-4 py-2 rounded-full flex-row items-center ${listing.is_sold ? 'bg-red-100' : 'bg-green-100'}`}>
-              <CheckCircle size={16} color={listing.is_sold ? '#dc2626' : '#16a34a'} />
-              <Text className={`font-semibold text-sm ml-2 ${listing.is_sold ? 'text-red-800' : 'text-green-800'}`}>
-                {listing.is_sold ? 'Sold' : 'Available'}
-              </Text>
-            </View>
+            {/* Listing Status Badge */}
+            <StatusBadge status={listing.status || 'pending'} size="medium" />
+            
+            {/* Sale Status */}
+            {listing.status === 'approved' && (
+              <View className={`px-4 py-2 rounded-full flex-row items-center ${listing.is_sold ? 'bg-red-100' : 'bg-green-100'}`}>
+                <CheckCircle size={16} color={listing.is_sold ? '#dc2626' : '#16a34a'} />
+                <Text className={`font-semibold text-sm ml-2 ${listing.is_sold ? 'text-red-800' : 'text-green-800'}`}>
+                  {listing.is_sold ? 'Sold' : 'Available'}
+                </Text>
+              </View>
+            )}
+            
             {listing.is_draft && (
               <View className="bg-gray-100 px-4 py-2 rounded-full flex-row items-center">
                 <FileText size={16} color="#6b7280" />
@@ -258,6 +268,11 @@ export const ListingOwnerView: React.FC<ListingOwnerViewProps> = ({
               </View>
             )}
           </View>
+
+          {/* Status Description for pending/denied listings */}
+          {listing.status && listing.status !== 'approved' && (
+            <StatusDescription status={listing.status} denialReason={listing.denial_reason} />
+          )}
 
           {/* Meta Information */}
           <View className="flex-row flex-wrap gap-4 mb-6">
@@ -318,40 +333,60 @@ export const ListingOwnerView: React.FC<ListingOwnerViewProps> = ({
 
       {/* Fixed Bottom Button */}
       <View className="p-4 border-t border-gray-200 bg-white">
-        <AnimatedButton
-          onPress={() => setShowActionsModal(true)}
-          hapticType="medium"
-          scaleValue={0.97}
-          style={{
-            backgroundColor: COLORS.utOrange,
-            flexDirection: 'row',
-            alignItems: 'center',
-            justifyContent: 'center',
-            paddingVertical: 18,
-            borderRadius: 16,
-            shadowColor: '#000',
-            shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: 0.1,
-            shadowRadius: 4,
-            elevation: 3,
-          }}
-        >
-          <Settings size={22} color="white" />
-          <Text className="text-white font-bold text-lg ml-2">Manage Listing</Text>
-        </AnimatedButton>
+        {listing.status === 'pending' ? (
+          <View 
+            style={{
+              backgroundColor: '#F3F4F6',
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'center',
+              paddingVertical: 18,
+              borderRadius: 16,
+              borderWidth: 1,
+              borderColor: '#D1D5DB',
+            }}
+          >
+            <Clock size={22} color="#6B7280" />
+            <Text className="text-gray-500 font-bold text-lg ml-2">Listing is Pending - Please Wait</Text>
+          </View>
+        ) : (
+          <AnimatedButton
+            onPress={() => setShowActionsModal(true)}
+            hapticType="medium"
+            scaleValue={0.97}
+            style={{
+              backgroundColor: COLORS.utOrange,
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'center',
+              paddingVertical: 18,
+              borderRadius: 16,
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.1,
+              shadowRadius: 4,
+              elevation: 3,
+            }}
+          >
+            <Settings size={22} color="white" />
+            <Text className="text-white font-bold text-lg ml-2">Manage Listing</Text>
+          </AnimatedButton>
+        )}
       </View>
 
-      {/* Actions Modal */}
-      <ListingActionsModal
-        visible={showActionsModal}
-        onClose={() => setShowActionsModal(false)}
-        listing={listing}
-        onEdit={handleEditListing}
-        onMarkAsSold={handleMarkAsSold}
-        onDelete={handleDeleteListing}
-        onViewAsPublic={handleViewAsPublic}
-        updating={updating}
-      />
+      {/* Actions Modal - Only show if not pending */}
+      {listing.status !== 'pending' && (
+        <ListingActionsModal
+          visible={showActionsModal}
+          onClose={() => setShowActionsModal(false)}
+          listing={listing}
+          onEdit={handleEditListing}
+          onMarkAsSold={handleMarkAsSold}
+          onDelete={handleDeleteListing}
+          onViewAsPublic={handleViewAsPublic}
+          updating={updating}
+        />
+      )}
     </>
   );
 }; 

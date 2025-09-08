@@ -65,6 +65,8 @@ interface Listing {
   condition: string;
   location: string;
   user_id: string;
+  status: 'pending' | 'approved' | 'denied';
+  denial_reason?: string;
 }
 
 export default function EditListingScreen() {
@@ -105,6 +107,16 @@ export default function EditListingScreen() {
       if (user?.id !== data.user_id) {
         Alert.alert('Error', 'You can only edit your own listings');
         router.back();
+        return;
+      }
+
+      // Check if listing is pending - block editing
+      if (data.status === 'pending') {
+        Alert.alert(
+          'Cannot Edit Listing', 
+          'This listing is currently under review and cannot be edited until approved.',
+          [{ text: 'OK', onPress: () => router.back() }]
+        );
         return;
       }
 

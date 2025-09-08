@@ -51,10 +51,20 @@ export const isRelevantMessage = (
   other_user_id: string, 
   listing_id: string
 ) => {
-  return (
+  // Check if the message is part of this conversation (between these two users)
+  const isConversationMessage = (
     (message.sender_id === user_id && message.receiver_id === other_user_id) ||
     (message.sender_id === other_user_id && message.receiver_id === user_id)
-  ) && (
-    listing_id === "general" ? !message.listing_id : message.listing_id === listing_id
   );
+  
+  if (!isConversationMessage) return false;
+  
+  // Check if the listing context matches
+  if (listing_id === "general") {
+    // For general conversations, message should have no listing_id or null listing_id
+    return !message.listing_id || message.listing_id === null;
+  } else {
+    // For specific listing conversations, message should have the matching listing_id
+    return message.listing_id === listing_id;
+  }
 }; 

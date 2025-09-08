@@ -12,6 +12,7 @@ import { ViewAllCard } from '~/components/ui/ViewAllCard';
 import Reanimated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import { useSettings } from '~/contexts/SettingsContext';
+import StatusBadge from '~/components/StatusBadge';
 
 interface UserSettings {
   display_name: string | null;
@@ -28,6 +29,8 @@ interface Listing {
   location: string;
   created_at: string;
   is_sold: boolean;
+  status: 'pending' | 'approved' | 'denied';
+  denial_reason?: string;
 }
 
 interface Rating {
@@ -257,14 +260,15 @@ const ProfileStatsSection = ({ activeListings, soldListings, ratings, avgRating 
 };
 
 // Quick Listings Preview Component
-const QuickListingsPreview = ({ activeListings, soldListings }: {
+const QuickListingsPreview = ({ activeListings, pendingListings, soldListings }: {
   activeListings: Listing[];
+  pendingListings: Listing[];
   soldListings: Listing[];
 }) => {
   const router = useRouter();
   const { locationEnabled } = useSettings();
 
-  const ListingCard = ({ listing, isSold = false }: { listing: Listing; isSold?: boolean }) => {
+  const ListingCard = ({ listing, isSold = false, isPending = false }: { listing: Listing; isSold?: boolean; isPending?: boolean }) => {
     const { hapticFeedbackEnabled } = useSettings();
     const scale = useSharedValue(1);
     const opacity = useSharedValue(1);
@@ -340,6 +344,11 @@ const QuickListingsPreview = ({ activeListings, soldListings }: {
                 </View>
               </View>
             )}
+            {isPending && (
+              <View className="absolute top-8 left-8">
+                <StatusBadge status="pending" size="small" />
+              </View>
+            )}
           </View>
           <View className="p-4">
             <Text className="font-bold text-gray-900 text-base mb-2" numberOfLines={2}>
@@ -362,13 +371,13 @@ const QuickListingsPreview = ({ activeListings, soldListings }: {
 
   return (
     <View className="mb-8">
-      {/* Active Listings */}
+      {/* Active Listings - Only Approved */}
       {activeListings.length > 0 && (
         <View className="mb-6">
           <View className="px-6 mb-4 flex-row items-center justify-between">
             <View>
               <Text className="text-xl font-black text-gray-900 mb-1">Your Active Listings</Text>
-              <Text className="text-gray-500 font-medium">Currently available</Text>
+              <Text className="text-gray-500 font-medium">Live and available for sale</Text>
             </View>
             <TouchableOpacity
               onPress={() => router.push('/my-listings')}
@@ -392,19 +401,49 @@ const QuickListingsPreview = ({ activeListings, soldListings }: {
         </View>
       )}
 
+      {/* Pending Listings */}
+      {pendingListings.length > 0 && (
+        <View className="mb-6">
+          <View className="px-6 mb-4 flex-row items-center justify-between">
+            <View>
+              <Text className="text-xl font-black text-gray-900 mb-1">Pending Listings</Text>
+              <Text className="text-gray-500 font-medium">Under review by our team</Text>
+            </View>
+            <TouchableOpacity
+              onPress={() => router.push('/my-listings')}
+              className="px-3 py-1 bg-yellow-50 rounded-full"
+            >
+              <Text className="text-sm font-bold text-yellow-800">
+                View All
+              </Text>
+            </TouchableOpacity>
+          </View>
+          
+          <ScrollView 
+            horizontal 
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{ paddingLeft: 24, paddingRight: 24 }}
+          >
+            {pendingListings.map(listing => (
+              <ListingCard key={listing.id} listing={listing} isPending />
+            ))}
+          </ScrollView>
+        </View>
+      )}
+
       {/* Sold Listings */}
       {soldListings.length > 0 && (
         <View className="mb-6">
           <View className="px-6 mb-4 flex-row items-center justify-between">
             <View>
-              <Text className="text-xl font-black text-gray-900 mb-1">Recently Sold</Text>
+              <Text className="text-xl font-black text-gray-900 mb-1">Sold Listings</Text>
               <Text className="text-gray-500 font-medium">Your successful sales</Text>
             </View>
             <TouchableOpacity
               onPress={() => router.push('/my-listings')}
-              className="px-3 py-1 bg-orange-50 rounded-full"
+              className="px-3 py-1 bg-gray-50 rounded-full"
             >
-              <Text className="text-sm font-bold" style={{ color: COLORS.utOrange }}>
+              <Text className="text-sm font-bold text-gray-700">
                 View All
               </Text>
             </TouchableOpacity>
@@ -423,7 +462,7 @@ const QuickListingsPreview = ({ activeListings, soldListings }: {
       )}
 
       {/* Empty State */}
-      {activeListings.length === 0 && soldListings.length === 0 && (
+      {activeListings.length === 0 && pendingListings.length === 0 && soldListings.length === 0 && (
         <View className="px-6">
           <View className="bg-white rounded-lg p-8 items-center border border-gray-200"
             style={{
@@ -543,7 +582,7 @@ export default function ProfileScreen() {
       // 2. Fetch listings
       const { data: listingsData } = await supabase
         .from('listings')
-        .select('*')
+        .select('id, title, price, description, images, location, created_at, is_sold, status, denial_reason')
         .eq('user_id', user.id)
         .eq('is_draft', false)
         .order('created_at', { ascending: false });
@@ -631,14 +670,15 @@ export default function ProfileScreen() {
     );
   }
 
-  // Compute stats
+  // Compute stats - separate by status and sold state
+  const activeListings = listings.filter(l => !l.is_sold && l.status === 'approved');
+  const pendingListings = listings.filter(l => !l.is_sold && l.status === 'pending');
   const soldListings = listings.filter(l => l.is_sold);
-  const activeListings = listings.filter(l => !l.is_sold);
   const avgRating = ratings.length
     ? (ratings.reduce((sum, r) => sum + Number(r.rating), 0) / ratings.length).toFixed(1)
     : 'N/A';
 
-  const renderListingItem = ({ item }: { item: Listing }) => (
+  const renderActiveListingItem = ({ item }: { item: Listing }) => (
     <TouchableOpacity 
       className="mr-4"
       onPress={() => router.push({
@@ -660,12 +700,69 @@ export default function ProfileScreen() {
             <Text className="text-gray-500 text-xs ml-1">{item.location}</Text>
           </View>
           <Text className="text-gray-500 text-xs">{getTimeAgo(item.created_at)}</Text>
-          {item.is_sold && (
-            <View className="flex-row items-center mt-1">
-              <CheckCircle2 size={14} color="#ef4444" />
-              <Text className="text-red-500 text-sm ml-1">Sold</Text>
+        </View>
+      </View>
+    </TouchableOpacity>
+  );
+
+  const renderPendingListingItem = ({ item }: { item: Listing }) => (
+    <TouchableOpacity 
+      className="mr-4"
+      onPress={() => router.push({
+        pathname: '/listing/[id]',
+        params: { id: item.id }
+      })}
+    >
+      <View className="w-40 bg-white rounded-lg overflow-hidden shadow-sm">
+        <Image
+          source={{ uri: item.images?.[0] || 'https://picsum.photos/200' }}
+          className="w-full h-40"
+          resizeMode="cover"
+        />
+        <View className="p-2">
+          <Text className="font-medium text-gray-900" numberOfLines={2}>{item.title}</Text>
+          <Text style={{ color: COLORS.utOrange, fontWeight: 'bold' }}>${item.price}</Text>
+          <View className="flex-row items-center mt-1">
+            <MapPin size={12} color="#6b7280" />
+            <Text className="text-gray-500 text-xs ml-1">{item.location}</Text>
+          </View>
+          <View className="flex-row items-center justify-between mt-2">
+            <Text className="text-gray-500 text-xs">{getTimeAgo(item.created_at)}</Text>
+            <StatusBadge status={item.status} size="small" />
+          </View>
+        </View>
+      </View>
+    </TouchableOpacity>
+  );
+
+  const renderSoldListingItem = ({ item }: { item: Listing }) => (
+    <TouchableOpacity 
+      className="mr-4"
+      onPress={() => router.push({
+        pathname: '/listing/[id]',
+        params: { id: item.id }
+      })}
+    >
+      <View className="w-40 bg-white rounded-lg overflow-hidden shadow-sm">
+        <Image
+          source={{ uri: item.images?.[0] || 'https://picsum.photos/200' }}
+          className="w-full h-40"
+          resizeMode="cover"
+        />
+        <View className="p-2">
+          <Text className="font-medium text-gray-900" numberOfLines={2}>{item.title}</Text>
+          <Text style={{ color: COLORS.utOrange, fontWeight: 'bold' }}>${item.price}</Text>
+          <View className="flex-row items-center mt-1">
+            <MapPin size={12} color="#6b7280" />
+            <Text className="text-gray-500 text-xs ml-1">{item.location}</Text>
+          </View>
+          <View className="flex-row items-center justify-between mt-2">
+            <Text className="text-gray-500 text-xs">{getTimeAgo(item.created_at)}</Text>
+            <View className="flex-row items-center">
+              <CheckCircle2 size={12} color="#ef4444" />
+              <Text className="text-red-500 text-xs ml-1">Sold</Text>
             </View>
-          )}
+          </View>
         </View>
       </View>
     </TouchableOpacity>
@@ -732,6 +829,7 @@ export default function ProfileScreen() {
         {/* Quick Listings Preview */}
         <QuickListingsPreview 
           activeListings={activeListings.slice(0, 3)}
+          pendingListings={pendingListings.slice(0, 3)}
           soldListings={soldListings.slice(0, 3)}
         />
 

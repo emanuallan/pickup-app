@@ -14,6 +14,7 @@ import {
 import { getTimeAgo } from '../../utils/timeago';
 import { useSettings } from '~/contexts/SettingsContext';
 import * as Haptics from 'expo-haptics';
+import StatusBadge, { StatusDescription } from '~/components/StatusBadge';
 
 interface Listing {
   id: string;
@@ -24,6 +25,8 @@ interface Listing {
   location: string;
   created_at: string;
   is_sold: boolean;
+  status: 'pending' | 'approved' | 'denied';
+  denial_reason?: string;
 }
 
 export default function CreateScreen() {
@@ -40,7 +43,7 @@ export default function CreateScreen() {
     try {
       const { data, error } = await supabase
         .from('listings')
-        .select('*')
+        .select('id, title, price, description, images, location, created_at, is_sold, status, denial_reason')
         .eq('user_id', user.id)
         .eq('is_draft', false)
         .order('created_at', { ascending: false });
@@ -80,34 +83,51 @@ export default function CreateScreen() {
 
 
   const renderListingItem = ({ item }: { item: Listing }) => (
-    <TouchableOpacity 
-      className="flex-row bg-white p-4 mb-2 rounded-xl shadow-sm"
-      onPress={() => router.push({
-        pathname: '/listing/[id]',
-        params: { id: item.id }
-      })}
-    >
-      <Image
-        source={{ uri: item.images?.[0] || 'https://picsum.photos/200' }}
-        className="w-20 h-20 rounded-lg"
-        resizeMode="cover"
-      />
-      <View className="flex-1 ml-4">
-        <Text className="text-lg font-medium text-gray-900" numberOfLines={2}>{item.title}</Text>
-        <Text style={{ color: COLORS.utOrange, fontWeight: 'bold' }}>${item.price}</Text>
-        <View className="flex-row items-center mt-1">
-          <MapPin size={12} color="#6b7280" />
-          <Text className="text-gray-500 text-xs ml-1">{item.location}</Text>
-        </View>
-        <Text className="text-gray-500 text-xs">{getTimeAgo(item.created_at)}</Text>
-        {item.is_sold && (
+    <View className="bg-white p-4 mb-2 rounded-xl shadow-sm">
+      <TouchableOpacity 
+        className="flex-row"
+        onPress={() => router.push({
+          pathname: '/listing/[id]',
+          params: { id: item.id }
+        })}
+      >
+        <Image
+          source={{ uri: item.images?.[0] || 'https://picsum.photos/200' }}
+          className="w-20 h-20 rounded-lg"
+          resizeMode="cover"
+        />
+        <View className="flex-1 ml-4">
+          <Text className="text-lg font-medium text-gray-900" numberOfLines={2}>{item.title}</Text>
+          <Text style={{ color: COLORS.utOrange, fontWeight: 'bold' }}>${item.price}</Text>
           <View className="flex-row items-center mt-1">
-            <CheckCircle2 size={14} color="#ef4444" />
-            <Text className="text-red-500 text-sm ml-1">Sold</Text>
+            <MapPin size={12} color="#6b7280" />
+            <Text className="text-gray-500 text-xs ml-1">{item.location}</Text>
           </View>
+          <Text className="text-gray-500 text-xs">{getTimeAgo(item.created_at)}</Text>
+          {item.is_sold && (
+            <View className="flex-row items-center mt-1">
+              <CheckCircle2 size={14} color="#ef4444" />
+              <Text className="text-red-500 text-sm ml-1">Sold</Text>
+            </View>
+          )}
+        </View>
+      </TouchableOpacity>
+      
+      {/* Status Badge */}
+      <View className="flex-row items-center justify-between mt-3 pt-3 border-t border-gray-100">
+        <StatusBadge status={item.status || 'pending'} size="small" />
+        {item.status === 'denied' && item.denial_reason && (
+          <Text className="text-xs text-gray-500 flex-1 ml-2" numberOfLines={1}>
+            {item.denial_reason}
+          </Text>
         )}
       </View>
-    </TouchableOpacity>
+      
+      {/* Status Description for denied items */}
+      {item.status === 'denied' && (
+        <StatusDescription status={item.status} denialReason={item.denial_reason} />
+      )}
+    </View>
   );
 
   return (

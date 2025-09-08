@@ -192,6 +192,7 @@ export default function BrowseScreen() {
         .select('*')
         .eq('is_sold', false)
         .eq('is_draft', false)
+        .eq('status', 'approved')
         .order('created_at', { ascending: false });
 
       if (error) throw error;
