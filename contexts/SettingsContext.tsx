@@ -1,5 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { supabase } from '~/lib/supabase';
+import { useAuth } from './AuthContext';
 
 interface SettingsContextType {
   notificationsEnabled: boolean;
@@ -28,6 +30,7 @@ interface SettingsProviderProps {
 }
 
 export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) => {
+  const { user } = useAuth();
   const [notificationsEnabled, setNotificationsEnabledState] = useState(true);
   const [darkModeEnabled, setDarkModeEnabledState] = useState(false);
   const [locationEnabled, setLocationEnabledState] = useState(true);
@@ -62,6 +65,19 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({ children }) 
   const setNotificationsEnabled = async (enabled: boolean) => {
     setNotificationsEnabledState(enabled);
     await saveSetting('notificationsEnabled', enabled);
+    
+    // Sync with database if user is logged in
+    if (user?.id) {
+      try {
+        await supabase
+          .from('users')
+          .update({ notifications_enabled: enabled })
+          .eq('id', user.id);
+        console.log('✅ Notification setting synced to database:', enabled);
+      } catch (error) {
+        console.error('Failed to sync notification setting to database:', error);
+      }
+    }
   };
 
   const setDarkModeEnabled = async (enabled: boolean) => {

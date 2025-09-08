@@ -395,8 +395,16 @@ export default function ChatScreen() {
       // The real-time subscription will handle replacing the optimistic message
       // So we don't need to manually replace it here to avoid race conditions
       
-      // Send notification to the receiver
+      // Send notification to the receiver (NOT the sender)
       if (senderName && otherUserId && data) {
+        console.log('🔔 Sending notification - Sender:', user.id, 'Receiver:', otherUserId);
+        
+        // Double-check we're not sending notification to ourselves
+        if (user.id === otherUserId.toString()) {
+          console.log('⚠️ Attempted to send notification to self, skipping');
+          return;
+        }
+        
         try {
           await UserNotificationService.notifyNewMessage({
             receiverId: otherUserId.toString(),
@@ -407,7 +415,7 @@ export default function ChatScreen() {
             listingId: listingId && listingId !== 'general' ? listingId.toString() : undefined,
             listingTitle: listingDetails?.title
           });
-          console.log('📱 Notification sent successfully');
+          console.log('📱 Notification sent successfully to receiver:', otherUserId);
         } catch (error) {
           console.error('Error sending notification:', error);
           // Don't throw error - message was sent successfully, just notification failed

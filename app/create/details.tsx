@@ -43,6 +43,10 @@ const locations = [
   'Other',
 ] as const;
 
+// Constants for validation
+const MAX_PRICE = 50000; // Maximum price of $50,000
+const MAX_DESCRIPTION_LENGTH = 500; // Maximum 500 characters for description
+
 export default function DetailsScreen() {
   const router = useRouter();
   const { images: imagesJson } = useLocalSearchParams();
@@ -189,9 +193,23 @@ export default function DetailsScreen() {
                       placeholder="0.00"
                       value={price}
                       onChangeText={(text) => {
-                        setPrice(text);
-                        if (hapticFeedbackEnabled && text.length > 0 && price.length === 0) {
-                          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                        // Remove any non-numeric characters except decimal point
+                        const numericText = text.replace(/[^0-9.]/g, '');
+                        
+                        // Ensure only one decimal point
+                        const parts = numericText.split('.');
+                        const cleanText = parts[0] + (parts.length > 1 ? '.' + parts[1] : '');
+                        
+                        // Check if price exceeds maximum
+                        const numericValue = parseFloat(cleanText);
+                        if (isNaN(numericValue) || numericValue <= MAX_PRICE) {
+                          setPrice(cleanText);
+                          if (hapticFeedbackEnabled && cleanText.length > 0 && price.length === 0) {
+                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                          }
+                        } else if (hapticFeedbackEnabled) {
+                          // Give feedback when price limit is reached
+                          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
                         }
                       }}
                       keyboardType="decimal-pad"
@@ -199,6 +217,9 @@ export default function DetailsScreen() {
                       style={{ fontSize: 16 }}
                     />
                   </View>
+                  <Text className="text-xs text-gray-500 mt-2">
+                    Maximum price: ${MAX_PRICE.toLocaleString()}
+                  </Text>
                 </View>
 
                 <View className="mb-5">
@@ -242,20 +263,38 @@ export default function DetailsScreen() {
                 </View>
 
                 <View>
-                  <View className="flex-row items-center mb-2">
-                    <View className="w-8 h-8 bg-indigo-50 rounded-full items-center justify-center mr-3">
-                      <FileText size={16} color="#6366F1" />
+                  <View className="flex-row items-center justify-between mb-2">
+                    <View className="flex-row items-center">
+                      <View className="w-8 h-8 bg-indigo-50 rounded-full items-center justify-center mr-3">
+                        <FileText size={16} color="#6366F1" />
+                      </View>
+                      <Text className="text-sm font-semibold text-gray-700">Description</Text>
                     </View>
-                    <Text className="text-sm font-semibold text-gray-700">Description</Text>
+                    <Text className={`text-xs font-medium ${
+                      description.length > MAX_DESCRIPTION_LENGTH * 0.9 
+                        ? description.length >= MAX_DESCRIPTION_LENGTH 
+                          ? 'text-red-500' 
+                          : 'text-orange-500'
+                        : 'text-gray-500'
+                    }`}>
+                      {description.length}/{MAX_DESCRIPTION_LENGTH}
+                    </Text>
                   </View>
                   <TextInput
-                    className="text-base bg-gray-50 rounded-xl px-4 py-3 border border-transparent focus:border-indigo-200"
+                    className={`text-base bg-gray-50 rounded-xl px-4 py-3 border border-transparent focus:border-indigo-200 ${
+                      description.length >= MAX_DESCRIPTION_LENGTH ? 'border-red-200' : ''
+                    }`}
                     placeholder="Describe your item in detail..."
                     value={description}
                     onChangeText={(text) => {
-                      setDescription(text);
-                      if (hapticFeedbackEnabled && text.length > 0 && description.length === 0) {
-                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      if (text.length <= MAX_DESCRIPTION_LENGTH) {
+                        setDescription(text);
+                        if (hapticFeedbackEnabled && text.length > 0 && description.length === 0) {
+                          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                        }
+                      } else if (hapticFeedbackEnabled) {
+                        // Give feedback when character limit is reached
+                        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
                       }
                     }}
                     multiline
@@ -264,6 +303,9 @@ export default function DetailsScreen() {
                     placeholderTextColor="#9CA3AF"
                     style={{ fontSize: 16, minHeight: 100 }}
                   />
+                  <Text className="text-xs text-gray-500 mt-2">
+                    Provide detailed information about condition, features, and any relevant details
+                  </Text>
                 </View>
               </View>
             </View>

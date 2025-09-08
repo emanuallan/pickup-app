@@ -193,6 +193,57 @@ export default function Settings() {
     <View className="flex-1 bg-gray-50">
       <ModalHeader title="Settings" />
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
+        {/* Beta Feedback Banner */}
+        <View className="mx-4 mt-4 mb-6">
+          <View 
+            className="rounded-3xl p-6 border-2 shadow-lg"
+            style={{
+              backgroundColor: '#FFF7ED',
+              borderColor: COLORS.utOrange,
+              shadowColor: COLORS.utOrange,
+              shadowOffset: { width: 0, height: 6 },
+              shadowOpacity: 0.15,
+              shadowRadius: 15,
+              elevation: 8,
+            }}
+          >
+            <View className="flex-row items-center mb-4">
+              <View 
+                className="w-12 h-12 rounded-2xl items-center justify-center mr-4"
+                style={{ backgroundColor: COLORS.utOrange }}
+              >
+                <MessageCircle size={24} color="white" />
+              </View>
+              <View className="flex-1">
+                <Text className="text-xl font-bold text-gray-900">Beta Version 🚀</Text>
+                <Text className="text-sm text-gray-600">Help us improve UT Marketplace</Text>
+              </View>
+            </View>
+            <Text className="text-gray-700 mb-6 leading-6 text-base">
+              UT Marketplace is currently in beta! Your feedback is incredibly valuable to help us build the best marketplace for Longhorns. Share your thoughts, report bugs, or suggest features.
+            </Text>
+            <TouchableOpacity
+              onPress={() => Linking.openURL('https://docs.google.com/forms/d/e/1FAIpQLSf6Kw2J3QhVbC8xN2L4M9P7R5T1Y6Z8A3B4C5D6E7F8G9H0I/viewform')}
+              className="flex-row items-center justify-center rounded-2xl py-4 px-6 shadow-sm"
+              style={{ 
+                backgroundColor: COLORS.utOrange,
+                shadowColor: COLORS.utOrange,
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: 0.25,
+                shadowRadius: 8,
+                elevation: 6,
+              }}
+              activeOpacity={0.8}
+            >
+              <MessageCircle size={20} color="white" />
+              <Text className="text-white font-bold text-base ml-3">
+                Leave Feedback
+              </Text>
+              <ExternalLink size={18} color="white" className="ml-2" />
+            </TouchableOpacity>
+          </View>
+        </View>
+
         {/* Profile Section */}
         <View className="mx-4 mb-6">
           <View 

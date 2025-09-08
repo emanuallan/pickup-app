@@ -1,5 +1,6 @@
 import { supabase } from './supabase';
 import { sendNotificationToUser } from './pushNotifications';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export interface UserNotification {
   id: string;
@@ -34,11 +35,56 @@ export interface CreateNotificationParams {
  */
 export class UserNotificationService {
   /**
+   * Check if user has notifications enabled
+   */
+  private static async checkNotificationSettings(userId: string): Promise<boolean> {
+    try {
+      // First, try to get settings from user's database profile
+      // Note: For now, we'll assume notifications are enabled unless we have a database setting
+      // In the future, we could store user preferences in the database
+      
+      // For now, we'll check if the user exists and default to enabled
+      const { data: userProfile, error } = await supabase
+        .from('users')
+        .select('id, notifications_enabled')
+        .eq('id', userId)
+        .single();
+
+      if (error || !userProfile) {
+        console.log('🔕 Could not find user profile, defaulting to notifications enabled');
+        return true; // Default to enabled if user not found
+      }
+
+      // If notifications_enabled field exists in database, use it
+      // Otherwise default to enabled
+      const notificationsEnabled = userProfile.notifications_enabled ?? true;
+      
+      if (!notificationsEnabled) {
+        console.log('🔕 Notifications disabled in database for user:', userId);
+        return false;
+      }
+
+      return true;
+    } catch (error) {
+      console.error('Error checking notification settings:', error);
+      // Default to enabled if we can't check settings
+      return true;
+    }
+  }
+
+  /**
    * Create and send a notification
    */
   static async create(params: CreateNotificationParams): Promise<string | null> {
     try {
       console.log('📝 Creating user notification:', params.title);
+
+      // Check if user has notifications enabled
+      const notificationsEnabled = await this.checkNotificationSettings(params.userId);
+      if (!notificationsEnabled) {
+        console.log('🔕 Skipping notification - user has notifications disabled');
+        return null;
+      }
 
       // 1. Store notification in database
       const { data: notification, error } = await supabase
