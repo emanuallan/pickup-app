@@ -169,7 +169,7 @@ export default function DetailsScreen() {
               <View>
                 <View 
                   className="mb-5"
-                  ref={(ref) => inputRefs.current['title'] = ref}
+                  ref={(ref) => inputRefs.current['title'] = ref as any}
                 >
                   <View className="flex-row items-center mb-2">
                     <View className="w-8 h-8 bg-blue-50 rounded-full items-center justify-center mr-3">
@@ -216,7 +216,7 @@ export default function DetailsScreen() {
 
                 <View 
                   className="mb-5"
-                  ref={(ref) => inputRefs.current['price'] = ref}
+                  ref={(ref) => inputRefs.current['price'] = ref as any}
                 >
                   <View className="flex-row items-center mb-2">
                     <View className="w-8 h-8 bg-green-50 rounded-full items-center justify-center mr-3">
@@ -302,7 +302,7 @@ export default function DetailsScreen() {
                   />
                 </View>
 
-                <View ref={(ref) => inputRefs.current['description'] = ref}>
+                <View ref={(ref) => inputRefs.current['description'] = ref as any}>
                   <View className="flex-row items-center justify-between mb-2">
                     <View className="flex-row items-center">
                       <View className="w-8 h-8 bg-indigo-50 rounded-full items-center justify-center mr-3">

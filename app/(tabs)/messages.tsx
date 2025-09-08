@@ -27,6 +27,8 @@ interface Conversation {
   user_image?: string;
   listing_id: string;
   listing_title: string;
+  listing_image?: string;
+  listing_is_sold?: boolean;
   last_message?: string;
   last_message_time?: string;
   unread_count: number;
@@ -174,10 +176,10 @@ export default function MessagesScreen() {
         .select('id, email, display_name, profile_image_url')
         .in('id', partnerIds);
 
-      // Fetch listing titles
+      // Fetch listing titles, images, and sold status
       const { data: listingData } = await supabase
         .from("listings")
-        .select("id, title")
+        .select("id, title, images, is_sold")
         .in("id", listingIds.length > 0 ? listingIds : [""]);
 
       // Update conversation map with user info and listing titles
@@ -192,6 +194,8 @@ export default function MessagesScreen() {
         const listing = listingData?.find((l) => l.id === conv.listing_id);
         if (listing) {
           conv.listing_title = listing.title;
+          conv.listing_image = listing.images?.[0]; // Use first image from listing
+          conv.listing_is_sold = listing.is_sold;
         }
       }
 
@@ -394,9 +398,16 @@ export default function MessagesScreen() {
             onPress={() => navigateToChat(item)}
             className="flex-row items-center px-4 py-3 border-b border-gray-100"
           >
-            {/* Profile Picture */}
-            <View className="w-12 h-12 rounded-full bg-gray-200 justify-center items-center mr-3">
-              {item.user_image ? (
+            {/* Profile Picture or Listing Image */}
+            <View className="w-12 h-12 rounded-full bg-gray-200 justify-center items-center mr-3 relative">
+              {/* Show listing image if it's a listing chat and has image, otherwise show user profile picture */}
+              {(item.listing_id !== 'general' && item.listing_image) ? (
+                <Image
+                  source={{ uri: item.listing_image }}
+                  className="w-12 h-12 rounded-full"
+                  style={{ opacity: item.listing_is_sold ? 0.4 : 1 }}
+                />
+              ) : item.user_image ? (
                 <Image
                   source={{ uri: item.user_image }}
                   className="w-12 h-12 rounded-full"
@@ -405,6 +416,15 @@ export default function MessagesScreen() {
                 <Text className="text-lg font-semibold text-gray-500">
                   {item.user_name[0]?.toUpperCase()}
                 </Text>
+              )}
+              
+              {/* SOLD overlay for listing images */}
+              {item.listing_id !== 'general' && item.listing_is_sold && (
+                <View className="absolute inset-0 items-center justify-center bg-black/20 rounded-full">
+                  <View className="bg-red-500 px-1 py-0.5 rounded">
+                    <Text className="text-white text-xs font-bold">SOLD</Text>
+                  </View>
+                </View>
               )}
             </View>
 
@@ -422,9 +442,16 @@ export default function MessagesScreen() {
       </View>
 
               <View className="flex-row justify-between items-center">
-                <Text className="text-sm text-gray-600" numberOfLines={1}>
-                  {item.listing_title || "General Chat"}
-                </Text>
+                <View className="flex-row items-center flex-1">
+                  <Text className="text-sm text-gray-600" numberOfLines={1}>
+                    {item.listing_title || "General Chat"}
+                  </Text>
+                  {item.listing_id !== 'general' && item.listing_is_sold && (
+                    <View className="bg-red-500 px-2 py-0.5 rounded ml-2">
+                      <Text className="text-white text-xs font-bold">SOLD</Text>
+                    </View>
+                  )}
+                </View>
                 {item.unread_count > 0 && (
                   <View className="bg-[#C1501F] rounded-full w-5 h-5 items-center justify-center">
                     <Text className="text-white text-xs">

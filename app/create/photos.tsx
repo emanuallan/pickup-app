@@ -2,8 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { View, Text, TouchableOpacity, Image, ScrollView, Animated } from 'react-native';
 import { useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
-import { MaterialIcons } from '@expo/vector-icons';
-import { Camera, ImageIcon, Sparkles, Check, X, ArrowRight } from 'lucide-react-native';
+import { Camera, ImageIcon, Sparkles, X, ArrowRight } from 'lucide-react-native';
 import { useSettings } from '~/contexts/SettingsContext';
 import * as Haptics from 'expo-haptics';
 
@@ -130,8 +129,8 @@ export default function PhotosScreen() {
                       aspectRatio: 1,
                     }}
                   >
-                    <View className="w-full h-full rounded-2xl overflow-hidden bg-gray-100 shadow-sm">
-                      <Image source={{ uri }} className="w-full h-full" resizeMode="cover" />
+                    <View className="w-full h-full bg-gray-100 shadow-sm">
+                      <Image source={{ uri }} className="w-full h-full rounded-2xl" resizeMode="cover" />
                       <TouchableOpacity
                         onPress={() => removeImage(index)}
                         className="absolute -top-2 -right-2 w-7 h-7 bg-red-500 rounded-full items-center justify-center shadow-lg"
@@ -143,7 +142,7 @@ export default function PhotosScreen() {
                           elevation: 4,
                         }}
                       >
-                        <X size={14} color="white" strokeWidth={2} />
+                        <X size={14} color="white" strokeWidth={2}  />
                       </TouchableOpacity>
                     </View>
                     {/* Image number indicator */}

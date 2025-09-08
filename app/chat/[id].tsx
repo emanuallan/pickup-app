@@ -29,7 +29,7 @@ export default function ChatScreen() {
   const flatListRef = useRef<FlatList>(null);
   const [pressedMessageId, setPressedMessageId] = useState<string | null>(null);
   const [senderName, setSenderName] = useState<string>('');
-  const [listingDetails, setListingDetails] = useState<{ title?: string; price?: number; image?: string } | null>(null);
+  const [listingDetails, setListingDetails] = useState<{ title?: string; price?: number; image?: string; is_sold?: boolean } | null>(null);
 
   useEffect(() => {
     if (!otherUserId || !otherUserName) {
@@ -126,7 +126,7 @@ export default function ChatScreen() {
     try {
       const { data, error } = await supabase
         .from('listings')
-        .select('title, price, images')
+        .select('title, price, images, is_sold')
         .eq('id', listingId.toString())
         .single();
 
@@ -135,7 +135,8 @@ export default function ChatScreen() {
       setListingDetails({
         title: data?.title,
         price: data?.price,
-        image: data?.images?.[0]
+        image: data?.images?.[0],
+        is_sold: data?.is_sold
       });
     } catch (error) {
       console.error('Error fetching listing details:', error);
@@ -526,6 +527,8 @@ export default function ChatScreen() {
         otherUserId={otherUserId.toString()}
         listingId={listingId?.toString() || "general"}
         listingTitle={listingTitle?.toString() || ""}
+        listingImageUrl={listingDetails?.image || null}
+        listingIsSold={listingDetails?.is_sold || false}
         onSettingsPress={() => setShowSettings(true)}
       />
 
