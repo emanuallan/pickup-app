@@ -25,6 +25,7 @@ import { NotificationSyncProvider } from '../contexts/NotificationSyncContext';
 import { UserNotificationProvider } from '../contexts/UserNotificationContext';
 import { SettingsProvider } from '../contexts/SettingsContext';
 import { MessageCountProvider } from '../contexts/MessageCountContext';
+import { ListingsProvider } from '../contexts/ListingsContext';
 import { useEffect } from 'react';
 import WelcomeSlideshow from '../components/WelcomeSlideshow';
 
@@ -117,11 +118,13 @@ export default function RootLayout() {
             <NotificationProvider>
               <UserNotificationProvider>
                 <SettingsProvider>
-                  <View className="flex-1">
-                    <SafeAreaView className="flex-1" edges={['top']}>
-                      <AuthNavigator />
-                    </SafeAreaView>
-                  </View>
+                  <ListingsProvider>
+                    <View className="flex-1">
+                      <SafeAreaView className="flex-1" edges={['top']}>
+                        <AuthNavigator />
+                      </SafeAreaView>
+                    </View>
+                  </ListingsProvider>
                 </SettingsProvider>
               </UserNotificationProvider>
             </NotificationProvider>

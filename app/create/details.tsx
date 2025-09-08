@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform, Animated } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform, Animated, Keyboard } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 import { FileText, Tag, DollarSign, MapPin, CheckCircle, ArrowRight } from 'lucide-react-native';
@@ -63,6 +63,13 @@ export default function DetailsScreen() {
   // Animation values
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(50)).current;
+  
+  // Scroll and keyboard handling
+  const scrollViewRef = useRef<ScrollView>(null);
+  const titleInputRef = useRef<TextInput>(null);
+  const priceInputRef = useRef<TextInput>(null);
+  const descriptionInputRef = useRef<TextInput>(null);
+  const inputRefs = useRef<{ [key: string]: View | null }>({});
 
   useEffect(() => {
     // Start animations
@@ -80,6 +87,24 @@ export default function DetailsScreen() {
       }),
     ]).start();
   }, []);
+
+  const scrollToInput = (inputKey: string, extraOffset = 0) => {
+    const inputRef = inputRefs.current[inputKey];
+    if (inputRef && scrollViewRef.current) {
+      inputRef.measureInWindow((x, y, width, height) => {
+        // Calculate the position to scroll to
+        const scrollPosition = Math.max(0, y - 200 + extraOffset); // 200px from top to give space
+        scrollViewRef.current?.scrollTo({ y: scrollPosition, animated: true });
+      });
+    }
+  };
+
+  const handleInputFocus = (inputKey: string, extraOffset = 0) => {
+    // Small delay to ensure keyboard animation is starting
+    setTimeout(() => {
+      scrollToInput(inputKey, extraOffset);
+    }, 100);
+  };
 
   const isValid = title && 
     category !== 'Select a category' && 
@@ -115,7 +140,12 @@ export default function DetailsScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         className="flex-1"
       >
-        <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
+        <ScrollView 
+          ref={scrollViewRef}
+          className="flex-1" 
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
           <Animated.View
             style={{
               opacity: fadeAnim,
@@ -137,7 +167,10 @@ export default function DetailsScreen() {
 
             <View className="bg-white mx-6 rounded-3xl p-6 shadow-sm mb-6">
               <View>
-                <View className="mb-5">
+                <View 
+                  className="mb-5"
+                  ref={(ref) => inputRefs.current['title'] = ref}
+                >
                   <View className="flex-row items-center mb-2">
                     <View className="w-8 h-8 bg-blue-50 rounded-full items-center justify-center mr-3">
                       <FileText size={16} color="#3B82F6" />
@@ -145,9 +178,11 @@ export default function DetailsScreen() {
                     <Text className="text-sm font-semibold text-gray-700">Title</Text>
                   </View>
                   <TextInput
+                    ref={titleInputRef}
                     className="text-base bg-gray-50 rounded-xl px-4 py-3 border border-transparent focus:border-blue-200"
                     placeholder="What are you selling?"
                     value={title}
+                    onFocus={() => handleInputFocus('title')}
                     onChangeText={(text) => {
                       setTitle(text);
                       if (hapticFeedbackEnabled && text.length > 0 && title.length === 0) {
@@ -179,7 +214,10 @@ export default function DetailsScreen() {
                   />
                 </View>
 
-                <View className="mb-5">
+                <View 
+                  className="mb-5"
+                  ref={(ref) => inputRefs.current['price'] = ref}
+                >
                   <View className="flex-row items-center mb-2">
                     <View className="w-8 h-8 bg-green-50 rounded-full items-center justify-center mr-3">
                       <DollarSign size={16} color="#10B981" />
@@ -189,9 +227,11 @@ export default function DetailsScreen() {
                   <View className="flex-row items-center bg-gray-50 rounded-xl px-4 py-3 border border-transparent focus-within:border-green-200">
                     <Text className="text-gray-500 mr-2 text-base font-medium">$</Text>
                     <TextInput
+                      ref={priceInputRef}
                       className="flex-1 text-base p-0"
                       placeholder="0.00"
                       value={price}
+                      onFocus={() => handleInputFocus('price')}
                       onChangeText={(text) => {
                         // Remove any non-numeric characters except decimal point
                         const numericText = text.replace(/[^0-9.]/g, '');
@@ -262,7 +302,7 @@ export default function DetailsScreen() {
                   />
                 </View>
 
-                <View>
+                <View ref={(ref) => inputRefs.current['description'] = ref}>
                   <View className="flex-row items-center justify-between mb-2">
                     <View className="flex-row items-center">
                       <View className="w-8 h-8 bg-indigo-50 rounded-full items-center justify-center mr-3">
@@ -281,11 +321,13 @@ export default function DetailsScreen() {
                     </Text>
                   </View>
                   <TextInput
+                    ref={descriptionInputRef}
                     className={`text-base bg-gray-50 rounded-xl px-4 py-3 border border-transparent focus:border-indigo-200 ${
                       description.length >= MAX_DESCRIPTION_LENGTH ? 'border-red-200' : ''
                     }`}
                     placeholder="Describe your item in detail..."
                     value={description}
+                    onFocus={() => handleInputFocus('description', 150)} // Extra offset for multiline input
                     onChangeText={(text) => {
                       if (text.length <= MAX_DESCRIPTION_LENGTH) {
                         setDescription(text);

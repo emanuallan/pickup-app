@@ -19,10 +19,10 @@ interface CategoryButtonsProps {
 const categories: Category[] = [
   { name: 'All', icon: Search },
   { name: 'Furniture', icon: Sofa },
-  { name: 'Housing', icon: Home },
+  { name: 'Subleases', icon: Home },
   { name: 'Tech', icon: Laptop },
   { name: 'Vehicles', icon: Car },
-  { name: 'Books', icon: Book },
+  { name: 'Textbooks', icon: Book },
   { name: 'Clothing', icon: Shirt },
   { name: 'Kitchen', icon: Utensils },
   { name: 'Other', icon: ShoppingBag },

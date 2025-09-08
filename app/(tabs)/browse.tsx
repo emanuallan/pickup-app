@@ -262,7 +262,7 @@ export default function BrowseScreen() {
     // Apply category filter
     if (selectedCategory !== 'All') {
       filteredListings = filteredListings.filter(listing => 
-        listing.category === selectedCategory
+        listing.category?.toLowerCase() === selectedCategory.toLowerCase()
       );
     }
 
@@ -448,9 +448,16 @@ export default function BrowseScreen() {
         {/* Listings Section */}
         <View className="px-6">
           <View className="mb-4">
-            <Text className="text-2xl font-black text-gray-900 mb-1">All Listings</Text>
+            <Text className="text-2xl font-black text-gray-900 mb-1">
+              {searchQuery.trim() 
+                ? `Results for "${searchQuery}"`
+                : selectedCategory === 'All' 
+                  ? 'All Listings'
+                  : `${selectedCategory} Listings`
+              }
+            </Text>
             <Text className="text-gray-500 font-medium">
-              {loading ? 'Loading...' : `${displayListings.length} items available`}
+              {loading ? 'Loading...' : `${displayListings.length} items ${selectedCategory === 'All' ? 'available' : `in ${selectedCategory}`}`}
             </Text>
           </View>
 

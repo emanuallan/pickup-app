@@ -3,6 +3,7 @@ import * as Notifications from 'expo-notifications';
 import { initializePushNotifications, pushNotificationService } from '~/lib/pushNotifications';
 import { useAuth } from './AuthContext';
 import { supabase } from '~/lib/supabase';
+import { useRouter } from 'expo-router';
 
 interface NotificationContextType {
   expoPushToken: string | null;
@@ -27,6 +28,7 @@ interface NotificationProviderProps {
 
 export const NotificationProvider: React.FC<NotificationProviderProps> = ({ children }) => {
   const { user } = useAuth();
+  const router = useRouter();
   const [expoPushToken, setExpoPushToken] = useState<string | null>(null);
   const [notification, setNotification] = useState<Notifications.Notification | null>(null);
 
@@ -49,10 +51,42 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
       
       // Handle notification tap - navigate to appropriate screen
       const data = response.notification.request.content.data;
-      if (data?.listing_id) {
-        // Navigate to listing or chat based on notification type
-        // This would need to be implemented with your navigation system
+      console.log('Notification data:', data);
+      
+      // Handle different notification types
+      if (data?.notification_type === 'message' && data?.actor_id && user?.id) {
+        // Navigate to chat with the person who sent the message
+        console.log('Navigating to chat with:', data.actor_id);
+        
+        // Construct the chat ID (same format used in chat screens)
+        const chatId = data.listing_id && data.listing_id !== 'general' 
+          ? `${user.id}_${data.actor_id}_${data.listing_id}`
+          : `${user.id}_${data.actor_id}`;
+        
+        // Navigate to the specific chat
+        router.push({
+          pathname: '/chat/[id]',
+          params: { 
+            id: chatId,
+            otherUserId: data.actor_id,
+            listingId: data.listing_id || 'general'
+          }
+        });
+      } else if (data?.listing_id && data?.notification_type !== 'message') {
+        // Navigate to listing for other notification types
         console.log('Navigate to listing:', data.listing_id);
+        router.push({
+          pathname: '/listing/[id]',
+          params: { id: data.listing_id }
+        });
+      } else if (data?.notification_type === 'review') {
+        // Navigate to reviews/profile page
+        console.log('Navigate to reviews');
+        router.push('/reviews');
+      } else {
+        // Default: navigate to notifications screen
+        console.log('Navigate to notifications');
+        router.push('/user-notifications');
       }
     });
 

@@ -6,6 +6,7 @@ import { MapPin, Calendar, Tag, Star, MessageCircle, MoreHorizontal, Heart, Shar
 import { AnimatedButton } from '~/components/ui/AnimatedButton';
 import { ListingBuyerActionsModal } from '~/components/modals/ListingBuyerActionsModal';
 import { RatingSubmissionModal } from '~/components/modals/RatingSubmissionModal';
+import { ImageViewerModal } from '~/components/modals/ImageViewerModal';
 import UserRatingDisplay from '~/components/ui/UserRatingDisplay';
 import { useAuth } from '~/contexts/AuthContext';
 import { supabase } from '~/lib/supabase';
@@ -68,6 +69,7 @@ export const ListingBuyerView: React.FC<ListingBuyerViewProps> = ({
   const [isSaved, setIsSaved] = useState(false);
   const [isWatchlisted, setIsWatchlisted] = useState(false);
   const [showRatingModal, setShowRatingModal] = useState(false);
+  const [showImageViewer, setShowImageViewer] = useState(false);
   
   // Use external modal state if provided, otherwise use internal state
   const [internalShowActionsModal, setInternalShowActionsModal] = useState(false);
@@ -349,12 +351,20 @@ export const ListingBuyerView: React.FC<ListingBuyerViewProps> = ({
                 }}
                 >
                 {listing.images.map((image, index) => (
-                  <Image
+                  <TouchableOpacity
                     key={index}
-                    source={{ uri: image }}
-                    style={{ width: screenWidth, height: 300 }}
-                    resizeMode="cover"
-                  />
+                    activeOpacity={0.9}
+                    onPress={() => {
+                      setSelectedImageIndex(index);
+                      setShowImageViewer(true);
+                    }}
+                  >
+                    <Image
+                      source={{ uri: image }}
+                      style={{ width: screenWidth, height: 300 }}
+                      resizeMode="cover"
+                    />
+                  </TouchableOpacity>
                 ))}
               </ScrollView>
               
@@ -592,6 +602,14 @@ export const ListingBuyerView: React.FC<ListingBuyerViewProps> = ({
         ratedUserId={listing.user_id}
         ratedUserName={listing.user_name || 'Unknown User'}
         onRatingSubmitted={handleRatingSubmitted}
+      />
+
+      {/* Image Viewer Modal */}
+      <ImageViewerModal
+        visible={showImageViewer}
+        images={listing.images}
+        initialIndex={selectedImageIndex}
+        onClose={() => setShowImageViewer(false)}
       />
     </>
   );

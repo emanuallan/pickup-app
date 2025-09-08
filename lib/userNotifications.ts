@@ -122,7 +122,9 @@ export class UserNotificationService {
           {
             ...params.data,
             notification_id: notification.id,
-            notification_type: params.type
+            notification_type: params.type,
+            actor_id: params.actorId,
+            listing_id: params.listingId
           }
         );
 

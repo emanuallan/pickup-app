@@ -4,6 +4,7 @@ import { COLORS } from '~/theme/colors';
 import { MapPin, Calendar, Tag, Edit3, Trash2, Eye, CheckCircle, MessageCircle, Heart, FileText, Settings, Clock, XCircle } from 'lucide-react-native';
 import { AnimatedButton } from '~/components/ui/AnimatedButton';
 import { ListingActionsModal } from '~/components/modals/ListingActionsModal';
+import { ImageViewerModal } from '~/components/modals/ImageViewerModal';
 import { supabase } from '~/lib/supabase';
 import { useState, useEffect } from 'react';
 import StatusBadge, { StatusDescription } from '~/components/StatusBadge';
@@ -53,6 +54,7 @@ export const ListingOwnerView: React.FC<ListingOwnerViewProps> = ({
   const router = useRouter();
   const [updating, setUpdating] = useState(false);
   const [showActionsModal, setShowActionsModal] = useState(false);
+  const [showImageViewer, setShowImageViewer] = useState(false);
   const [favoriteCounts, setFavoriteCounts] = useState({
     favorites: 0,
     watchlist: 0
@@ -177,12 +179,20 @@ export const ListingOwnerView: React.FC<ListingOwnerViewProps> = ({
                 }}
               >
                 {listing.images.map((image, index) => (
-                  <Image
+                  <TouchableOpacity
                     key={index}
-                    source={{ uri: image }}
-                    style={{ width: screenWidth, height: 300 }}
-                    resizeMode="cover"
-                  />
+                    activeOpacity={0.9}
+                    onPress={() => {
+                      setSelectedImageIndex(index);
+                      setShowImageViewer(true);
+                    }}
+                  >
+                    <Image
+                      source={{ uri: image }}
+                      style={{ width: screenWidth, height: 300 }}
+                      resizeMode="cover"
+                    />
+                  </TouchableOpacity>
                 ))}
               </ScrollView>
               
@@ -387,6 +397,14 @@ export const ListingOwnerView: React.FC<ListingOwnerViewProps> = ({
           updating={updating}
         />
       )}
+
+      {/* Image Viewer Modal */}
+      <ImageViewerModal
+        visible={showImageViewer}
+        images={listing.images}
+        initialIndex={selectedImageIndex}
+        onClose={() => setShowImageViewer(false)}
+      />
     </>
   );
 }; 
