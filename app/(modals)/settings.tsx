@@ -62,6 +62,10 @@ export default function Settings() {
     }
   };
 
+  const handleToggleDarkMode = async () => {
+    Alert.alert('Coming Soon', 'Dark mode is coming soon!');
+  };
+
   const handleSaveBio = async () => {
     if (!user?.email) return;
 
@@ -481,7 +485,7 @@ export default function Settings() {
                 </View>
                 <Switch
                   value={darkModeEnabled}
-                  onValueChange={setDarkModeEnabled}
+                  onValueChange={handleToggleDarkMode}
                   trackColor={{ false: '#D1D5DB', true: COLORS.utOrange }}
                   thumbColor="#FFFFFF"
                 />
