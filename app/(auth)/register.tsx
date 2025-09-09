@@ -173,9 +173,6 @@ export default function RegisterScreen() {
         setError(signUpError.message);
       } else {
         setShowSuccess(true);
-        setTimeout(() => {
-          router.replace('/(auth)/login');
-        }, 3000);
       }
     } catch {
       setError('An unexpected error occurred. Please try again.');
@@ -191,13 +188,19 @@ export default function RegisterScreen() {
           <View className="w-16 h-16 bg-green-100 rounded-full items-center justify-center">
             <CheckCircle size={32} color="#16A34A" strokeWidth={2} />
           </View>
-          <Text className="text-2xl font-bold text-green-800">Welcome to UT Marketplace!</Text>
-          <Text className="text-green-700 text-center text-base leading-6">
+          <Text className="text-2xl font-bold text-green-800 text-center">Welcome to UT Marketplace!</Text>
+          <Text className="text-green-700 text-center text-base leading-6 mt-2">
             Account created successfully! Please check your email to verify your account before signing in.
           </Text>
-          <Text className="text-gray-600 text-center text-sm">
-            Redirecting to login in a moment...
-          </Text>
+          <TouchableOpacity
+            onPress={() => router.replace('/(auth)/login')}
+            className="bg-[#C1501F] rounded-xl px-8 py-4 mt-4"
+            activeOpacity={0.8}
+          >
+            <Text className="text-white font-semibold text-lg text-center">
+              Go to Sign In
+            </Text>
+          </TouchableOpacity>
         </View>
       </View>
     );

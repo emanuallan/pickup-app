@@ -33,6 +33,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         .single();
 
       if (error) {
+        if (error.code === 'PGRST116') {
+          // User profile doesn't exist - create it
+          console.log('User profile not found, creating new profile...');
+          return await createUserProfile(userId);
+        }
         console.error('Error fetching user profile:', error);
         return null;
       }
@@ -40,6 +45,44 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       return profile;
     } catch (error) {
       console.error('Error fetching user profile:', error);
+      return null;
+    }
+  };
+
+  const createUserProfile = async (userId: string) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        console.error('No authenticated user found');
+        return null;
+      }
+
+      const { data: profile, error } = await supabase
+        .from('users')
+        .insert([
+          {
+            id: userId,
+            email: user.email,
+            display_name: user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split('@')[0] || 'User',
+            profile_image_url: user.user_metadata?.avatar_url || user.user_metadata?.picture || null,
+            onboard_complete: false,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          }
+        ])
+        .select('onboard_complete')
+        .single();
+
+      if (error) {
+        console.error('Error creating user profile:', error);
+        return null;
+      }
+
+      console.log('User profile created successfully');
+      return profile;
+    } catch (error) {
+      console.error('Error in createUserProfile:', error);
       return null;
     }
   };
@@ -98,7 +141,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const signUp = async (email: string, password: string) => {
     console.log('Attempting sign up:', email);
-    const { data, error } = await supabase.auth.signUp({
+    const { error } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -111,29 +154,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       return { error };
     }
     
-    if (data.user) {
-      console.log('Sign up successful, creating user profile...');
-      // Create user profile with onboard_complete set to false
-      const { error: profileError } = await supabase
-        .from('users')
-        .insert([
-          {
-            id: data.user.id,
-            email: data.user.email,
-            onboard_complete: false,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          }
-        ]);
-      
-      if (profileError) {
-        console.error('Error creating user profile:', profileError);
-        // Don't return this error as the auth signup was successful
-      }
-    }
-    
     console.log('Sign up successful');
-    return { error: null };
+    return { error };
   };
 
   const signOut = async () => {
