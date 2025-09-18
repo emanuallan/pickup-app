@@ -1,3 +1,3 @@
-import WelcomeSlideshow from '../components/WelcomeSlideshow';
+import { WelcomeScreen } from '~/components/features/welcome';
 
-export default WelcomeSlideshow;
+export default WelcomeScreen;

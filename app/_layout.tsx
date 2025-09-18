@@ -7,7 +7,7 @@ import { ActionSheetProvider } from '@expo/react-native-action-sheet';
 
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 
-import { Link, Stack, Tabs, useRouter , Slot } from 'expo-router';
+import { Link, Stack, Tabs, useRouter, Slot } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { Pressable, View, ActivityIndicator, Text } from 'react-native';
 
@@ -16,9 +16,9 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { cn } from '~/lib/cn';
 import { useColorScheme, useInitialAndroidBarSync } from '~/lib/useColorScheme';
 import { NAV_THEME } from '~/theme';
-import Header from "~/components/Header";
-import TabBar from "~/components/TabBar";
-import { SafeAreaView } from "react-native-safe-area-context";
+import Header from '~/components/Header';
+import TabBar from '~/components/TabBar';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { AuthProvider, useAuth } from '../contexts/AuthContext';
 import { NotificationProvider } from '../contexts/NotificationContext';
 import { NotificationSyncProvider } from '../contexts/NotificationSyncContext';
@@ -27,7 +27,7 @@ import { SettingsProvider } from '../contexts/SettingsContext';
 import { MessageCountProvider } from '../contexts/MessageCountContext';
 import { ListingsProvider } from '../contexts/ListingsContext';
 import { useEffect } from 'react';
-import WelcomeSlideshow from '../components/WelcomeSlideshow';
+import WelcomeSlideshow from '../components/features/welcome/WelcomeScreen';
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -76,7 +76,7 @@ function AuthNavigator() {
 
   if (loading) {
     return (
-      <View className="flex-1 justify-center items-center bg-white">
+      <View className="flex-1 items-center justify-center bg-white">
         <ActivityIndicator size="large" color="#C1501F" />
         <Text className="mt-4 text-gray-600">Loading...</Text>
       </View>
@@ -84,26 +84,25 @@ function AuthNavigator() {
   }
 
   return (
-    <Stack 
-      screenOptions={{ 
+    <Stack
+      screenOptions={{
         headerShown: false,
-      }}
-    >
+      }}>
       <Stack.Screen name="welcome" />
       <Stack.Screen name="(auth)" />
       <Stack.Screen name="onboarding" />
-      <Stack.Screen 
-        name="(tabs)" 
+      <Stack.Screen
+        name="(tabs)"
         options={{
           headerShown: false,
         }}
       />
-      <Stack.Screen 
-        name="(modals)" 
-        options={{ 
+      <Stack.Screen
+        name="(modals)"
+        options={{
           headerShown: false,
           presentation: 'modal',
-        }} 
+        }}
       />
     </Stack>
   );
