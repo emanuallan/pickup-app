@@ -1,23 +1,14 @@
 import '../global.css';
 import 'expo-dev-client';
-import { ThemeProvider as NavThemeProvider } from '@react-navigation/native';
 import { Icon } from '@roninoss/icons';
 
-import { ActionSheetProvider } from '@expo/react-native-action-sheet';
-
-import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
-
-import { Link, Stack, Tabs, useRouter, Slot } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
+import { Link, Stack, useRouter } from 'expo-router';
 import { Pressable, View, ActivityIndicator, Text } from 'react-native';
 
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { cn } from '~/lib/cn';
-import { useColorScheme, useInitialAndroidBarSync } from '~/lib/useColorScheme';
-import { NAV_THEME } from '~/theme';
-import Header from '~/components/Header';
-import TabBar from '~/components/TabBar';
+import { useColorScheme } from '~/lib/useColorScheme';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AuthProvider, useAuth } from '../contexts/AuthContext';
 import { NotificationProvider } from '../contexts/NotificationContext';
@@ -27,7 +18,6 @@ import { SettingsProvider } from '../contexts/SettingsContext';
 import { MessageCountProvider } from '../contexts/MessageCountContext';
 import { ListingsProvider } from '../contexts/ListingsContext';
 import { useEffect } from 'react';
-import WelcomeSlideshow from '../components/features/welcome/WelcomeScreen';
 
 export {
   // Catch any errors thrown by the Layout component.
