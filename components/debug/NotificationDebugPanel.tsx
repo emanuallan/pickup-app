@@ -2,7 +2,11 @@ import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, Alert, Switch } from 'react-native';
 import { useAuth } from '~/contexts/AuthContext';
 import { NotificationTestUtils } from '~/utils/testNotifications';
-import { testNotificationDatabaseSetup, createTestNotification, checkNotificationCount } from '~/utils/testDatabaseSetup';
+import {
+  testNotificationDatabaseSetup,
+  createTestNotification,
+  checkNotificationCount,
+} from '~/utils/testDatabaseSetup';
 import { useNotificationSync } from '~/contexts/NotificationSyncContext';
 import { COLORS } from '~/theme/colors';
 import MessageNotificationTestPanel from './MessageNotificationTestPanel';
@@ -12,9 +16,9 @@ interface NotificationDebugPanelProps {
   onToggle?: () => void;
 }
 
-export const NotificationDebugPanel: React.FC<NotificationDebugPanelProps> = ({ 
-  visible = false, 
-  onToggle 
+export const NotificationDebugPanel: React.FC<NotificationDebugPanelProps> = ({
+  visible = false,
+  onToggle,
 }) => {
   const { user } = useAuth();
   const { unreadCount, refreshCount } = useNotificationSync();
@@ -83,8 +87,8 @@ export const NotificationDebugPanel: React.FC<NotificationDebugPanelProps> = ({
             } finally {
               setIsLoading(false);
             }
-          }
-        }
+          },
+        },
       ]
     );
   };
@@ -108,8 +112,8 @@ export const NotificationDebugPanel: React.FC<NotificationDebugPanelProps> = ({
       const isWorking = await testNotificationDatabaseSetup();
       Alert.alert(
         isWorking ? 'Database Setup OK' : 'Database Setup Error',
-        isWorking 
-          ? 'All database functions and tables are properly configured!' 
+        isWorking
+          ? 'All database functions and tables are properly configured!'
           : 'Database setup is missing. Please run the migration in Supabase SQL editor.'
       );
     } catch (error) {
@@ -130,8 +134,8 @@ export const NotificationDebugPanel: React.FC<NotificationDebugPanelProps> = ({
       const success = await createTestNotification(user.id);
       await refreshCount();
       Alert.alert(
-        success ? 'Success' : 'Error', 
-        success 
+        success ? 'Success' : 'Error',
+        success
           ? 'Test notification created directly in database!'
           : 'Failed to create test notification'
       );
@@ -147,9 +151,9 @@ export const NotificationDebugPanel: React.FC<NotificationDebugPanelProps> = ({
   }
 
   return (
-    <View className="bg-gray-900 p-4 m-4 rounded-lg">
-      <View className="flex-row items-center justify-between mb-4">
-        <Text className="text-white text-lg font-bold">🧪 Notification Debug Panel</Text>
+    <View className="m-4 rounded-lg bg-gray-900 p-4">
+      <View className="mb-4 flex-row items-center justify-between">
+        <Text className="text-lg font-bold text-white">🧪 Notification Debug Panel</Text>
         {onToggle && (
           <Switch
             value={visible}
@@ -160,9 +164,9 @@ export const NotificationDebugPanel: React.FC<NotificationDebugPanelProps> = ({
         )}
       </View>
 
-      <View className="space-y-3">
-        <View className="bg-gray-800 p-3 rounded">
-          <Text className="text-white font-medium">Current Status:</Text>
+      <View className="gap-y-3">
+        <View className="rounded bg-gray-800 p-3">
+          <Text className="font-medium text-white">Current Status:</Text>
           <Text className="text-gray-300">User ID: {user?.id || 'Not logged in'}</Text>
           <Text className="text-gray-300">Unread Count: {unreadCount}</Text>
         </View>
@@ -170,9 +174,8 @@ export const NotificationDebugPanel: React.FC<NotificationDebugPanelProps> = ({
         <TouchableOpacity
           onPress={handleCreateTestNotifications}
           disabled={isLoading || !user?.id}
-          className={`p-3 rounded ${isLoading || !user?.id ? 'bg-gray-600' : 'bg-blue-600'}`}
-        >
-          <Text className="text-white text-center font-medium">
+          className={`rounded p-3 ${isLoading || !user?.id ? 'bg-gray-600' : 'bg-blue-600'}`}>
+          <Text className="text-center font-medium text-white">
             {isLoading ? 'Creating...' : 'Create Test Notifications'}
           </Text>
         </TouchableOpacity>
@@ -180,9 +183,8 @@ export const NotificationDebugPanel: React.FC<NotificationDebugPanelProps> = ({
         <TouchableOpacity
           onPress={handleTestPushNotification}
           disabled={isLoading || !user?.id}
-          className={`p-3 rounded ${isLoading || !user?.id ? 'bg-gray-600' : 'bg-green-600'}`}
-        >
-          <Text className="text-white text-center font-medium">
+          className={`rounded p-3 ${isLoading || !user?.id ? 'bg-gray-600' : 'bg-green-600'}`}>
+          <Text className="text-center font-medium text-white">
             {isLoading ? 'Sending...' : 'Test Push Notification'}
           </Text>
         </TouchableOpacity>
@@ -190,9 +192,8 @@ export const NotificationDebugPanel: React.FC<NotificationDebugPanelProps> = ({
         <TouchableOpacity
           onPress={handleTestDatabaseSetup}
           disabled={isLoading}
-          className={`p-3 rounded ${isLoading ? 'bg-gray-600' : 'bg-purple-600'}`}
-        >
-          <Text className="text-white text-center font-medium">
+          className={`rounded p-3 ${isLoading ? 'bg-gray-600' : 'bg-purple-600'}`}>
+          <Text className="text-center font-medium text-white">
             {isLoading ? 'Testing...' : 'Test Database Setup'}
           </Text>
         </TouchableOpacity>
@@ -200,9 +201,8 @@ export const NotificationDebugPanel: React.FC<NotificationDebugPanelProps> = ({
         <TouchableOpacity
           onPress={handleCreateTestNotificationDirect}
           disabled={isLoading || !user?.id}
-          className={`p-3 rounded ${isLoading || !user?.id ? 'bg-gray-600' : 'bg-indigo-600'}`}
-        >
-          <Text className="text-white text-center font-medium">
+          className={`rounded p-3 ${isLoading || !user?.id ? 'bg-gray-600' : 'bg-indigo-600'}`}>
+          <Text className="text-center font-medium text-white">
             {isLoading ? 'Creating...' : 'Create Test (Direct DB)'}
           </Text>
         </TouchableOpacity>
@@ -210,9 +210,8 @@ export const NotificationDebugPanel: React.FC<NotificationDebugPanelProps> = ({
         <TouchableOpacity
           onPress={handleRefreshCount}
           disabled={isLoading}
-          className={`p-3 rounded ${isLoading ? 'bg-gray-600' : 'bg-yellow-600'}`}
-        >
-          <Text className="text-white text-center font-medium">
+          className={`rounded p-3 ${isLoading ? 'bg-gray-600' : 'bg-yellow-600'}`}>
+          <Text className="text-center font-medium text-white">
             {isLoading ? 'Refreshing...' : 'Check Counts'}
           </Text>
         </TouchableOpacity>
@@ -220,15 +219,14 @@ export const NotificationDebugPanel: React.FC<NotificationDebugPanelProps> = ({
         <TouchableOpacity
           onPress={handleClearAllNotifications}
           disabled={isLoading || !user?.id}
-          className={`p-3 rounded ${isLoading || !user?.id ? 'bg-gray-600' : 'bg-red-600'}`}
-        >
-          <Text className="text-white text-center font-medium">
+          className={`rounded p-3 ${isLoading || !user?.id ? 'bg-gray-600' : 'bg-red-600'}`}>
+          <Text className="text-center font-medium text-white">
             {isLoading ? 'Clearing...' : 'Clear All Notifications'}
           </Text>
         </TouchableOpacity>
       </View>
 
-      <Text className="text-gray-400 text-xs mt-4 text-center">
+      <Text className="mt-4 text-center text-xs text-gray-400">
         Debug panel for testing notification functionality
       </Text>
 

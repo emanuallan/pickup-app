@@ -185,7 +185,7 @@ export const LoginScreen = () => {
                   </Text>
                 </TouchableOpacity>
 
-                <View className="space-y-6">
+                <View className="gap-y-6">
                   {/* Header with Icon */}
                   <View className="mb-8 items-center">
                     <View className="mb-6 h-20 w-20 items-center justify-center rounded-full bg-orange-50">
@@ -203,8 +203,8 @@ export const LoginScreen = () => {
                     </View>
                   )}
 
-                  <View className="space-y-4">
-                    <View className="space-y-2">
+                  <View className="gap-y-4">
+                    <View className="gap-y-2">
                       <Text className="text-base font-medium text-gray-700">Email Address</Text>
                       <View className="relative">
                         <View className="absolute left-4 top-1/2 z-10 -translate-y-1/2 transform">
@@ -230,7 +230,7 @@ export const LoginScreen = () => {
                       )}
                     </View>
 
-                    <View className="space-y-2">
+                    <View className="gap-y-2">
                       <Text className="text-base font-medium text-gray-700">Password</Text>
                       <View className="relative">
                         <View className="absolute left-4 top-1/2 z-10 -translate-y-1/2 transform">

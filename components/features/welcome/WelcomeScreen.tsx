@@ -77,14 +77,14 @@ export const WelcomeScreen = () => {
             key={slide.id}
             className="flex-1 items-center justify-center px-8"
             style={{ width: screenWidth }}>
-            <View className="max-w-sm items-center space-y-6">
+            <View className="max-w-sm items-center gap-y-6">
               <View
                 className="mb-4 h-24 w-24 items-center justify-center rounded-full"
                 style={{ backgroundColor: slide.color + '20' }}>
                 <slide.icon size={48} color={slide.color} strokeWidth={1.5} />
               </View>
 
-              <View className="items-center space-y-3">
+              <View className="items-center gap-y-3">
                 <Text className="text-center text-3xl font-bold text-gray-900">{slide.title}</Text>
                 <Text className="text-center text-xl font-medium" style={{ color: slide.color }}>
                   {slide.subtitle}
@@ -112,7 +112,7 @@ export const WelcomeScreen = () => {
           ))}
         </View>
 
-        <View className="w-full space-y-3 px-8">
+        <View className="w-full gap-y-3 px-8">
           <TouchableOpacity
             onPress={() => router.replace('/(auth)/register')}
             className="w-full rounded-lg bg-[#C1501F] p-4">

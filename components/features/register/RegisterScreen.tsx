@@ -203,7 +203,7 @@ export const RegisterScreen = () => {
   if (showSuccess) {
     return (
       <View className="flex-1 items-center justify-center bg-white p-6">
-        <View className="max-w-sm items-center space-y-6 rounded-xl border border-green-200 bg-green-50 p-8">
+        <View className="max-w-sm items-center gap-y-6 rounded-xl border border-green-200 bg-green-50 p-8">
           <View className="h-16 w-16 items-center justify-center rounded-full bg-green-100">
             <CheckCircle size={32} color="#16A34A" strokeWidth={2} />
           </View>
@@ -259,7 +259,7 @@ export const RegisterScreen = () => {
                   </Text>
                 </TouchableOpacity>
 
-                <View className="space-y-6">
+                <View className="gap-y-6">
                   {/* Header with Icon */}
                   <View className="mb-8 items-center">
                     <View className="mb-6 h-20 w-20 items-center justify-center rounded-full bg-orange-50">
@@ -279,8 +279,8 @@ export const RegisterScreen = () => {
                     </View>
                   )}
 
-                  <View className="space-y-4">
-                    <View className="space-y-2">
+                  <View className="gap-y-4">
+                    <View className="gap-y-2">
                       <Text className="text-base font-medium text-gray-700">Email Address</Text>
                       <View className="relative">
                         <View className="absolute left-4 top-1/2 z-10 -translate-y-1/2 transform">
@@ -306,7 +306,7 @@ export const RegisterScreen = () => {
                       )}
                     </View>
 
-                    <View className="space-y-2">
+                    <View className="gap-y-2">
                       <Text className="text-base font-medium text-gray-700">Password</Text>
                       <View className="relative">
                         <View className="absolute left-4 top-1/2 z-10 -translate-y-1/2 transform">
@@ -344,7 +344,7 @@ export const RegisterScreen = () => {
                       </Text>
                     </View>
 
-                    <View className="space-y-2">
+                    <View className="gap-y-2">
                       <Text className="text-base font-medium text-gray-700">Confirm Password</Text>
                       <View className="relative">
                         <View className="absolute left-4 top-1/2 z-10 -translate-y-1/2 transform">

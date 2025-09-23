@@ -1,9 +1,17 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, Alert, TextInput } from 'react-native';
 import { useAuth } from '../../contexts/AuthContext';
-import { testGeneralMessageNotification, testListingMessageNotification } from '../../utils/testMessagingNotificationsSimple';
+import {
+  testGeneralMessageNotification,
+  testListingMessageNotification,
+} from '../../utils/testMessagingNotificationsSimple';
 import { testMessageReadStatus, testOpenChatWithUser } from '../../utils/testMessageReadStatus';
-import { testGeneralMessagePush, testListingMessagePush, testNewReviewPush, testUpdatedReviewPush } from '../../utils/testPushNotifications';
+import {
+  testGeneralMessagePush,
+  testListingMessagePush,
+  testNewReviewPush,
+  testUpdatedReviewPush,
+} from '../../utils/testPushNotifications';
 import { COLORS } from '../../theme/colors';
 
 export default function MessageNotificationTestPanel() {
@@ -16,8 +24,10 @@ export default function MessageNotificationTestPanel() {
 
   if (!user) {
     return (
-      <View className="p-4 bg-gray-100 rounded-lg m-4">
-        <Text className="text-center text-gray-600">Please log in to test messaging notifications</Text>
+      <View className="m-4 rounded-lg bg-gray-100 p-4">
+        <Text className="text-center text-gray-600">
+          Please log in to test messaging notifications
+        </Text>
       </View>
     );
   }
@@ -166,16 +176,16 @@ export default function MessageNotificationTestPanel() {
   };
 
   return (
-    <View className="p-4 bg-white rounded-lg m-4 border border-gray-200">
-      <Text className="text-lg font-semibold mb-4" style={{ color: COLORS.utOrange }}>
+    <View className="m-4 rounded-lg border border-gray-200 bg-white p-4">
+      <Text className="mb-4 text-lg font-semibold" style={{ color: COLORS.utOrange }}>
         🧪 Message Notification Testing
       </Text>
 
-      <View className="space-y-3">
+      <View className="gap-y-3">
         <View>
-          <Text className="text-sm font-medium text-gray-700 mb-1">Receiver User ID:</Text>
+          <Text className="mb-1 text-sm font-medium text-gray-700">Receiver User ID:</Text>
           <TextInput
-            className="border border-gray-300 rounded-lg p-3 bg-gray-50"
+            className="rounded-lg border border-gray-300 bg-gray-50 p-3"
             placeholder="Enter receiver user ID"
             value={receiverId}
             onChangeText={setReceiverId}
@@ -184,9 +194,9 @@ export default function MessageNotificationTestPanel() {
         </View>
 
         <View>
-          <Text className="text-sm font-medium text-gray-700 mb-1">Message Content:</Text>
+          <Text className="mb-1 text-sm font-medium text-gray-700">Message Content:</Text>
           <TextInput
-            className="border border-gray-300 rounded-lg p-3 bg-gray-50"
+            className="rounded-lg border border-gray-300 bg-gray-50 p-3"
             placeholder="Enter test message"
             value={messageContent}
             onChangeText={setMessageContent}
@@ -197,32 +207,31 @@ export default function MessageNotificationTestPanel() {
 
         <TouchableOpacity
           onPress={testGeneralMessage}
-          className="bg-blue-500 rounded-lg p-3 items-center"
-        >
-          <Text className="text-white font-medium">Test General Message Notification</Text>
+          className="items-center rounded-lg bg-blue-500 p-3">
+          <Text className="font-medium text-white">Test General Message Notification</Text>
         </TouchableOpacity>
 
-        <View className="border-t border-gray-200 pt-3 mt-3">
-          <Text className="text-sm font-medium text-gray-700 mb-2">For Listing Messages:</Text>
-          
-          <View className="space-y-2">
+        <View className="mt-3 border-t border-gray-200 pt-3">
+          <Text className="mb-2 text-sm font-medium text-gray-700">For Listing Messages:</Text>
+
+          <View className="gap-y-2">
             <TextInput
-              className="border border-gray-300 rounded-lg p-3 bg-gray-50"
+              className="rounded-lg border border-gray-300 bg-gray-50 p-3"
               placeholder="Listing ID"
               value={listingId}
               onChangeText={setListingId}
               keyboardType="numeric"
             />
-            
+
             <TextInput
-              className="border border-gray-300 rounded-lg p-3 bg-gray-50"
+              className="rounded-lg border border-gray-300 bg-gray-50 p-3"
               placeholder="Listing Title"
               value={listingTitle}
               onChangeText={setListingTitle}
             />
-            
+
             <TextInput
-              className="border border-gray-300 rounded-lg p-3 bg-gray-50"
+              className="rounded-lg border border-gray-300 bg-gray-50 p-3"
               placeholder="Listing Price"
               value={listingPrice}
               onChangeText={setListingPrice}
@@ -232,71 +241,65 @@ export default function MessageNotificationTestPanel() {
 
           <TouchableOpacity
             onPress={testListingMessage}
-            className="bg-green-500 rounded-lg p-3 items-center mt-3"
-          >
-            <Text className="text-white font-medium">Test Listing Message Notification</Text>
+            className="mt-3 items-center rounded-lg bg-green-500 p-3">
+            <Text className="font-medium text-white">Test Listing Message Notification</Text>
           </TouchableOpacity>
         </View>
 
-        <View className="border-t border-gray-200 pt-3 mt-3">
-          <Text className="text-sm font-medium text-gray-700 mb-2">Message Read Status Tests:</Text>
-          
+        <View className="mt-3 border-t border-gray-200 pt-3">
+          <Text className="mb-2 text-sm font-medium text-gray-700">Message Read Status Tests:</Text>
+
           <TouchableOpacity
             onPress={testReadStatus}
-            className="bg-purple-500 rounded-lg p-3 items-center mb-2"
-          >
-            <Text className="text-white font-medium">Test Message Read Status</Text>
+            className="mb-2 items-center rounded-lg bg-purple-500 p-3">
+            <Text className="font-medium text-white">Test Message Read Status</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
             onPress={testChatOpen}
-            className="bg-indigo-500 rounded-lg p-3 items-center"
-          >
-            <Text className="text-white font-medium">Test Chat Open (Clear Read Count)</Text>
+            className="items-center rounded-lg bg-indigo-500 p-3">
+            <Text className="font-medium text-white">Test Chat Open (Clear Read Count)</Text>
           </TouchableOpacity>
         </View>
 
-        <View className="border-t border-gray-200 pt-3 mt-3">
-          <Text className="text-sm font-medium text-gray-700 mb-2">Push Notification Tests:</Text>
-          
+        <View className="mt-3 border-t border-gray-200 pt-3">
+          <Text className="mb-2 text-sm font-medium text-gray-700">Push Notification Tests:</Text>
+
           <TouchableOpacity
             onPress={testPushGeneral}
-            className="bg-orange-500 rounded-lg p-3 items-center mb-2"
-          >
-            <Text className="text-white font-medium">Test General Message Push</Text>
+            className="mb-2 items-center rounded-lg bg-orange-500 p-3">
+            <Text className="font-medium text-white">Test General Message Push</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
             onPress={testPushListing}
-            className="bg-red-500 rounded-lg p-3 items-center"
-          >
-            <Text className="text-white font-medium">Test Listing Message Push</Text>
+            className="items-center rounded-lg bg-red-500 p-3">
+            <Text className="font-medium text-white">Test Listing Message Push</Text>
           </TouchableOpacity>
         </View>
 
-        <View className="border-t border-gray-200 pt-3 mt-3">
-          <Text className="text-sm font-medium text-gray-700 mb-2">Review Notification Tests:</Text>
-          
+        <View className="mt-3 border-t border-gray-200 pt-3">
+          <Text className="mb-2 text-sm font-medium text-gray-700">Review Notification Tests:</Text>
+
           <TouchableOpacity
             onPress={testReviewNew}
-            className="bg-yellow-500 rounded-lg p-3 items-center mb-2"
-          >
-            <Text className="text-white font-medium">Test New Review Push</Text>
+            className="mb-2 items-center rounded-lg bg-yellow-500 p-3">
+            <Text className="font-medium text-white">Test New Review Push</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
             onPress={testReviewUpdate}
-            className="bg-amber-600 rounded-lg p-3 items-center"
-          >
-            <Text className="text-white font-medium">Test Updated Review Push</Text>
+            className="items-center rounded-lg bg-amber-600 p-3">
+            <Text className="font-medium text-white">Test Updated Review Push</Text>
           </TouchableOpacity>
         </View>
       </View>
 
-      <View className="mt-4 p-3 bg-gray-50 rounded-lg">
+      <View className="mt-4 rounded-lg bg-gray-50 p-3">
         <Text className="text-xs text-gray-600">
-          💡 Tip: Check the console for detailed logs. Push notifications will appear on your device if you have notifications enabled.
-          Test both message and review notifications to ensure they work properly.
+          💡 Tip: Check the console for detailed logs. Push notifications will appear on your device
+          if you have notifications enabled. Test both message and review notifications to ensure
+          they work properly.
         </Text>
       </View>
     </View>
