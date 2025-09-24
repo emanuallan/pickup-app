@@ -64,14 +64,14 @@ function AuthNavigator() {
     }
   }, [user, userProfile, loading, router]);
 
-  if (loading) {
-    return (
-      <View className="flex-1 items-center justify-center bg-white">
-        <ActivityIndicator size="large" color="#C1501F" />
-        <Text className="mt-4 text-gray-600">Loading...</Text>
-      </View>
-    );
-  }
+  // if (loading) {
+  //   return (
+  //     <View className="flex-1 items-center justify-center bg-white">
+  //       <ActivityIndicator size="large" color="#C1501F" />
+  //       <Text className="mt-4 text-gray-600">Loading...</Text>
+  //     </View>
+  //   );
+  // }
 
   return (
     <Stack

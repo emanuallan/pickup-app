@@ -51,8 +51,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const createUserProfile = async (userId: string) => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
       if (!user) {
         console.error('No authenticated user found');
         return null;
@@ -64,12 +66,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           {
             id: userId,
             email: user.email,
-            display_name: user.user_metadata?.full_name || user.user_metadata?.name || user.email?.split('@')[0] || 'User',
-            profile_image_url: user.user_metadata?.avatar_url || user.user_metadata?.picture || null,
+            display_name:
+              user.user_metadata?.full_name ||
+              user.user_metadata?.name ||
+              user.email?.split('@')[0] ||
+              'User',
+            profile_image_url:
+              user.user_metadata?.avatar_url || user.user_metadata?.picture || null,
             onboard_complete: false,
             created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          }
+            updated_at: new Date().toISOString(),
+          },
         ])
         .select('onboard_complete')
         .single();
@@ -89,36 +96,38 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   useEffect(() => {
     console.log('Setting up auth listeners...');
-    
+
     // Check active sessions and sets the user
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       console.log('Initial session check:', session ? 'Logged in' : 'Not logged in');
       const currentUser = session?.user ?? null;
       setUser(currentUser);
-      
+
       if (currentUser) {
         const profile = await fetchUserProfile(currentUser.id);
         setUserProfile(profile);
       } else {
         setUserProfile(null);
       }
-      
+
       setLoading(false);
     });
 
     // Listen for changes on auth state (signed in, signed out, etc.)
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (_event, session) => {
       console.log('Auth state changed:', _event, session ? 'Logged in' : 'Not logged in');
       const currentUser = session?.user ?? null;
       setUser(currentUser);
-      
+
       if (currentUser) {
         const profile = await fetchUserProfile(currentUser.id);
         setUserProfile(profile);
       } else {
         setUserProfile(null);
       }
-      
+
       setLoading(false);
     });
 
@@ -148,12 +157,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         emailRedirectTo: 'ut-marketplace://',
       },
     });
-    
+
     if (error) {
       console.error('Sign up error:', error.message);
       return { error };
     }
-    
+
     console.log('Sign up successful');
     return { error };
   };
@@ -166,7 +175,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   return (
     <AuthContext.Provider value={{ user, userProfile, loading, signIn, signUp, signOut }}>
-      {!loading && children}
+      {/* {!loading && children} */}
+      {children}
     </AuthContext.Provider>
   );
 };
@@ -177,4 +187,4 @@ export const useAuth = () => {
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
-}; 
+};

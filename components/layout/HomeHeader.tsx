@@ -1,40 +1,40 @@
-import { memo, useState, useEffect } from 'react';
+import { memo } from 'react';
 import { View, Text } from 'react-native';
-import { useAuth } from '~/contexts/AuthContext';
+// import { useAuth } from '~/contexts/AuthContext';
 import { Sun, Moon } from 'lucide-react-native';
-import { supabase } from '~/lib/supabase';
+// import { supabase } from '~/lib/supabase';
 import TopBar from './TopBar';
 
 function HomeHeader() {
-  const { user } = useAuth();
-  const [displayName, setDisplayName] = useState<string>('there');
+  // const { user } = useAuth();
+  // const [displayName, setDisplayName] = useState<string>('there');
 
-  useEffect(() => {
-    const fetchDisplayName = async () => {
-      if (!user?.id) return;
-      
-      try {
-        const { data: userData } = await supabase
-          .from('user_settings')
-          .select('display_name')
-          .eq('email', user.email)
-          .single();
-        
-        if (userData?.display_name) {
-          setDisplayName(userData.display_name);
-        } else if (user.email) {
-          setDisplayName(user.email.split('@')[0]);
-        }
-      } catch (error) {
-        // Fallback to email username if query fails
-        if (user.email) {
-          setDisplayName(user.email.split('@')[0]);
-        }
-      }
-    };
+  // useEffect(() => {
+  //   const fetchDisplayName = async () => {
+  //     if (!user?.id) return;
 
-    fetchDisplayName();
-  }, [user]);
+  //     try {
+  //       const { data: userData } = await supabase
+  //         .from('user_settings')
+  //         .select('display_name')
+  //         .eq('email', user.email)
+  //         .single();
+
+  //       if (userData?.display_name) {
+  //         setDisplayName(userData.display_name);
+  //       } else if (user.email) {
+  //         setDisplayName(user.email.split('@')[0]);
+  //       }
+  //     } catch (error) {
+  //       // Fallback to email username if query fails
+  //       if (user.email) {
+  //         setDisplayName(user.email.split('@')[0]);
+  //       }
+  //     }
+  //   };
+
+  //   fetchDisplayName();
+  // }, [user]);
 
   const getTimeOfDayGreeting = () => {
     const hour = new Date().getHours();
@@ -56,22 +56,18 @@ function HomeHeader() {
     <View className="bg-white">
       {/* Top Bar */}
       <TopBar />
-      
+
       {/* Home Content */}
       <View className="px-6 pb-4 pt-4">
         {/* Greeting */}
         <View className="flex-row items-center">
           <View className="flex-1">
-            <Text className="text-3xl font-black text-gray-900 mb-1">
-              {getTimeOfDayGreeting()}, {displayName}!
+            <Text className="mb-1 text-3xl font-black text-gray-900">
+              {getTimeOfDayGreeting()}!
             </Text>
-            <Text className="text-lg text-gray-600 font-medium">
-              Ready to find something great?
-            </Text>
+            <Text className="text-lg font-medium text-gray-600">Ready to find a game?</Text>
           </View>
-          <View className="ml-4">
-            {getTimeOfDayIcon()}
-          </View>
+          <View className="ml-4">{getTimeOfDayIcon()}</View>
         </View>
       </View>
     </View>

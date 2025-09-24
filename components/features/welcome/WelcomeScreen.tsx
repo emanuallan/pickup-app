@@ -112,14 +112,14 @@ export const WelcomeScreen = () => {
           ))}
         </View>
 
-        <View className="w-full gap-y-3 px-8">
+        <View className="w-full px-8">
           <TouchableOpacity
             onPress={() => router.replace('/(auth)/register')}
             className="w-full rounded-lg bg-[#C1501F] p-4">
             <Text className="text-center text-lg font-semibold text-white">Get Started</Text>
           </TouchableOpacity>
 
-          <View className="mt-2" />
+          <View className="mt-3" />
           <TouchableOpacity
             onPress={() => router.replace('/(auth)/login')}
             className="w-full rounded-lg border border-[#C1501F] p-4">
